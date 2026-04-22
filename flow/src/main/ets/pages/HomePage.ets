@@ -12,6 +12,7 @@ import { MoodEntry, RecommendMode } from '../models/DataModels';
 interface MoodOption {
   label: string;
   value: number;
+  icon: Resource;
 }
 
 @Entry
@@ -74,22 +75,30 @@ export struct HomePage {
   MoodQuickCheckIn() {
     Row() {
       ForEach([
-        { label: '😴 疲惫', value: 25 },
-        { label: '😰 焦虑', value: 50 },
-        { label: '😐 平淡', value: 75 },
-        { label: '🙂 平静', value: 85 },
-        { label: '⚡ 充沛', value: 100 }
+        { label: '疲惫', value: 25, icon: $r('sys.symbol.moon_zzz') },
+        { label: '焦虑', value: 50, icon: $r('sys.symbol.face_smiling') },
+        { label: '平淡', value: 75, icon: $r('sys.symbol.face_neutral') },
+        { label: '平静', value: 85, icon: $r('sys.symbol.face_smiling_fill') },
+        { label: '充沛', value: 100, icon: $r('sys.symbol.bolt_fill') }
       ], (mood: MoodOption) => {
-        Button(mood.label)
-          .backgroundColor('#FFFFFF')
-          .fontColor($r('app.color.text_color'))
-          .fontSize($r('app.float.body_font_size'))
-          .padding({ left: 16, right: 16, top: 8, bottom: 8 })
-          .borderRadius($r('app.float.button_radius'))
-          .onClick(async () => {
-            this.currentMood = mood.value;
-            await this.handleMoodCheckIn();
-          })
+        Button() {
+          Column() {
+            SymbolGlyph(mood.icon)
+              .fontSize(20)
+              .fontColor([$r('app.color.text_color')])
+            Text(mood.label)
+              .fontSize($r('app.float.caption_font_size'))
+              .margin({ top: 4 })
+          }
+        }
+        .backgroundColor('#FFFFFF')
+        .fontColor($r('app.color.text_color'))
+        .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+        .borderRadius($r('app.float.button_radius'))
+        .onClick(async () => {
+          this.currentMood = mood.value;
+          await this.handleMoodCheckIn();
+        })
       }, (mood: MoodOption) => mood.label)
     }
     .width('100%')
@@ -112,7 +121,7 @@ export struct HomePage {
           .fontSize($r('app.float.subtitle_font_size'))
           .fontWeight(FontWeight.Bold)
         Blank()
-        Text(MoodEngine.getMoodEmoji(this.currentMood) + ' ' + MoodEngine.getMoodLabel(this.currentMood))
+        Text(MoodEngine.getMoodLabel(this.currentMood))
           .fontSize($r('app.float.body_font_size'))
           .fontColor($r('app.color.text_secondary'))
       }
@@ -178,9 +187,15 @@ export struct HomePage {
   FocusContent() {
     Row() {
       Column() {
-        Text('🎯 开始专注')
-          .fontSize($r('app.float.subtitle_font_size'))
-          .fontWeight(FontWeight.Bold)
+        Row() {
+          SymbolGlyph($r('sys.symbol.target'))
+            .fontSize(20)
+            .fontColor([$r('app.color.primary_color')])
+            .margin({ right: 8 })
+          Text('开始专注')
+            .fontSize($r('app.float.subtitle_font_size'))
+            .fontWeight(FontWeight.Bold)
+        }
 
         if (this.recommendation) {
           Text(`建议时长: ${this.recommendation.suggestedDuration}分钟`)
@@ -218,7 +233,11 @@ export struct HomePage {
   AIInsightContent() {
     Column() {
       Row() {
-        Text('🧠 AI 节律洞察')
+        SymbolGlyph($r('sys.symbol.brain'))
+          .fontSize(20)
+          .fontColor([$r('app.color.primary_color')])
+          .margin({ right: 8 })
+        Text('AI 节律洞察')
           .fontSize($r('app.float.subtitle_font_size'))
           .fontWeight(FontWeight.Bold)
       }
@@ -269,9 +288,15 @@ export struct HomePage {
   @Builder
   AIPlanContent() {
     Column() {
-      Text('🤖 AI 计划制定')
-        .fontSize($r('app.float.subtitle_font_size'))
-        .fontWeight(FontWeight.Bold)
+      Row() {
+        SymbolGlyph($r('sys.symbol.wand_and_stars'))
+          .fontSize(20)
+          .fontColor([$r('app.color.primary_color')])
+          .margin({ right: 8 })
+        Text('AI 计划制定')
+          .fontSize($r('app.float.subtitle_font_size'))
+          .fontWeight(FontWeight.Bold)
+      }
 
       Text('告诉我你的目标，让 AI 帮你拆解任务')
         .fontSize($r('app.float.caption_font_size'))
@@ -316,8 +341,9 @@ export struct HomePage {
               router.pushUrl({ url: 'pages/LoginPage' });
             })
 
-          Text('⚙️')
+          SymbolGlyph($r('sys.symbol.gear'))
             .fontSize(24)
+            .fontColor([$r('app.color.text_color')])
             .onClick(() => {
               router.pushUrl({ url: 'pages/SettingsPage' });
             })

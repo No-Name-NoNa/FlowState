@@ -6,6 +6,7 @@ import { router } from '@kit.ArkUI';
 import { GlassCard } from '../components/common/GlassCard';
 import { DataManager } from '../utils/DataManager';
 import { ThemeManager } from '../utils/ThemeManager';
+import { ThemeContext } from '../utils/ThemeContext';
 import { UserSettings, ThemeConfig } from '../models/DataModels';
 
 @Entry
@@ -22,6 +23,7 @@ struct SettingsPage {
   };
   @State themes: ThemeConfig[] = [];
   @State showThemeSelector: boolean = false;
+  @StorageLink(ThemeContext.getThemeLink()) currentTheme: ThemeConfig = ThemeContext.getCurrentTheme();
 
   async aboutToAppear() {
     this.settings = await DataManager.getUserSettings();
@@ -34,25 +36,28 @@ struct SettingsPage {
 
   async handleThemeChange(themeId: string) {
     await ThemeManager.setTheme(themeId);
+    const newTheme = await ThemeManager.getCurrentTheme();
+    ThemeContext.updateTheme(newTheme);
     this.settings.currentTheme = themeId;
     await this.saveSettings();
     this.showThemeSelector = false;
   }
 
   @Builder
-  SettingItem(icon: string, title: string, action: () => void) {
+  SettingItem(iconResource: Resource, title: string, action: () => void) {
     Row() {
-      Text(icon)
+      SymbolGlyph(iconResource)
         .fontSize(24)
+        .fontColor([$r('app.color.primary_color')])
         .margin({ right: 12 })
 
       Text(title)
         .fontSize($r('app.float.body_font_size'))
         .layoutWeight(1)
 
-      Text('>')
-        .fontSize(20)
-        .fontColor($r('app.color.text_secondary'))
+      SymbolGlyph($r('sys.symbol.chevron_right'))
+        .fontSize(16)
+        .fontColor([$r('app.color.text_secondary')])
     }
     .width('100%')
     .padding($r('app.float.padding_md'))
@@ -60,10 +65,11 @@ struct SettingsPage {
   }
 
   @Builder
-  ToggleItem(icon: string, title: string, value: boolean, onChange: (val: boolean) => void) {
+  ToggleItem(iconResource: Resource, title: string, value: boolean, onChange: (val: boolean) => void) {
     Row() {
-      Text(icon)
+      SymbolGlyph(iconResource)
         .fontSize(24)
+        .fontColor([$r('app.color.primary_color')])
         .margin({ right: 12 })
 
       Text(title)
@@ -115,9 +121,9 @@ struct SettingsPage {
                   Blank()
 
                   if (this.settings.currentTheme === theme.id) {
-                    Text('✓')
+                    SymbolGlyph($r('sys.symbol.checkmark'))
                       .fontSize(24)
-                      .fontColor($r('app.color.success_color'))
+                      .fontColor([$r('app.color.success_color')])
                   }
                 }
                 .width('100%')
@@ -154,9 +160,9 @@ struct SettingsPage {
       Column() {
         // 顶部导航栏
         Row() {
-          Text('←')
-            .fontSize(32)
-            .fontColor($r('app.color.text_color'))
+          SymbolGlyph($r('sys.symbol.chevron_left'))
+            .fontSize(28)
+            .fontColor([$r('app.color.text_color')])
             .onClick(() => {
               router.back();
             })
@@ -258,7 +264,7 @@ struct SettingsPage {
       }
       .width('100%')
 
-      this.ToggleItem('🔄', '自动开始休息', this.settings.autoStartRest, (value: boolean) => {
+      this.ToggleItem($r('sys.symbol.arrow_clockwise'), '自动开始休息', this.settings.autoStartRest, (value: boolean) => {
         this.settings.autoStartRest = value;
         this.saveSettings();
       })
@@ -273,17 +279,17 @@ struct SettingsPage {
         .fontWeight(FontWeight.Bold)
         .margin({ bottom: 16 })
 
-      this.ToggleItem('🔔', '通知提醒', this.settings.notificationEnabled, (value: boolean) => {
+      this.ToggleItem($r('sys.symbol.bell'), '通知提醒', this.settings.notificationEnabled, (value: boolean) => {
         this.settings.notificationEnabled = value;
         this.saveSettings();
       })
 
-      this.ToggleItem('🔊', '声音提示', this.settings.soundEnabled, (value: boolean) => {
+      this.ToggleItem($r('sys.symbol.speaker_wave_2'), '声音提示', this.settings.soundEnabled, (value: boolean) => {
         this.settings.soundEnabled = value;
         this.saveSettings();
       })
 
-      this.ToggleItem('📳', '振动反馈', this.settings.vibrationEnabled, (value: boolean) => {
+      this.ToggleItem($r('sys.symbol.iphone_radiowaves_left_and_right'), '振动反馈', this.settings.vibrationEnabled, (value: boolean) => {
         this.settings.vibrationEnabled = value;
         this.saveSettings();
       })
@@ -298,11 +304,11 @@ struct SettingsPage {
         .fontWeight(FontWeight.Bold)
         .margin({ bottom: 16 })
 
-      this.SettingItem('🎨', '切换主题', () => {
+      this.SettingItem($r('sys.symbol.paintpalette'), '切换主题', () => {
         this.showThemeSelector = true;
       })
 
-      this.SettingItem('🖼️', '自定义背景', () => {
+      this.SettingItem($r('sys.symbol.photo'), '自定义背景', () => {
         // TODO: 实现背景图片选择
       })
     }

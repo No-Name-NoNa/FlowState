@@ -17,18 +17,6 @@ export class MoodLabels {
   }
 }
 
-// 情绪表情映射类
-export class MoodEmojis {
-  static getEmoji(value: number): string {
-    if (value === 0 || value === 25) return '😴';
-    if (value === 50) return '😰';
-    if (value === 75) return '😐';
-    if (value === 85) return '🙂';
-    if (value === 100) return '⚡';
-    return '😐';
-  }
-}
-
 // 推荐模式规则
 export const RECOMMEND_RULES: RecommendMode[] = [
   { moodRange: [0, 20], modeName: '建议休息', suggestedDuration: 15, description: '当前状态不适合专注，建议先休息一下' },

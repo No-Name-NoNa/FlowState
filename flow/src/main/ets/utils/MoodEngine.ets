@@ -33,17 +33,6 @@ export class MoodEngine {
   }
 
   /**
-   * 获取情绪表情
-   */
-  static getMoodEmoji(moodValue: number): string {
-    if (moodValue <= 20) return '😴';
-    if (moodValue <= 40) return '😰';
-    if (moodValue <= 60) return '😐';
-    if (moodValue <= 80) return '🙂';
-    return '⚡';
-  }
-
-  /**
    * 计算平均情绪值
    */
   static getAverageMood(moodValues: number[]): number {
