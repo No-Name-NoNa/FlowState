@@ -1,0 +1,11 @@
+{
+  "name": "flow",
+  "version": "1.0.0",
+  "description": "Please describe the basic information.",
+  "main": "",
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "libflow.so": "file:./src/main/cpp/types/libflow"
+  }
+}

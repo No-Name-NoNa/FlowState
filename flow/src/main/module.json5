@@ -1,0 +1,50 @@
+{
+  "module": {
+    "name": "flow",
+    "type": "entry",
+    "description": "$string:module_desc",
+    "mainElement": "FlowAbility",
+    "deviceTypes": [
+      "phone"
+    ],
+    "deliveryWithInstall": true,
+    "installationFree": false,
+    "pages": "$profile:main_pages",
+    "abilities": [
+      {
+        "name": "FlowAbility",
+        "srcEntry": "./ets/flowability/FlowAbility.ets",
+        "description": "$string:FlowAbility_desc",
+        "icon": "$media:layered_image",
+        "label": "$string:FlowAbility_label",
+        "startWindowIcon": "$media:startIcon",
+        "startWindowBackground": "$color:start_window_background",
+        "exported": true,
+        "skills": [
+          {
+            "entities": [
+              "entity.system.home"
+            ],
+            "actions": [
+              "ohos.want.action.home"
+            ]
+          }
+        ]
+      }
+    ],
+    "extensionAbilities": [
+      {
+        "name": "FlowBackupAbility",
+        "srcEntry": "./ets/flowbackupability/FlowBackupAbility.ets",
+        "type": "backup",
+        "exported": false,
+        "metadata": [
+          {
+            "name": "ohos.extension.backup",
+            "resource": "$profile:backup_config"
+          }
+        ],
+      }
+    ]
+  }
+}

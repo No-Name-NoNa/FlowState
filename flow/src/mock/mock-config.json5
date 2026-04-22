@@ -1,0 +1,5 @@
+{
+  "libflow.so": {
+    "source": "src/mock/Libflow.mock.ets"
+  }
+}
