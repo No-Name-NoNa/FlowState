@@ -67,13 +67,13 @@ export struct HomePage {
   @Builder
   MoodQuickCheckIn() {
     Row() {
-      [
+      ForEach([
         { label: '😴 疲惫', value: 25 },
         { label: '😰 焦虑', value: 50 },
         { label: '😐 平淡', value: 75 },
         { label: '🙂 平静', value: 85 },
         { label: '⚡ 充沛', value: 100 }
-      ].map((mood) => {
+      ], (mood: { label: string, value: number }) => {
         Button(mood.label)
           .backgroundColor('#FFFFFF')
           .fontColor($r('app.color.text_color'))
@@ -84,7 +84,7 @@ export struct HomePage {
             this.currentMood = mood.value;
             await this.handleMoodCheckIn();
           })
-      })
+      }, (mood: { label: string, value: number }) => mood.label)
     }
     .width('100%')
     .padding($r('app.float.padding_md'))

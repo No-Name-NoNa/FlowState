@@ -75,8 +75,8 @@ export class MoodEngine {
     taskCount: number
   ): string {
     const hours = (totalMinutes / 60).toFixed(1);
-    const avgMood = this.getAverageMood(moodValues);
-    const trend = this.getMoodTrend(moodValues);
+    const avgMood = MoodEngine.getAverageMood(moodValues);
+    const trend = MoodEngine.getMoodTrend(moodValues);
 
     let insight = `今日专注 ${hours} 小时，完成 ${taskCount} 项任务。`;
 

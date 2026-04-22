@@ -14,17 +14,17 @@ export class ThemeManager {
    * 初始化主题管理器
    */
   static async init(): Promise<void> {
-    this.currentTheme = await DataManager.getCurrentTheme();
+    ThemeManager.currentTheme = await DataManager.getCurrentTheme();
   }
 
   /**
    * 获取当前主题
    */
   static async getCurrentTheme(): Promise<ThemeConfig> {
-    if (!this.currentTheme) {
-      this.currentTheme = await DataManager.getCurrentTheme();
+    if (!ThemeManager.currentTheme) {
+      ThemeManager.currentTheme = await DataManager.getCurrentTheme();
     }
-    return this.currentTheme;
+    return ThemeManager.currentTheme;
   }
 
   /**
@@ -32,8 +32,8 @@ export class ThemeManager {
    */
   static async setTheme(themeId: string): Promise<void> {
     await DataManager.setCurrentTheme(themeId);
-    this.currentTheme = await DataManager.getCurrentTheme();
-    this.notifyThemeChange();
+    ThemeManager.currentTheme = await DataManager.getCurrentTheme();
+    ThemeManager.notifyThemeChange();
   }
 
   /**
@@ -54,16 +54,16 @@ export class ThemeManager {
    * 注册主题变化回调
    */
   static registerThemeChangeCallback(callback: (theme: ThemeConfig) => void): void {
-    this.themeChangeCallbacks.push(callback);
+    ThemeManager.themeChangeCallbacks.push(callback);
   }
 
   /**
    * 取消注册主题变化回调
    */
   static unregisterThemeChangeCallback(callback: (theme: ThemeConfig) => void): void {
-    const index = this.themeChangeCallbacks.indexOf(callback);
+    const index = ThemeManager.themeChangeCallbacks.indexOf(callback);
     if (index > -1) {
-      this.themeChangeCallbacks.splice(index, 1);
+      ThemeManager.themeChangeCallbacks.splice(index, 1);
     }
   }
 
@@ -71,8 +71,8 @@ export class ThemeManager {
    * 通知主题变化
    */
   private static notifyThemeChange(): void {
-    if (this.currentTheme) {
-      this.themeChangeCallbacks.forEach(callback => callback(this.currentTheme!));
+    if (ThemeManager.currentTheme) {
+      ThemeManager.themeChangeCallbacks.forEach(callback => callback(ThemeManager.currentTheme!));
     }
   }
 

@@ -111,13 +111,16 @@ export interface AIInsight {
   recommendation: string;
 }
 
+// AI 计划任务项
+export interface AIPlanTask {
+  title: string;
+  estimatedTime: number;
+  subtasks: string[];
+}
+
 // AI 计划数据（模拟）
 export interface AIPlan {
   goal: string;
-  tasks: {
-    title: string;
-    estimatedTime: number;
-    subtasks: string[];
-  }[];
+  tasks: AIPlanTask[];
   totalEstimatedTime: number;
 }

@@ -5,7 +5,7 @@
 
 import { preferences } from '@kit.ArkData';
 import { MoodEntry, Task, Schedule, FocusSession, RestSession, UserSettings, UserInfo, ThemeConfig } from '../models/DataModels';
-import { STORAGE_KEYS, PRESET_THEMES } from './Constants';
+import { StorageKeys, PRESET_THEMES } from './Constants';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const LOG_DOMAIN = 0x0001;
@@ -20,7 +20,7 @@ export class DataManager {
   static async init(context: Context): Promise<void> {
     try {
       const options: preferences.Options = { name: 'FlowStateData' };
-      this.dataPreferences = await preferences.getPreferences(context, options);
+      DataManager.dataPreferences = await preferences.getPreferences(context, options);
       hilog.info(LOG_DOMAIN, TAG, 'DataManager initialized');
     } catch (err) {
       hilog.error(LOG_DOMAIN, TAG, 'Failed to init DataManager: %{public}s', JSON.stringify(err));
@@ -31,10 +31,10 @@ export class DataManager {
    * 保存数据
    */
   private static async saveData<T>(key: string, data: T): Promise<void> {
-    if (!this.dataPreferences) return;
+    if (!DataManager.dataPreferences) return;
     try {
-      await this.dataPreferences.put(key, JSON.stringify(data));
-      await this.dataPreferences.flush();
+      await DataManager.dataPreferences.put(key, JSON.stringify(data));
+      await DataManager.dataPreferences.flush();
     } catch (err) {
       hilog.error(LOG_DOMAIN, TAG, 'Failed to save data: %{public}s', JSON.stringify(err));
     }
@@ -44,9 +44,9 @@ export class DataManager {
    * 读取数据
    */
   private static async getData<T>(key: string, defaultValue: T): Promise<T> {
-    if (!this.dataPreferences) return defaultValue;
+    if (!DataManager.dataPreferences) return defaultValue;
     try {
-      const value = await this.dataPreferences.get(key, '') as string;
+      const value = await DataManager.dataPreferences.get(key, '') as string;
       if (value) {
         return JSON.parse(value) as T;
       }
@@ -63,23 +63,23 @@ export class DataManager {
    * 保存情绪签到记录
    */
   static async saveMoodEntry(entry: MoodEntry): Promise<void> {
-    const entries = await this.getAllMoodEntries();
+    const entries = await DataManager.getAllMoodEntries();
     entries.push(entry);
-    await this.saveData(STORAGE_KEYS.MOOD_ENTRIES, entries);
+    await DataManager.saveData(StorageKeys.MOOD_ENTRIES, entries);
   }
 
   /**
    * 获取所有情绪记录
    */
   static async getAllMoodEntries(): Promise<MoodEntry[]> {
-    return await this.getData<MoodEntry[]>(STORAGE_KEYS.MOOD_ENTRIES, []);
+    return await DataManager.getData<MoodEntry[]>(StorageKeys.MOOD_ENTRIES, []);
   }
 
   /**
    * 获取今日情绪记录
    */
   static async getTodayMoodEntries(): Promise<MoodEntry[]> {
-    const entries = await this.getAllMoodEntries();
+    const entries = await DataManager.getAllMoodEntries();
     const today = new Date().setHours(0, 0, 0, 0);
     return entries.filter(entry => entry.timestamp >= today);
   }
@@ -88,7 +88,7 @@ export class DataManager {
    * 获取最近的情绪记录
    */
   static async getRecentMoodEntry(): Promise<MoodEntry | null> {
-    const entries = await this.getAllMoodEntries();
+    const entries = await DataManager.getAllMoodEntries();
     return entries.length > 0 ? entries[entries.length - 1] : null;
   }
 
@@ -98,37 +98,37 @@ export class DataManager {
    * 保存任务
    */
   static async saveTask(task: Task): Promise<void> {
-    const tasks = await this.getAllTasks();
+    const tasks = await DataManager.getAllTasks();
     const index = tasks.findIndex(t => t.id === task.id);
     if (index >= 0) {
       tasks[index] = task;
     } else {
       tasks.push(task);
     }
-    await this.saveData(STORAGE_KEYS.TASKS, tasks);
+    await DataManager.saveData(StorageKeys.TASKS, tasks);
   }
 
   /**
    * 获取所有任务
    */
   static async getAllTasks(): Promise<Task[]> {
-    return await this.getData<Task[]>(STORAGE_KEYS.TASKS, []);
+    return await DataManager.getData<Task[]>(StorageKeys.TASKS, []);
   }
 
   /**
    * 删除任务
    */
   static async deleteTask(taskId: string): Promise<void> {
-    const tasks = await this.getAllTasks();
+    const tasks = await DataManager.getAllTasks();
     const filtered = tasks.filter(t => t.id !== taskId);
-    await this.saveData(STORAGE_KEYS.TASKS, filtered);
+    await DataManager.saveData(StorageKeys.TASKS, filtered);
   }
 
   /**
    * 获取任务
    */
   static async getTask(taskId: string): Promise<Task | null> {
-    const tasks = await this.getAllTasks();
+    const tasks = await DataManager.getAllTasks();
     return tasks.find(t => t.id === taskId) || null;
   }
 
@@ -138,37 +138,37 @@ export class DataManager {
    * 保存日程
    */
   static async saveSchedule(schedule: Schedule): Promise<void> {
-    const schedules = await this.getAllSchedules();
+    const schedules = await DataManager.getAllSchedules();
     const index = schedules.findIndex(s => s.id === schedule.id);
     if (index >= 0) {
       schedules[index] = schedule;
     } else {
       schedules.push(schedule);
     }
-    await this.saveData(STORAGE_KEYS.SCHEDULES, schedules);
+    await DataManager.saveData(StorageKeys.SCHEDULES, schedules);
   }
 
   /**
    * 获取所有日程
    */
   static async getAllSchedules(): Promise<Schedule[]> {
-    return await this.getData<Schedule[]>(STORAGE_KEYS.SCHEDULES, []);
+    return await DataManager.getData<Schedule[]>(StorageKeys.SCHEDULES, []);
   }
 
   /**
    * 删除日程
    */
   static async deleteSchedule(scheduleId: string): Promise<void> {
-    const schedules = await this.getAllSchedules();
+    const schedules = await DataManager.getAllSchedules();
     const filtered = schedules.filter(s => s.id !== scheduleId);
-    await this.saveData(STORAGE_KEYS.SCHEDULES, filtered);
+    await DataManager.saveData(StorageKeys.SCHEDULES, filtered);
   }
 
   /**
    * 获取任务的所有日程
    */
   static async getTaskSchedules(taskId: string): Promise<Schedule[]> {
-    const schedules = await this.getAllSchedules();
+    const schedules = await DataManager.getAllSchedules();
     return schedules.filter(s => s.taskId === taskId);
   }
 
@@ -178,28 +178,28 @@ export class DataManager {
    * 保存专注记录
    */
   static async saveFocusSession(session: FocusSession): Promise<void> {
-    const sessions = await this.getAllFocusSessions();
+    const sessions = await DataManager.getAllFocusSessions();
     const index = sessions.findIndex(s => s.id === session.id);
     if (index >= 0) {
       sessions[index] = session;
     } else {
       sessions.push(session);
     }
-    await this.saveData(STORAGE_KEYS.FOCUS_SESSIONS, sessions);
+    await DataManager.saveData(StorageKeys.FOCUS_SESSIONS, sessions);
   }
 
   /**
    * 获取所有专注记录
    */
   static async getAllFocusSessions(): Promise<FocusSession[]> {
-    return await this.getData<FocusSession[]>(STORAGE_KEYS.FOCUS_SESSIONS, []);
+    return await DataManager.getData<FocusSession[]>(StorageKeys.FOCUS_SESSIONS, []);
   }
 
   /**
    * 获取今日专注记录
    */
   static async getTodayFocusSessions(): Promise<FocusSession[]> {
-    const sessions = await this.getAllFocusSessions();
+    const sessions = await DataManager.getAllFocusSessions();
     const today = new Date().setHours(0, 0, 0, 0);
     return sessions.filter(s => s.startTime >= today);
   }
@@ -208,7 +208,7 @@ export class DataManager {
    * 获取日期范围内的专注记录
    */
   static async getFocusSessionsInRange(startTime: number, endTime: number): Promise<FocusSession[]> {
-    const sessions = await this.getAllFocusSessions();
+    const sessions = await DataManager.getAllFocusSessions();
     return sessions.filter(s => s.startTime >= startTime && s.startTime <= endTime);
   }
 
@@ -218,14 +218,14 @@ export class DataManager {
    * 保存用户设置
    */
   static async saveUserSettings(settings: UserSettings): Promise<void> {
-    await this.saveData(STORAGE_KEYS.USER_SETTINGS, settings);
+    await DataManager.saveData(StorageKeys.USER_SETTINGS, settings);
   }
 
   /**
    * 获取用户设置
    */
   static async getUserSettings(): Promise<UserSettings> {
-    return await this.getData<UserSettings>(STORAGE_KEYS.USER_SETTINGS, {
+    return await DataManager.getData<UserSettings>(StorageKeys.USER_SETTINGS, {
       defaultFocusTime: 25,
       defaultRestTime: 5,
       autoStartRest: false,
@@ -242,14 +242,14 @@ export class DataManager {
    * 保存用户信息
    */
   static async saveUserInfo(userInfo: UserInfo): Promise<void> {
-    await this.saveData(STORAGE_KEYS.USER_INFO, userInfo);
+    await DataManager.saveData(StorageKeys.USER_INFO, userInfo);
   }
 
   /**
    * 获取用户信息
    */
   static async getUserInfo(): Promise<UserInfo> {
-    return await this.getData<UserInfo>(STORAGE_KEYS.USER_INFO, {
+    return await DataManager.getData<UserInfo>(StorageKeys.USER_INFO, {
       isLoggedIn: false
     });
   }
@@ -260,28 +260,28 @@ export class DataManager {
    * 保存自定义主题
    */
   static async saveCustomTheme(theme: ThemeConfig): Promise<void> {
-    const themes = await this.getCustomThemes();
+    const themes = await DataManager.getCustomThemes();
     const index = themes.findIndex(t => t.id === theme.id);
     if (index >= 0) {
       themes[index] = theme;
     } else {
       themes.push(theme);
     }
-    await this.saveData(STORAGE_KEYS.CUSTOM_THEMES, themes);
+    await DataManager.saveData(StorageKeys.CUSTOM_THEMES, themes);
   }
 
   /**
    * 获取自定义主题列表
    */
   static async getCustomThemes(): Promise<ThemeConfig[]> {
-    return await this.getData<ThemeConfig[]>(STORAGE_KEYS.CUSTOM_THEMES, []);
+    return await DataManager.getData<ThemeConfig[]>(StorageKeys.CUSTOM_THEMES, []);
   }
 
   /**
    * 获取所有主题（预设+自定义）
    */
   static async getAllThemes(): Promise<ThemeConfig[]> {
-    const customThemes = await this.getCustomThemes();
+    const customThemes = await DataManager.getCustomThemes();
     return [...PRESET_THEMES, ...customThemes];
   }
 
@@ -289,8 +289,8 @@ export class DataManager {
    * 获取当前主题
    */
   static async getCurrentTheme(): Promise<ThemeConfig> {
-    const settings = await this.getUserSettings();
-    const allThemes = await this.getAllThemes();
+    const settings = await DataManager.getUserSettings();
+    const allThemes = await DataManager.getAllThemes();
     return allThemes.find(t => t.id === settings.currentTheme) || PRESET_THEMES[0];
   }
 
@@ -298,9 +298,9 @@ export class DataManager {
    * 设置当前主题
    */
   static async setCurrentTheme(themeId: string): Promise<void> {
-    const settings = await this.getUserSettings();
+    const settings = await DataManager.getUserSettings();
     settings.currentTheme = themeId;
-    await this.saveUserSettings(settings);
+    await DataManager.saveUserSettings(settings);
   }
 
   // ==================== 统计相关 ====================
@@ -309,7 +309,7 @@ export class DataManager {
    * 获取今日总专注时长（分钟）
    */
   static async getTodayTotalFocusTime(): Promise<number> {
-    const sessions = await this.getTodayFocusSessions();
+    const sessions = await DataManager.getTodayFocusSessions();
     return sessions.reduce((sum, s) => sum + (s.completed ? s.duration : 0), 0);
   }
 
@@ -317,7 +317,7 @@ export class DataManager {
    * 获取今日完成的专注次数
    */
   static async getTodayCompletedCount(): Promise<number> {
-    const sessions = await this.getTodayFocusSessions();
+    const sessions = await DataManager.getTodayFocusSessions();
     return sessions.filter(s => s.completed).length;
   }
 
@@ -325,10 +325,10 @@ export class DataManager {
    * 清除所有数据
    */
   static async clearAllData(): Promise<void> {
-    if (!this.dataPreferences) return;
+    if (!DataManager.dataPreferences) return;
     try {
-      await this.dataPreferences.clear();
-      await this.dataPreferences.flush();
+      await DataManager.dataPreferences.clear();
+      await DataManager.dataPreferences.flush();
       hilog.info(LOG_DOMAIN, TAG, 'All data cleared');
     } catch (err) {
       hilog.error(LOG_DOMAIN, TAG, 'Failed to clear data: %{public}s', JSON.stringify(err));

@@ -21,9 +21,9 @@ export class LiveWindowManager {
    */
   static async startLiveWindow(taskName: string, durationMinutes: number): Promise<void> {
     try {
-      this.currentTaskName = taskName;
-      this.remainingTime = durationMinutes * 60;
-      this.isActive = true;
+      LiveWindowManager.currentTaskName = taskName;
+      LiveWindowManager.remainingTime = durationMinutes * 60;
+      LiveWindowManager.isActive = true;
 
       hilog.info(LOG_DOMAIN, TAG, 'Live Window started for task: %{public}s', taskName);
 
@@ -54,10 +54,10 @@ export class LiveWindowManager {
    * 更新实况窗内容
    */
   static async updateLiveWindow(remainingSeconds: number): Promise<void> {
-    if (!this.isActive) return;
+    if (!LiveWindowManager.isActive) return;
 
     try {
-      this.remainingTime = remainingSeconds;
+      LiveWindowManager.remainingTime = remainingSeconds;
 
       // TODO: 更新 Live Window 显示
       // 发送更新事件到 Live Window Extension
@@ -73,12 +73,12 @@ export class LiveWindowManager {
    * 停止实况窗
    */
   static async stopLiveWindow(): Promise<void> {
-    if (!this.isActive) return;
+    if (!LiveWindowManager.isActive) return;
 
     try {
-      this.isActive = false;
-      this.currentTaskName = '';
-      this.remainingTime = 0;
+      LiveWindowManager.isActive = false;
+      LiveWindowManager.currentTaskName = '';
+      LiveWindowManager.remainingTime = 0;
 
       // TODO: 关闭 Live Window
       // 发送停止事件到 Live Window Extension
@@ -94,7 +94,7 @@ export class LiveWindowManager {
    * 检查实况窗是否活跃
    */
   static isLiveWindowActive(): boolean {
-    return this.isActive;
+    return LiveWindowManager.isActive;
   }
 
   /**
@@ -102,8 +102,8 @@ export class LiveWindowManager {
    */
   static getCurrentTaskInfo(): { taskName: string, remainingTime: number } {
     return {
-      taskName: this.currentTaskName,
-      remainingTime: this.remainingTime
+      taskName: LiveWindowManager.currentTaskName,
+      remainingTime: LiveWindowManager.remainingTime
     };
   }
 }

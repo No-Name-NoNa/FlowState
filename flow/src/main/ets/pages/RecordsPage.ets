@@ -27,9 +27,13 @@ export struct RecordsPage {
     if (this.timeRange === 'today') {
       startTime = new Date().setHours(0, 0, 0, 0);
     } else if (this.timeRange === 'week') {
-      [startTime, endTime] = TimeFormatter.getWeekRange();
+      const weekRange = TimeFormatter.getWeekRange();
+      startTime = weekRange[0];
+      endTime = weekRange[1];
     } else if (this.timeRange === 'month') {
-      [startTime, endTime] = TimeFormatter.getMonthRange();
+      const monthRange = TimeFormatter.getMonthRange();
+      startTime = monthRange[0];
+      endTime = monthRange[1];
     }
 
     // 加载情绪记录
@@ -53,18 +57,21 @@ export struct RecordsPage {
   @Builder
   TimeRangeSelector() {
     Row() {
-      ['today', 'week', 'month'].map((range) => {
-        const label = range === 'today' ? '今天' : range === 'week' ? '本周' : '本月';
-        Button(label)
+      ForEach([
+        { value: 'today', label: '今天' },
+        { value: 'week', label: '本周' },
+        { value: 'month', label: '本月' }
+      ], (range: { value: string, label: string }) => {
+        Button(range.label)
           .fontSize($r('app.float.body_font_size'))
-          .backgroundColor(this.timeRange === range ? $r('app.color.primary_color') : $r('app.color.card_color'))
-          .fontColor(this.timeRange === range ? '#FFFFFF' : $r('app.color.text_color'))
+          .backgroundColor(this.timeRange === range.value ? $r('app.color.primary_color') : $r('app.color.card_color'))
+          .fontColor(this.timeRange === range.value ? '#FFFFFF' : $r('app.color.text_color'))
           .padding({ left: 20, right: 20, top: 8, bottom: 8 })
           .onClick(async () => {
-            this.timeRange = range as 'today' | 'week' | 'month';
+            this.timeRange = range.value as 'today' | 'week' | 'month';
             await this.loadData();
           })
-      })
+      }, (range: { value: string, label: string }) => range.value)
     }
     .width('100%')
     .padding($r('app.float.padding_md'))

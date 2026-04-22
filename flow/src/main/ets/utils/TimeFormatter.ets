@@ -69,7 +69,7 @@ export class TimeFormatter {
    * 获取今天的日期字符串
    */
   static getTodayString(): string {
-    return this.formatDate(Date.now());
+    return TimeFormatter.formatDate(Date.now());
   }
 
   /**
@@ -102,8 +102,8 @@ export class TimeFormatter {
    * 检查是否是今天
    */
   static isToday(timestamp: number): boolean {
-    const today = this.formatDate(Date.now());
-    const target = this.formatDate(timestamp);
+    const today = TimeFormatter.formatDate(Date.now());
+    const target = TimeFormatter.formatDate(timestamp);
     return today === target;
   }
 

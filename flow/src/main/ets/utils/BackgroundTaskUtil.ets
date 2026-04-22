@@ -74,12 +74,12 @@ export class BackgroundTaskUtil {
         callback: callback
       };
 
-      this.requestId = backgroundTaskManager.requestSuspendDelay(
+      BackgroundTaskUtil.requestId = backgroundTaskManager.requestSuspendDelay(
         requestInfo.reason,
         requestInfo.callback
       );
 
-      hilog.info(LOG_DOMAIN, TAG, 'Short running task requested: %{public}d', this.requestId);
+      hilog.info(LOG_DOMAIN, TAG, 'Short running task requested: %{public}d', BackgroundTaskUtil.requestId);
 
     } catch (err) {
       hilog.error(LOG_DOMAIN, TAG, 'Failed to request short running task: %{public}s', JSON.stringify(err));
@@ -90,11 +90,11 @@ export class BackgroundTaskUtil {
    * 取消短时任务
    */
   static cancelShortRunningTask(): void {
-    if (this.requestId > 0) {
+    if (BackgroundTaskUtil.requestId > 0) {
       try {
-        backgroundTaskManager.cancelSuspendDelay(this.requestId);
-        hilog.info(LOG_DOMAIN, TAG, 'Short running task cancelled: %{public}d', this.requestId);
-        this.requestId = 0;
+        backgroundTaskManager.cancelSuspendDelay(BackgroundTaskUtil.requestId);
+        hilog.info(LOG_DOMAIN, TAG, 'Short running task cancelled: %{public}d', BackgroundTaskUtil.requestId);
+        BackgroundTaskUtil.requestId = 0;
       } catch (err) {
         hilog.error(LOG_DOMAIN, TAG, 'Failed to cancel short running task: %{public}s', JSON.stringify(err));
       }
@@ -106,8 +106,8 @@ export class BackgroundTaskUtil {
    */
   static async getRemainingDelayTime(): Promise<number> {
     try {
-      if (this.requestId > 0) {
-        const info = await backgroundTaskManager.getRemainingDelayTime(this.requestId);
+      if (BackgroundTaskUtil.requestId > 0) {
+        const info = await backgroundTaskManager.getRemainingDelayTime(BackgroundTaskUtil.requestId);
         return info;
       }
       return 0;

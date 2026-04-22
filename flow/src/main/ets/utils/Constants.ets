@@ -2,28 +2,35 @@
  * 常量配置
  */
 
-// 情绪标签映射
-export const MOOD_LABELS = {
-  0: '休息',
-  25: '疲惫',
-  50: '焦虑',
-  75: '平淡',
-  85: '平静',
-  100: '充沛'
-};
+import { RecommendMode, ThemeConfig } from '../models/DataModels';
 
-// 情绪表情映射
-export const MOOD_EMOJIS = {
-  0: '😴',
-  25: '😴',
-  50: '😰',
-  75: '😐',
-  85: '🙂',
-  100: '⚡'
-};
+// 情绪标签映射类
+export class MoodLabels {
+  static getLabel(value: number): string {
+    if (value === 0) return '休息';
+    if (value === 25) return '疲惫';
+    if (value === 50) return '焦虑';
+    if (value === 75) return '平淡';
+    if (value === 85) return '平静';
+    if (value === 100) return '充沛';
+    return '平淡';
+  }
+}
+
+// 情绪表情映射类
+export class MoodEmojis {
+  static getEmoji(value: number): string {
+    if (value === 0 || value === 25) return '😴';
+    if (value === 50) return '😰';
+    if (value === 75) return '😐';
+    if (value === 85) return '🙂';
+    if (value === 100) return '⚡';
+    return '😐';
+  }
+}
 
 // 推荐模式规则
-export const RECOMMEND_RULES = [
+export const RECOMMEND_RULES: RecommendMode[] = [
   { moodRange: [0, 20], modeName: '建议休息', suggestedDuration: 15, description: '当前状态不适合专注，建议先休息一下' },
   { moodRange: [21, 40], modeName: '轻松任务', suggestedDuration: 10, description: '可以从简单的任务开始，慢慢进入状态' },
   { moodRange: [41, 60], modeName: '标准任务', suggestedDuration: 25, description: '适合处理标准难度的任务' },
@@ -32,27 +39,33 @@ export const RECOMMEND_RULES = [
 ];
 
 // 时间配置
-export const TIME_PRESETS = [15, 25, 45, 60, 90]; // 预设时长（分钟）
+export const TIME_PRESETS: number[] = [15, 25, 45, 60, 90]; // 预设时长（分钟）
 
-// 颜色配置
-export const TASK_COLORS = {
-  blue: '#4A90E2',
-  gray: '#8E8E93',
-  green: '#5AC8A8',
-  orange: '#F5A623',
-  red: '#E94B3C',
-  purple: '#9B59B6'
-};
+// 颜色配置类
+export class TaskColors {
+  static blue: string = '#4A90E2';
+  static gray: string = '#8E8E93';
+  static green: string = '#5AC8A8';
+  static orange: string = '#F5A623';
+  static red: string = '#E94B3C';
+  static purple: string = '#9B59B6';
+}
 
-// 优先级配置
-export const PRIORITY_CONFIG = {
-  P0: { label: '紧急', color: '#E94B3C' },
-  P1: { label: '重要', color: '#F5A623' },
-  P2: { label: '普通', color: '#4A90E2' }
-};
+// 优先级配置项
+export interface PriorityItem {
+  label: string;
+  color: string;
+}
+
+// 优先级配置类
+export class PriorityConfig {
+  static P0: PriorityItem = { label: '紧急', color: '#E94B3C' };
+  static P1: PriorityItem = { label: '重要', color: '#F5A623' };
+  static P2: PriorityItem = { label: '普通', color: '#4A90E2' };
+}
 
 // 预设主题
-export const PRESET_THEMES = [
+export const PRESET_THEMES: ThemeConfig[] = [
   {
     id: 'light',
     name: '浅色主题',
@@ -106,17 +119,17 @@ export const PRESET_THEMES = [
 ];
 
 // 数据存储键
-export const STORAGE_KEYS = {
-  MOOD_ENTRIES: 'mood_entries',
-  TASKS: 'tasks',
-  SCHEDULES: 'schedules',
-  FOCUS_SESSIONS: 'focus_sessions',
-  REST_SESSIONS: 'rest_sessions',
-  USER_SETTINGS: 'user_settings',
-  USER_INFO: 'user_info',
-  CUSTOM_THEMES: 'custom_themes',
-  CURRENT_THEME: 'current_theme'
-};
+export class StorageKeys {
+  static MOOD_ENTRIES: string = 'mood_entries';
+  static TASKS: string = 'tasks';
+  static SCHEDULES: string = 'schedules';
+  static FOCUS_SESSIONS: string = 'focus_sessions';
+  static REST_SESSIONS: string = 'rest_sessions';
+  static USER_SETTINGS: string = 'user_settings';
+  static USER_INFO: string = 'user_info';
+  static CUSTOM_THEMES: string = 'custom_themes';
+  static CURRENT_THEME: string = 'current_theme';
+}
 
 // 日志域
-export const LOG_DOMAIN = 0x0001;
+export const LOG_DOMAIN: number = 0x0001;
