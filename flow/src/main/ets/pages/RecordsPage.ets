@@ -7,6 +7,12 @@ import { DataManager } from '../utils/DataManager';
 import { TimeFormatter } from '../utils/TimeFormatter';
 import { MoodEntry, FocusSession } from '../models/DataModels';
 
+interface TimeRangeOption {
+  value: string;
+  label: string;
+}
+
+@Entry
 @Component
 export struct RecordsPage {
   @State timeRange: 'today' | 'week' | 'month' = 'today';
@@ -61,7 +67,7 @@ export struct RecordsPage {
         { value: 'today', label: '今天' },
         { value: 'week', label: '本周' },
         { value: 'month', label: '本月' }
-      ], (range: { value: string, label: string }) => {
+      ], (range: TimeRangeOption) => {
         Button(range.label)
           .fontSize($r('app.float.body_font_size'))
           .backgroundColor(this.timeRange === range.value ? $r('app.color.primary_color') : $r('app.color.card_color'))
@@ -71,7 +77,7 @@ export struct RecordsPage {
             this.timeRange = range.value as 'today' | 'week' | 'month';
             await this.loadData();
           })
-      }, (range: { value: string, label: string }) => range.value)
+      }, (range: TimeRangeOption) => range.value)
     }
     .width('100%')
     .padding($r('app.float.padding_md'))

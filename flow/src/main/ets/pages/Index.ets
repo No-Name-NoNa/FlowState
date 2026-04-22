@@ -14,7 +14,7 @@ struct Index {
 
   async aboutToAppear() {
     // 初始化数据管理器
-    await DataManager.init(getContext(this));
+    await DataManager.init(this.getUIContext().getHostContext() as Context);
   }
 
   @Builder

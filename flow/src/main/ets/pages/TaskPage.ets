@@ -7,6 +7,7 @@ import { GlassCard } from '../components/common/GlassCard';
 import { DataManager } from '../utils/DataManager';
 import { Task, Schedule, Priority } from '../models/DataModels';
 
+@Entry
 @Component
 export struct TaskPage {
   @State tasks: Task[] = [];

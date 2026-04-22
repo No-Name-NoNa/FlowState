@@ -9,6 +9,12 @@ import { MoodEngine } from '../utils/MoodEngine';
 import { TimeFormatter } from '../utils/TimeFormatter';
 import { MoodEntry, RecommendMode } from '../models/DataModels';
 
+interface MoodOption {
+  label: string;
+  value: number;
+}
+
+@Entry
 @Component
 export struct HomePage {
   @State todayDate: string = '';
@@ -73,7 +79,7 @@ export struct HomePage {
         { label: '😐 平淡', value: 75 },
         { label: '🙂 平静', value: 85 },
         { label: '⚡ 充沛', value: 100 }
-      ], (mood: { label: string, value: number }) => {
+      ], (mood: MoodOption) => {
         Button(mood.label)
           .backgroundColor('#FFFFFF')
           .fontColor($r('app.color.text_color'))
@@ -84,7 +90,7 @@ export struct HomePage {
             this.currentMood = mood.value;
             await this.handleMoodCheckIn();
           })
-      }, (mood: { label: string, value: number }) => mood.label)
+      }, (mood: MoodOption) => mood.label)
     }
     .width('100%')
     .padding($r('app.float.padding_md'))

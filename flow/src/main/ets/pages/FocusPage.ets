@@ -25,7 +25,7 @@ struct FocusPage {
   @State currentSessionId: string = '';
 
   async aboutToAppear() {
-    const params = router.getParams() as Record<string, Object>;
+    const params = router.getState() as Record<string, Object>;
     if (params) {
       this.duration = params['duration'] as number || 25;
       this.scheduleId = params['scheduleId'] as string || '';
