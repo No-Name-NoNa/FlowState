@@ -289,7 +289,7 @@ struct SettingsPage {
         this.saveSettings();
       })
 
-      this.ToggleItem($r('sys.symbol.iphone_radiowaves_left_and_right'), '振动反馈', this.settings.vibrationEnabled, (value: boolean) => {
+      this.ToggleItem($r('sys.symbol.dot_radiowaves_left_and_right'), '振动反馈', this.settings.vibrationEnabled, (value: boolean) => {
         this.settings.vibrationEnabled = value;
         this.saveSettings();
       })
@@ -308,7 +308,7 @@ struct SettingsPage {
         this.showThemeSelector = true;
       })
 
-      this.SettingItem($r('sys.symbol.photo'), '自定义背景', () => {
+      this.SettingItem($r('sys.symbol.livephoto'), '自定义背景', () => {
         // TODO: 实现背景图片选择
       })
     }

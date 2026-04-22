@@ -75,11 +75,11 @@ export struct HomePage {
   MoodQuickCheckIn() {
     Row() {
       ForEach([
-        { label: '疲惫', value: 25, icon: $r('sys.symbol.moon_zzz') },
-        { label: '焦虑', value: 50, icon: $r('sys.symbol.face_smiling') },
-        { label: '平淡', value: 75, icon: $r('sys.symbol.face_neutral') },
-        { label: '平静', value: 85, icon: $r('sys.symbol.face_smiling_fill') },
-        { label: '充沛', value: 100, icon: $r('sys.symbol.bolt_fill') }
+        { label: '疲惫', value: 25, icon: $r('sys.symbol.face_sleeping') },
+        { label: '焦虑', value: 50, icon: $r('sys.symbol.face_sading') },
+        { label: '平淡', value: 75, icon: $r('sys.symbol.face') },
+        { label: '平静', value: 85, icon: $r('sys.symbol.face_smiling') },
+        { label: '充沛', value: 100, icon: $r('sys.symbol.face_smiling_fill') }
       ], (mood: MoodOption) => {
         Button() {
           Column() {
@@ -188,7 +188,7 @@ export struct HomePage {
     Row() {
       Column() {
         Row() {
-          SymbolGlyph($r('sys.symbol.target'))
+          SymbolGlyph($r('sys.symbol.clock'))
             .fontSize(20)
             .fontColor([$r('app.color.primary_color')])
             .margin({ right: 8 })
@@ -233,7 +233,7 @@ export struct HomePage {
   AIInsightContent() {
     Column() {
       Row() {
-        SymbolGlyph($r('sys.symbol.brain'))
+        SymbolGlyph($r('sys.symbol.calendar'))
           .fontSize(20)
           .fontColor([$r('app.color.primary_color')])
           .margin({ right: 8 })
@@ -341,7 +341,7 @@ export struct HomePage {
               router.pushUrl({ url: 'pages/LoginPage' });
             })
 
-          SymbolGlyph($r('sys.symbol.gear'))
+          SymbolGlyph($r('sys.symbol.barrage_setting'))
             .fontSize(24)
             .fontColor([$r('app.color.text_color')])
             .onClick(() => {

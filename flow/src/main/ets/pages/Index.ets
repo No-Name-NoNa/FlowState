@@ -57,7 +57,7 @@ struct Index {
       TabContent() {
         RecordsPage()
       }
-      .tabBar(this.TabBuilder(2, '记录', $r('sys.symbol.chart_bar')))
+      .tabBar(this.TabBuilder(2, '记录', $r('sys.symbol.clock')))
     }
     .width('100%')
     .height('100%')
