@@ -25,15 +25,17 @@ struct FocusPage {
   @State currentSessionId: string = '';
 
   async aboutToAppear() {
-    const params = router.getState() as Record<string, Object>;
+    const state = router.getState();
+    const params = state.params as Record<string, Object>;
+
     if (params) {
-      this.duration = params['duration'] as number || 25;
-      this.scheduleId = params['scheduleId'] as string || '';
-      this.taskId = params['taskId'] as string || '';
+      this.duration = (params['duration'] as number) || 25;
+      this.scheduleId = (params['scheduleId'] as string) || '';
+      this.taskId = (params['taskId'] as string) || '';
     }
+
     this.remainingSeconds = this.duration * 60;
   }
-
   aboutToDisappear() {
     this.stopTimer();
   }
