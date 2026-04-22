@@ -2,15 +2,171 @@
   "string": [
     {
       "name": "module_desc",
-      "value": "module description"
+      "value": "Flow State - 沉浸式任务管理应用"
     },
     {
       "name": "FlowAbility_desc",
-      "value": "description"
+      "value": "Flow State 主应用"
     },
     {
       "name": "FlowAbility_label",
-      "value": "label"
+      "value": "Flow State"
+    },
+    {
+      "name": "app_name",
+      "value": "Flow State"
+    },
+    {
+      "name": "tab_tasks",
+      "value": "任务"
+    },
+    {
+      "name": "tab_home",
+      "value": "首页"
+    },
+    {
+      "name": "tab_records",
+      "value": "记录"
+    },
+    {
+      "name": "mood_check_in",
+      "value": "心情打卡"
+    },
+    {
+      "name": "mood_tired",
+      "value": "疲惫"
+    },
+    {
+      "name": "mood_anxious",
+      "value": "焦虑"
+    },
+    {
+      "name": "mood_neutral",
+      "value": "平淡"
+    },
+    {
+      "name": "mood_calm",
+      "value": "平静"
+    },
+    {
+      "name": "mood_energetic",
+      "value": "充沛"
+    },
+    {
+      "name": "focus_mode",
+      "value": "专注模式"
+    },
+    {
+      "name": "rest_mode",
+      "value": "休息模式"
+    },
+    {
+      "name": "start_focus",
+      "value": "开始专注"
+    },
+    {
+      "name": "pause",
+      "value": "暂停"
+    },
+    {
+      "name": "resume",
+      "value": "继续"
+    },
+    {
+      "name": "complete",
+      "value": "完成"
+    },
+    {
+      "name": "cancel",
+      "value": "取消"
+    },
+    {
+      "name": "add_task",
+      "value": "添加任务"
+    },
+    {
+      "name": "add_schedule",
+      "value": "添加日程"
+    },
+    {
+      "name": "task_title",
+      "value": "任务标题"
+    },
+    {
+      "name": "schedule_title",
+      "value": "日程标题"
+    },
+    {
+      "name": "estimated_time",
+      "value": "预估时长"
+    },
+    {
+      "name": "minutes",
+      "value": "分钟"
+    },
+    {
+      "name": "hours",
+      "value": "小时"
+    },
+    {
+      "name": "today",
+      "value": "今天"
+    },
+    {
+      "name": "this_week",
+      "value": "本周"
+    },
+    {
+      "name": "this_month",
+      "value": "本月"
+    },
+    {
+      "name": "settings",
+      "value": "设置"
+    },
+    {
+      "name": "login",
+      "value": "登录"
+    },
+    {
+      "name": "logout",
+      "value": "退出"
+    },
+    {
+      "name": "save",
+      "value": "保存"
+    },
+    {
+      "name": "delete",
+      "value": "删除"
+    },
+    {
+      "name": "confirm",
+      "value": "确认"
+    },
+    {
+      "name": "ai_insight",
+      "value": "AI 节律洞察"
+    },
+    {
+      "name": "ai_planning",
+      "value": "AI 计划制定"
+    },
+    {
+      "name": "theme_settings",
+      "value": "主题设置"
+    },
+    {
+      "name": "notification_settings",
+      "value": "通知设置"
+    },
+    {
+      "name": "focus_preferences",
+      "value": "专注偏好"
+    },
+    {
+      "name": "permission_keep_background",
+      "value": "用于专注计时器后台运行"
     }
   ]
 }

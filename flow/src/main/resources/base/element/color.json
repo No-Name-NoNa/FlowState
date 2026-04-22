@@ -2,7 +2,71 @@
   "color": [
     {
       "name": "start_window_background",
+      "value": "#F5F5F7"
+    },
+    {
+      "name": "primary_color",
+      "value": "#4A90E2"
+    },
+    {
+      "name": "background_color",
+      "value": "#F5F5F7"
+    },
+    {
+      "name": "card_color",
       "value": "#FFFFFF"
+    },
+    {
+      "name": "text_color",
+      "value": "#1D1D1F"
+    },
+    {
+      "name": "text_secondary",
+      "value": "#8E8E93"
+    },
+    {
+      "name": "accent_color",
+      "value": "#5AC8A8"
+    },
+    {
+      "name": "border_color",
+      "value": "#E5E5EA"
+    },
+    {
+      "name": "task_blue",
+      "value": "#4A90E2"
+    },
+    {
+      "name": "task_gray",
+      "value": "#8E8E93"
+    },
+    {
+      "name": "priority_p0",
+      "value": "#E94B3C"
+    },
+    {
+      "name": "priority_p1",
+      "value": "#F5A623"
+    },
+    {
+      "name": "priority_p2",
+      "value": "#4A90E2"
+    },
+    {
+      "name": "glass_bg",
+      "value": "#F5F5F7CC"
+    },
+    {
+      "name": "success_color",
+      "value": "#34C759"
+    },
+    {
+      "name": "warning_color",
+      "value": "#FF9500"
+    },
+    {
+      "name": "error_color",
+      "value": "#FF3B30"
     }
   ]
 }
