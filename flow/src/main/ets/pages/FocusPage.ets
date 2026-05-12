@@ -10,13 +10,13 @@ import { FocusSession } from '../models/DataModels';
 @Entry
 @Component
 struct FocusPage {
-  @State duration: number = 25; // 分钟
+  @State duration: number = 25;
   @State scheduleId: string = '';
   @State taskId: string = '';
   @State remainingSeconds: number = 0;
   @State isRunning: boolean = false;
   @State isPaused: boolean = false;
-  @State isCountdown: boolean = true; // true: 倒计时, false: 正计时
+  @State isCountdown: boolean = true;
   @State pauseCount: number = 0;
   @State startTime: number = 0;
   @State timerInterval: number = -1;
@@ -36,6 +36,7 @@ struct FocusPage {
 
     this.remainingSeconds = this.duration * 60;
   }
+
   aboutToDisappear() {
     this.stopTimer();
   }
@@ -86,18 +87,23 @@ struct FocusPage {
 
   async completeSession() {
     this.stopTimer();
+    if (!this.startTime) {
+      this.startTime = Date.now();
+      this.currentSessionId = `focus_${this.startTime}`;
+    }
     this.showCompletionDialog = true;
   }
 
   async saveSession(completed: boolean) {
+    const start = this.startTime || Date.now();
     const endTime = Date.now();
-    const actualDuration = Math.floor((endTime - this.startTime) / 60000); // 转换为分钟
+    const actualDuration = Math.max(0, Math.floor((endTime - start) / 60000));
 
     const session: FocusSession = {
-      id: this.currentSessionId,
+      id: this.currentSessionId || `focus_${Date.now()}`,
       scheduleId: this.scheduleId || undefined,
       taskId: this.taskId || undefined,
-      startTime: this.startTime,
+      startTime: start,
       endTime: endTime,
       duration: actualDuration,
       mode: this.isCountdown ? 'pomodoro' : 'continuous',
@@ -122,101 +128,159 @@ struct FocusPage {
   toggleMode() {
     this.isCountdown = !this.isCountdown;
     if (!this.isCountdown) {
-      this.remainingSeconds = 0; // 正计时从0开始
+      this.remainingSeconds = 0;
     } else {
-      this.remainingSeconds = this.duration * 60; // 倒计时重置
+      this.remainingSeconds = this.duration * 60;
+    }
+  }
+
+  getModeLabel(): string {
+    return this.isCountdown ? '倒计时' : '正计时';
+  }
+
+  getPrimaryActionText(): string {
+    if (!this.isRunning && !this.isPaused) return '开始';
+    if (this.isRunning) return '暂停';
+    return '继续';
+  }
+
+  getPrimaryActionColor(): string {
+    if (this.isRunning) return '#8EA1AE';
+    return '#58B7AE';
+  }
+
+  getProgressValue(): number {
+    if (!this.isCountdown) return Math.min(this.remainingSeconds / 60, 100);
+    const total = this.duration * 60;
+    if (total <= 0) return 0;
+    return Math.max(0, Math.min(100, (total - this.remainingSeconds) * 100 / total));
+  }
+
+  handlePrimaryAction() {
+    if (!this.isRunning && !this.isPaused) {
+      this.startTimer();
+    } else if (this.isRunning) {
+      this.pauseTimer();
+    } else {
+      this.startTimer();
     }
   }
 
   @Builder
-  TimerDisplay() {
+  Header() {
+    Row() {
+      Button() {
+        Text('<')
+          .fontSize(22)
+          .fontColor('#FFFFFF')
+      }
+      .width(42)
+      .height(42)
+      .borderRadius(8)
+      .backgroundColor('#26323A')
+      .onClick(() => {
+        if (this.isRunning || this.isPaused) {
+          this.handleCancel();
+        } else {
+          router.back();
+        }
+      })
+
+      Blank()
+
+      Text(this.getModeLabel())
+        .fontSize(13)
+        .fontColor('#AAB7BE')
+        .padding({ left: 12, right: 12, top: 7, bottom: 7 })
+        .backgroundColor('#26323A')
+        .borderRadius(8)
+        .onClick(() => {
+          if (!this.isRunning) {
+            this.toggleMode();
+          }
+        })
+    }
+    .width('100%')
+    .padding({ left: 20, right: 20, top: 18, bottom: 8 })
+  }
+
+  @Builder
+  TimerPanel() {
     Column() {
-      // 模式切换
+      Text('Focus Session')
+        .fontSize(13)
+        .fontColor('#9BAAB2')
+        .fontWeight(FontWeight.Medium)
+
+      Stack({ alignContent: Alignment.Center }) {
+        Progress({ value: this.getProgressValue(), total: 100, type: ProgressType.Ring })
+          .width(220)
+          .height(220)
+          .color('#58B7AE')
+
+        Column() {
+          Text(TimeFormatter.formatSeconds(this.remainingSeconds))
+            .fontSize(54)
+            .fontWeight(FontWeight.Bold)
+            .fontColor('#FFFFFF')
+
+          Text(`${this.duration} 分钟计划`)
+            .fontSize(12)
+            .fontColor('#AAB7BE')
+            .margin({ top: 8 })
+        }
+      }
+      .width(240)
+      .height(240)
+      .margin({ top: 34, bottom: 34 })
+
+      Button(this.getPrimaryActionText())
+        .fontSize(18)
+        .fontWeight(FontWeight.Bold)
+        .fontColor('#FFFFFF')
+        .width(112)
+        .height(112)
+        .borderRadius(56)
+        .backgroundColor(this.getPrimaryActionColor())
+        .onClick(() => {
+          this.handlePrimaryAction();
+        })
+
       Row() {
-        Text(this.isCountdown ? '倒计时模式' : '正计时模式')
-          .fontSize($r('app.float.body_font_size'))
-          .fontColor($r('app.color.text_secondary'))
+        Button('完成')
+          .fontSize(14)
+          .fontColor('#FFFFFF')
+          .backgroundColor('#2F6F86')
+          .borderRadius(8)
+          .layoutWeight(1)
           .onClick(() => {
-            if (!this.isRunning) {
-              this.toggleMode();
-            }
+            this.completeSession();
+          })
+
+        Button('放弃')
+          .fontSize(14)
+          .fontColor('#AAB7BE')
+          .backgroundColor('#26323A')
+          .borderRadius(8)
+          .layoutWeight(1)
+          .margin({ left: 10 })
+          .onClick(() => {
+            this.handleCancel();
           })
       }
-      .margin({ bottom: 32 })
+      .width('100%')
+      .padding({ left: 34, right: 34 })
+      .margin({ top: 34 })
 
-      // 时间显示
-      Text(TimeFormatter.formatSeconds(this.remainingSeconds))
-        .fontSize(72)
-        .fontWeight(FontWeight.Bold)
-        .fontColor($r('app.color.primary_color'))
-        .margin({ top: 60, bottom: 60 })
-
-      // 控制按钮
-      Row() {
-        if (!this.isRunning && !this.isPaused) {
-          Button('开始')
-            .fontSize($r('app.float.subtitle_font_size'))
-            .width(120)
-            .height(120)
-            .borderRadius(60)
-            .backgroundColor($r('app.color.accent_color'))
-            .onClick(() => {
-              this.startTimer();
-            })
-        } else if (this.isRunning) {
-          Button('暂停')
-            .fontSize($r('app.float.subtitle_font_size'))
-            .width(120)
-            .height(120)
-            .borderRadius(60)
-            .backgroundColor($r('app.color.warning_color'))
-            .onClick(() => {
-              this.pauseTimer();
-            })
-        } else if (this.isPaused) {
-          Button('继续')
-            .fontSize($r('app.float.subtitle_font_size'))
-            .width(120)
-            .height(120)
-            .borderRadius(60)
-            .backgroundColor($r('app.color.accent_color'))
-            .onClick(() => {
-              this.startTimer();
-            })
-        }
-      }
-
-      // 次要操作按钮
-      Row() {
-        if (this.isRunning || this.isPaused) {
-          Button('完成')
-            .fontSize($r('app.float.body_font_size'))
-            .backgroundColor($r('app.color.success_color'))
-            .margin({ right: 12 })
-            .onClick(() => {
-              this.completeSession();
-            })
-
-          Button('放弃')
-            .fontSize($r('app.float.body_font_size'))
-            .backgroundColor($r('app.color.error_color'))
-            .onClick(() => {
-              this.handleCancel();
-            })
-        }
-      }
-      .margin({ top: 32 })
-
-      // 暂停次数
       if (this.pauseCount > 0) {
         Text(`已暂停 ${this.pauseCount} 次`)
-          .fontSize($r('app.float.caption_font_size'))
-          .fontColor($r('app.color.text_secondary'))
-          .margin({ top: 16 })
+          .fontSize(12)
+          .fontColor('#8EA1AE')
+          .margin({ top: 18 })
       }
     }
     .width('100%')
-    .height('100%')
+    .layoutWeight(1)
     .justifyContent(FlexAlign.Center)
   }
 
@@ -224,78 +288,63 @@ struct FocusPage {
   CompletionDialog() {
     if (this.showCompletionDialog) {
       Column() {
-        Text('🎉 专注完成')
-          .fontSize($r('app.float.title_font_size'))
+        Text('专注完成')
+          .fontSize(24)
           .fontWeight(FontWeight.Bold)
-          .margin({ bottom: 24 })
+          .fontColor('#151C22')
+          .margin({ bottom: 10 })
 
-        Text(`专注时长: ${TimeFormatter.formatMinutes((Date.now() - this.startTime) / 60000)}`)
-          .fontSize($r('app.float.subtitle_font_size'))
-          .margin({ bottom: 16 })
+        Text(`本次专注 ${TimeFormatter.formatMinutes((Date.now() - this.startTime) / 60000)} 分钟`)
+          .fontSize(13)
+          .fontColor('#6C7A84')
+          .margin({ bottom: 18 })
 
-        Text('记录本次专注心得')
-          .fontSize($r('app.float.body_font_size'))
-          .fontColor($r('app.color.text_secondary'))
-          .margin({ bottom: 12 })
-
-        TextArea({ placeholder: '写下你的感受...', text: this.reflection })
+        TextArea({ placeholder: '记录一点复盘，例如完成了什么、下次怎么开始', text: this.reflection })
           .width('100%')
-          .height(120)
+          .height(116)
+          .backgroundColor('#F4F7F8')
+          .borderRadius(8)
           .onChange((value: string) => {
             this.reflection = value;
           })
 
-        Button('完成并保存')
+        Button('保存记录')
           .width('100%')
-          .margin({ top: 24 })
-          .backgroundColor($r('app.color.primary_color'))
+          .height(46)
+          .fontColor('#FFFFFF')
+          .backgroundColor('#2F6F86')
+          .borderRadius(8)
+          .margin({ top: 18 })
           .onClick(() => {
             this.handleComplete();
           })
       }
-      .padding($r('app.float.padding_xl'))
-      .backgroundColor($r('app.color.card_color'))
-      .borderRadius($r('app.float.card_radius'))
       .width('90%')
+      .padding({ left: 20, right: 20, top: 24, bottom: 20 })
+      .backgroundColor('#FFFFFF')
+      .borderRadius(8)
     }
   }
 
   build() {
     Stack() {
       Column() {
-        // 顶部返回按钮
-        Row() {
-          Text('←')
-            .fontSize(32)
-            .fontColor($r('app.color.text_color'))
-            .onClick(() => {
-              if (this.isRunning || this.isPaused) {
-                // 如果正在进行，询问是否放弃
-                this.handleCancel();
-              } else {
-                router.back();
-              }
-            })
-        }
-        .width('100%')
-        .padding($r('app.float.padding_md'))
-
-        this.TimerDisplay()
+        this.Header()
+        this.TimerPanel()
       }
       .width('100%')
       .height('100%')
-      .backgroundColor($r('app.color.background_color'))
+      .backgroundColor('#17212A')
 
-      // 完成对话框
       if (this.showCompletionDialog) {
         Column() {
           this.CompletionDialog()
         }
         .width('100%')
         .height('100%')
-        .backgroundColor('#00000040')
         .justifyContent(FlexAlign.Center)
         .alignItems(HorizontalAlign.Center)
+        .backgroundColor('#17212ACC')
       }
     }
   }

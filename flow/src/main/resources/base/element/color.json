@@ -2,15 +2,15 @@
   "color": [
     {
       "name": "start_window_background",
-      "value": "#F5F5F7"
+      "value": "#F4F7F8"
     },
     {
       "name": "primary_color",
-      "value": "#4A90E2"
+      "value": "#2F6F86"
     },
     {
       "name": "background_color",
-      "value": "#F5F5F7"
+      "value": "#F4F7F8"
     },
     {
       "name": "card_color",
@@ -18,51 +18,51 @@
     },
     {
       "name": "text_color",
-      "value": "#1D1D1F"
+      "value": "#151C22"
     },
     {
       "name": "text_secondary",
-      "value": "#8E8E93"
+      "value": "#6C7A84"
     },
     {
       "name": "accent_color",
-      "value": "#5AC8A8"
+      "value": "#58B7AE"
     },
     {
       "name": "border_color",
-      "value": "#E5E5EA"
+      "value": "#E1E8EC"
     },
     {
       "name": "task_blue",
-      "value": "#4A90E2"
+      "value": "#2F6F86"
     },
     {
       "name": "task_gray",
-      "value": "#8E8E93"
+      "value": "#7D8C96"
     },
     {
       "name": "priority_p0",
-      "value": "#E94B3C"
+      "value": "#2F6F86"
     },
     {
       "name": "priority_p1",
-      "value": "#F5A623"
+      "value": "#58B7AE"
     },
     {
       "name": "priority_p2",
-      "value": "#4A90E2"
+      "value": "#7D8C96"
     },
     {
       "name": "glass_bg",
-      "value": "#F5F5F7CC"
+      "value": "#FFFFFFE6"
     },
     {
       "name": "success_color",
-      "value": "#34C759"
+      "value": "#58B7AE"
     },
     {
       "name": "warning_color",
-      "value": "#FF9500"
+      "value": "#8EA1AE"
     },
     {
       "name": "error_color",

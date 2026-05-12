@@ -31,12 +31,12 @@ export const TIME_PRESETS: number[] = [15, 25, 45, 60, 90]; // 预设时长（�
 
 // 颜色配置类
 export class TaskColors {
-  static blue: string = '#4A90E2';
-  static gray: string = '#8E8E93';
-  static green: string = '#5AC8A8';
-  static orange: string = '#F5A623';
-  static red: string = '#E94B3C';
-  static purple: string = '#9B59B6';
+  static blue: string = '#2F6F86';
+  static gray: string = '#7D8C96';
+  static green: string = '#58B7AE';
+  static orange: string = '#8EA1AE';
+  static red: string = '#9C5B5B';
+  static purple: string = '#7E86A8';
 }
 
 // 优先级配置项
@@ -47,21 +47,21 @@ export interface PriorityItem {
 
 // 优先级配置类
 export class PriorityConfig {
-  static P0: PriorityItem = { label: '紧急', color: '#E94B3C' };
-  static P1: PriorityItem = { label: '重要', color: '#F5A623' };
-  static P2: PriorityItem = { label: '普通', color: '#4A90E2' };
+  static P0: PriorityItem = { label: '紧急', color: '#2F6F86' };
+  static P1: PriorityItem = { label: '重要', color: '#58B7AE' };
+  static P2: PriorityItem = { label: '普通', color: '#7D8C96' };
 }
 
 // 预设主题
 export const PRESET_THEMES: ThemeConfig[] = [
   {
     id: 'light',
-    name: '浅色主题',
-    primaryColor: '#4A90E2',
-    backgroundColor: '#F5F5F7',
+    name: '雾白主题',
+    primaryColor: '#2F6F86',
+    backgroundColor: '#F4F7F8',
     cardColor: '#FFFFFF',
-    textColor: '#1D1D1F',
-    accentColor: '#5AC8A8',
+    textColor: '#151C22',
+    accentColor: '#58B7AE',
     isDark: false
   },
   {
@@ -76,12 +76,12 @@ export const PRESET_THEMES: ThemeConfig[] = [
   },
   {
     id: 'warm',
-    name: '暖色主题',
-    primaryColor: '#FF9500',
-    backgroundColor: '#FFF8F0',
+    name: '石墨主题',
+    primaryColor: '#2F6F86',
+    backgroundColor: '#F4F7F8',
     cardColor: '#FFFFFF',
-    textColor: '#2D2D2D',
-    accentColor: '#FF6B6B',
+    textColor: '#151C22',
+    accentColor: '#58B7AE',
     isDark: false
   },
   {

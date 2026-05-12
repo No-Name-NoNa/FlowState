@@ -5,7 +5,6 @@
     "pages/TaskPage",
     "pages/RecordsPage",
     "pages/FocusPage",
-    "pages/SettingsPage",
-    "pages/LoginPage"
+    "pages/SettingsPage"
   ]
 }

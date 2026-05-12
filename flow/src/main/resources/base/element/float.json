@@ -26,11 +26,11 @@
     },
     {
       "name": "card_radius",
-      "value": "16vp"
+      "value": "8vp"
     },
     {
       "name": "button_radius",
-      "value": "12vp"
+      "value": "10vp"
     },
     {
       "name": "padding_xs",

@@ -1,57 +1,64 @@
 /**
- * 数据模型定义
- * Flow State 核心数据结构
+ * Core data models for Flow State.
  */
 
-// 情绪签到记录
 export interface MoodEntry {
   id: string;
   timestamp: number;
-  moodValue: number; // 0-100
-  moodLabel: string; // '疲惫', '焦虑', '平淡', '平静', '充沛'
+  moodValue: number;
+  moodLabel: string;
   note?: string;
 }
 
-// 任务优先级
 export type Priority = 'P0' | 'P1' | 'P2';
 
-// 任务模型
+export interface TaskStep {
+  id: string;
+  title: string;
+  completed: boolean;
+  createdAt: number;
+}
+
 export interface Task {
   id: string;
   title: string;
-  color: string; // 'blue' | 'gray'
+  color: string;
   priority: Priority;
   schedules: Schedule[];
   createdAt: number;
-  isExpanded?: boolean; // UI 状态
+  updatedAt?: number;
+  note?: string;
+  steps?: TaskStep[];
+  isExpanded?: boolean;
 }
 
-// 子日程模型
 export interface Schedule {
   id: string;
   taskId: string;
   title: string;
-  estimatedTime: number; // 分钟
+  estimatedTime: number;
   priority: Priority;
+  scheduledDate?: number;
+  scheduledTime?: string;
+  dueAt?: number;
+  reminderMinutes?: number;
   createdAt: number;
-  stats?: number[]; // 柱状图数据（6个点）
+  stats?: number[];
 }
 
-// 专注记录
 export interface FocusSession {
   id: string;
   scheduleId?: string;
   taskId?: string;
   startTime: number;
   endTime?: number;
-  duration: number; // 实际专注时长（分钟）
-  mode: 'pomodoro' | 'continuous'; // 番茄钟 | 正计时
+  duration: number;
+  mode: 'pomodoro' | 'continuous';
   completed: boolean;
   pauseCount: number;
-  reflection?: string; // 复盘心得
+  reflection?: string;
 }
 
-// 休息记录
 export interface RestSession {
   id: string;
   focusSessionId: string;
@@ -61,7 +68,6 @@ export interface RestSession {
   skipped: boolean;
 }
 
-// 主题配置
 export interface ThemeConfig {
   id: string;
   name: string;
@@ -70,22 +76,20 @@ export interface ThemeConfig {
   cardColor: string;
   textColor: string;
   accentColor: string;
-  backgroundImage?: string; // base64 or path
+  backgroundImage?: string;
   isDark: boolean;
 }
 
-// 用户设置
 export interface UserSettings {
-  defaultFocusTime: number; // 默认专注时长（分钟）
-  defaultRestTime: number; // 默认休息时长（分钟）
-  autoStartRest: boolean; // 自动开始休息
+  defaultFocusTime: number;
+  defaultRestTime: number;
+  autoStartRest: boolean;
   notificationEnabled: boolean;
   soundEnabled: boolean;
   vibrationEnabled: boolean;
-  currentTheme: string; // 主题 ID
+  currentTheme: string;
 }
 
-// 用户信息
 export interface UserInfo {
   id?: string;
   username?: string;
@@ -94,31 +98,27 @@ export interface UserInfo {
   isLoggedIn: boolean;
 }
 
-// 推荐模式
 export interface RecommendMode {
-  moodRange: [number, number]; // [min, max]
+  moodRange: [number, number];
   modeName: string;
-  suggestedDuration: number; // 分钟
+  suggestedDuration: number;
   description: string;
 }
 
-// AI 洞察数据（模拟）
 export interface AIInsight {
   date: string;
-  totalFocusTime: number; // 小时
+  totalFocusTime: number;
   taskSummary: string;
   moodCorrelation: string;
   recommendation: string;
 }
 
-// AI 计划任务项
 export interface AIPlanTask {
   title: string;
   estimatedTime: number;
   subtasks: string[];
 }
 
-// AI 计划数据（模拟）
 export interface AIPlan {
   goal: string;
   tasks: AIPlanTask[];

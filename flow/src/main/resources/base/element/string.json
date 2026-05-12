@@ -2,7 +2,7 @@
   "string": [
     {
       "name": "module_desc",
-      "value": "Flow State - 沉浸式任务管理应用"
+      "value": "Flow State - 专注与计划工具"
     },
     {
       "name": "FlowAbility_desc",
@@ -30,7 +30,7 @@
     },
     {
       "name": "mood_check_in",
-      "value": "心情打卡"
+      "value": "心情校准"
     },
     {
       "name": "mood_tired",
@@ -42,7 +42,7 @@
     },
     {
       "name": "mood_neutral",
-      "value": "平淡"
+      "value": "平稳"
     },
     {
       "name": "mood_calm",
@@ -98,7 +98,7 @@
     },
     {
       "name": "estimated_time",
-      "value": "预估时长"
+      "value": "预计时长"
     },
     {
       "name": "minutes",
@@ -125,14 +125,6 @@
       "value": "设置"
     },
     {
-      "name": "login",
-      "value": "登录"
-    },
-    {
-      "name": "logout",
-      "value": "退出"
-    },
-    {
       "name": "save",
       "value": "保存"
     },
@@ -145,24 +137,16 @@
       "value": "确认"
     },
     {
-      "name": "ai_insight",
-      "value": "AI 节律洞察"
-    },
-    {
-      "name": "ai_planning",
-      "value": "AI 计划制定"
-    },
-    {
       "name": "theme_settings",
       "value": "主题设置"
     },
     {
       "name": "notification_settings",
-      "value": "通知设置"
+      "value": "提醒反馈"
     },
     {
       "name": "focus_preferences",
-      "value": "专注偏好"
+      "value": "专注节奏"
     },
     {
       "name": "permission_keep_background",
