@@ -24,6 +24,7 @@ $env:DEVECO_SDK_HOME='C:\Program Files\Huawei\DevEco Studio\sdk'
 ## Product Roadmap
 
 - Detailed product backlog and phased feature roadmap: `docs/PRODUCT_ROADMAP.md`
+- Product and UI reset blueprint: `docs/PRODUCT_UI_BLUEPRINT.md`
 - Roadmap inputs: `副本任务类功能.xlsx`, current implementation state, and market references including TickTick, Todoist, Microsoft To Do, Any.do, Structured, Sunsama, Taskito, and Sorted.
 - Next recommended phase: Phase 4 UI refinement, focused on "简约而不简单" rather than adding backend-heavy features immediately.
 
@@ -193,11 +194,28 @@ $env:DEVECO_SDK_HOME='C:\Program Files\Huawei\DevEco Studio\sdk'
 
 Result: `BUILD SUCCESSFUL in 26 s 851 ms`.
 
+## Phase 6: Product And UI Reset Blueprint
+
+Status: Done
+
+Files changed:
+
+- `docs/PRODUCT_UI_BLUEPRINT.md`
+- `docs/DEVELOPMENT_PROGRESS.md`
+
+Implemented:
+
+- Added a detailed product/UI reset blueprint that explicitly moves Flow State away from the old Home / Task / Records structure.
+- Extracted reference-app patterns from TickTick, Structured, Sunsama, Any.do, and Todoist.
+- Defined the next target information architecture: Today / Inbox / Plan / Review.
+- Defined the target visual language: Fresh Graphite Timeline with semantic accents instead of a single-color interface.
+- Defined target screens, core feature priorities, implementation stages, and acceptance criteria.
+
 ## Next Phase Candidates
 
-1. Implement delay/advance with a mandatory change note and visible change history.
-2. Add a dedicated Inbox section/filter so unscheduled tasks can be triaged faster.
-3. Add schedule editing for existing time blocks, not only adding new ones.
-4. Expand time planning from quick time points to a true picker-style time input after official component/API confirmation.
-5. Implement real reminder delivery after confirming the official HarmonyOS system capability, permission, and background execution model.
-6. Continue records page analytics with task completion distribution and focus-time charts.
+1. Reset navigation to Today / Inbox / Plan / Review.
+2. Rebuild Today as a real vertical timeline with workload, now/next action, and free-space visibility.
+3. Add a dedicated Inbox section/filter so unscheduled tasks can be triaged faster.
+4. Add schedule editing, delay/advance, and change notes for existing time blocks.
+5. Add guided daily planning with workload threshold and rollover.
+6. Expand time planning from quick time points to a true picker-style time input after official component/API confirmation.
