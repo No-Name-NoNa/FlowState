@@ -4,6 +4,8 @@ Updated: 2026-05-12
 
 This document resets the product direction. The current app should no longer be treated as a UI polish exercise on top of the first version. It should become a timeline-first daily planning app that borrows the best ideas from TickTick, Structured, Sunsama, Any.do, and Todoist while staying native to HarmonyOS ArkTS/ArkUI.
 
+For the complete module-by-module product context, use `docs/FUNCTION_MODULE_SPEC.md` as the authoritative implementation reference.
+
 ## Reference Extraction
 
 | Product | What To Learn | Source |
@@ -60,6 +62,8 @@ UI shape:
 - Full-height vertical timeline, not a stack of unrelated cards.
 - Left time rail with hour labels and a subtle vertical guide.
 - Time blocks with compact height based on duration.
+- Time blocks may reveal linked task notes and the first one or two subtasks when the task needs execution context.
+- Inline task-depth controls should stay lightweight: subtask chips are acceptable; full editing belongs in a sheet.
 - Color should identify task category/status, not fill the whole screen.
 - "Now" indicator line should make the app feel alive.
 - Empty states should offer action: Capture, Plan, or Import.
@@ -98,6 +102,10 @@ UI shape:
 
 - Stepper/wizard, but visually lightweight.
 - One decision per screen.
+- Source panel should show Inbox and scheduled-later work before auto-planning.
+- Auto-plan is a proposal, not a command: suggestions should be selectable, excludable, and reversible before they become real time blocks.
+- Suggested plans should be refinable in place: order and duration are part of the decision, not hidden in a later edit screen.
+- Finalizing the plan should not dump the user back into a list; it should surface the first executable block and make starting it obvious.
 - Persistent workload meter at bottom.
 - "Too much" should be treated as a product feature, not a warning afterthought.
 
@@ -124,6 +132,10 @@ UI shape:
 - Header: title, priority, schedule status.
 - Body sections are collapsible: Plan, Notes, Steps, Reminders, History.
 - Primary action changes by context: Start, Schedule, Save, Complete.
+- Inbox detail should let the user add notes and subtasks before deciding when to schedule the task.
+- Scheduled blocks should keep showing enough task depth that the user understands what the block means after it leaves Inbox.
+- Schedule editors may combine time controls with task-depth fields when the user is already editing that block; keep sections visually quiet and scrollable rather than forcing separate pages.
+- When a schedule editor combines timing and task fields, timing remains the default visible task; note/priority/subtasks stay in a collapsible `任务细节` section.
 
 ### 5. Focus
 
@@ -137,12 +149,13 @@ Required modules:
 - Reflection after completion.
 - Planned vs actual duration.
 - Next block preview.
+- Completion handoff: return to Today or start the next block.
 
 UI shape:
 
 - Immersive, darker, low-distraction.
 - Should not feel like a separate app.
-- Completion should return to Today and update the timeline.
+- Completion should show planned/actual/delta, let the user write a short reflection, update the timeline, and either return to Today or start the next block.
 
 ### 6. Review
 
@@ -160,6 +173,7 @@ UI shape:
 - More editorial and readable than dashboard-heavy.
 - Charts should answer questions, not decorate.
 - Start with "What happened today?" then allow deeper charts.
+- If there is no reviewable data, show a concise next-step guide instead of zero-value analytics.
 
 ## Core Feature Set
 
@@ -250,6 +264,8 @@ Rules:
 - Avoid nested cards.
 - Stable dimensions for timeline blocks, icon buttons, tabs, and chips.
 - Bottom sheets should be rounded modestly and occupy 80-92% height.
+- Keep the default path simple: show common actions first, then reveal advanced fields only when requested.
+- Prefer progressive disclosure over showing every editable field at once.
 
 ### Motion And Interaction
 
@@ -271,6 +287,11 @@ Top:
 - Date and weekday.
 - Workload pill: "3h 20m planned / 5h capacity".
 - Small replan button if needed.
+
+Support:
+
+- A compact `常用模板` strip can appear near the top when routine templates are still available for today.
+- Routine template rows must stay one-tap and low-commitment: title, time, duration, short purpose, `加入`.
 
 Middle:
 
@@ -328,6 +349,7 @@ Main:
 Bottom:
 
 - Workload meter and next button.
+- Source strip for Inbox and future work, with a simple move-to-today action.
 
 ### Review Screen
 
@@ -342,6 +364,7 @@ Main:
 - Completion distribution.
 - Estimate accuracy.
 - Most delayed items.
+- Empty-state guide with Collect and Plan actions before any timeline exists.
 
 ## Implementation Strategy
 
@@ -352,12 +375,13 @@ The next implementation should not keep patching the current screen order. It sh
 - Replace tabs with Today, Inbox, Plan, Review.
 - Keep Settings accessible from Today header.
 - Preserve existing data model and focus page for now.
+- Current status: implemented. Root navigation now uses Today / Inbox / Plan / Future / Review, and old Home / Task / Records routes have been removed from the shipped page profile.
 
 ### Stage B: Today Timeline
 
 - Move current task page timeline preview into a real Today page.
 - Add time rail, now indicator, current/next action, free-space rows.
-- Make HomePage obsolete or convert it into Today.
+- Current status: implemented. HomePage is obsolete and removed from the routed app surface.
 
 ### Stage C: Inbox
 

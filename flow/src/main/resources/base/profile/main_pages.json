@@ -1,9 +1,11 @@
 {
   "src": [
     "pages/Index",
-    "pages/HomePage",
-    "pages/TaskPage",
-    "pages/RecordsPage",
+    "pages/TodayPage",
+    "pages/InboxPage",
+    "pages/PlanPage",
+    "pages/UpcomingPage",
+    "pages/ReviewPage",
     "pages/FocusPage",
     "pages/SettingsPage"
   ]

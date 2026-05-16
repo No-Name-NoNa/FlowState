@@ -111,12 +111,14 @@ export class StorageKeys {
   static MOOD_ENTRIES: string = 'mood_entries';
   static TASKS: string = 'tasks';
   static SCHEDULES: string = 'schedules';
+  static SCHEDULE_ARCHIVE: string = 'schedule_archive';
   static FOCUS_SESSIONS: string = 'focus_sessions';
   static REST_SESSIONS: string = 'rest_sessions';
   static USER_SETTINGS: string = 'user_settings';
   static USER_INFO: string = 'user_info';
   static CUSTOM_THEMES: string = 'custom_themes';
   static CURRENT_THEME: string = 'current_theme';
+  static DATA_SCHEMA_VERSION: string = 'data_schema_version';
 }
 
 // 日志域

@@ -4,9 +4,10 @@
  */
 
 import { preferences } from '@kit.ArkData';
-import { MoodEntry, Task, Schedule, FocusSession, RestSession, UserSettings, UserInfo, ThemeConfig } from '../models/DataModels';
+import { MoodEntry, Task, Schedule, FocusSession, RestSession, UserSettings, UserInfo, ThemeConfig, ScheduleArchiveEntry } from '../models/DataModels';
 import { StorageKeys, PRESET_THEMES } from './Constants';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { CURRENT_DATA_SCHEMA_VERSION, DataMigration } from './DataMigration';
 
 const LOG_DOMAIN = 0x0001;
 const TAG = 'DataManager';
@@ -21,6 +22,7 @@ export class DataManager {
     try {
       const options: preferences.Options = { name: 'FlowStateData' };
       DataManager.dataPreferences = await preferences.getPreferences(context, options);
+      await DataManager.migrateDataIfNeeded();
       hilog.info(LOG_DOMAIN, TAG, 'DataManager initialized');
     } catch (err) {
       hilog.error(LOG_DOMAIN, TAG, 'Failed to init DataManager: %{public}s', JSON.stringify(err));
@@ -177,6 +179,50 @@ export class DataManager {
   /**
    * 保存专注记录
    */
+  static async saveScheduleArchiveEntry(entry: ScheduleArchiveEntry): Promise<void> {
+    const entries = await DataManager.getAllScheduleArchiveEntries();
+    entries.push(entry);
+    await DataManager.saveData(StorageKeys.SCHEDULE_ARCHIVE, entries);
+  }
+
+  private static async migrateDataIfNeeded(): Promise<void> {
+    const storedVersion = await DataManager.getData<number>(StorageKeys.DATA_SCHEMA_VERSION, 1);
+    if (storedVersion >= CURRENT_DATA_SCHEMA_VERSION) return;
+
+    if (storedVersion < 2) {
+      await DataManager.saveData(StorageKeys.MOOD_ENTRIES, DataMigration.normalizeMoodEntries(await DataManager.getData<MoodEntry[]>(StorageKeys.MOOD_ENTRIES, [])));
+      await DataManager.saveData(StorageKeys.TASKS, DataMigration.normalizeTasks(await DataManager.getData<Task[]>(StorageKeys.TASKS, [])));
+      await DataManager.saveData(StorageKeys.SCHEDULES, DataMigration.normalizeSchedules(await DataManager.getData<Schedule[]>(StorageKeys.SCHEDULES, [])));
+      await DataManager.saveData(StorageKeys.SCHEDULE_ARCHIVE, DataMigration.normalizeScheduleArchive(await DataManager.getData<ScheduleArchiveEntry[]>(StorageKeys.SCHEDULE_ARCHIVE, [])));
+      await DataManager.saveData(StorageKeys.FOCUS_SESSIONS, DataMigration.normalizeFocusSessions(await DataManager.getData<FocusSession[]>(StorageKeys.FOCUS_SESSIONS, [])));
+      await DataManager.saveData(StorageKeys.REST_SESSIONS, DataMigration.normalizeRestSessions(await DataManager.getData<RestSession[]>(StorageKeys.REST_SESSIONS, [])));
+      await DataManager.saveData(StorageKeys.USER_SETTINGS, DataMigration.normalizeUserSettings(await DataManager.getData<UserSettings>(StorageKeys.USER_SETTINGS, {
+        defaultFocusTime: 25,
+        defaultRestTime: 5,
+        dailyCapacityMinutes: 300,
+        autoStartRest: false,
+        notificationEnabled: true,
+        soundEnabled: true,
+        vibrationEnabled: false,
+        currentTheme: 'light'
+      })));
+      await DataManager.saveData(StorageKeys.USER_INFO, DataMigration.normalizeUserInfo(await DataManager.getData<UserInfo>(StorageKeys.USER_INFO, {
+        isLoggedIn: false
+      })));
+    }
+
+    await DataManager.saveData(StorageKeys.DATA_SCHEMA_VERSION, CURRENT_DATA_SCHEMA_VERSION);
+  }
+
+  static async getAllScheduleArchiveEntries(): Promise<ScheduleArchiveEntry[]> {
+    return await DataManager.getData<ScheduleArchiveEntry[]>(StorageKeys.SCHEDULE_ARCHIVE, []);
+  }
+
+  static async getScheduleArchiveEntriesInRange(startTime: number, endTime: number): Promise<ScheduleArchiveEntry[]> {
+    const entries = await DataManager.getAllScheduleArchiveEntries();
+    return entries.filter(entry => entry.archivedAt >= startTime && entry.archivedAt <= endTime);
+  }
+
   static async saveFocusSession(session: FocusSession): Promise<void> {
     const sessions = await DataManager.getAllFocusSessions();
     const index = sessions.findIndex(s => s.id === session.id);
@@ -225,15 +271,27 @@ export class DataManager {
    * 获取用户设置
    */
   static async getUserSettings(): Promise<UserSettings> {
-    return await DataManager.getData<UserSettings>(StorageKeys.USER_SETTINGS, {
+    const defaults: UserSettings = {
       defaultFocusTime: 25,
       defaultRestTime: 5,
+      dailyCapacityMinutes: 300,
       autoStartRest: false,
       notificationEnabled: true,
       soundEnabled: true,
       vibrationEnabled: false,
       currentTheme: 'light'
-    });
+    };
+    const settings = await DataManager.getData<UserSettings>(StorageKeys.USER_SETTINGS, defaults);
+    return {
+      defaultFocusTime: settings.defaultFocusTime || defaults.defaultFocusTime,
+      defaultRestTime: settings.defaultRestTime || defaults.defaultRestTime,
+      dailyCapacityMinutes: settings.dailyCapacityMinutes || defaults.dailyCapacityMinutes,
+      autoStartRest: settings.autoStartRest === undefined ? defaults.autoStartRest : settings.autoStartRest,
+      notificationEnabled: settings.notificationEnabled === undefined ? defaults.notificationEnabled : settings.notificationEnabled,
+      soundEnabled: settings.soundEnabled === undefined ? defaults.soundEnabled : settings.soundEnabled,
+      vibrationEnabled: settings.vibrationEnabled === undefined ? defaults.vibrationEnabled : settings.vibrationEnabled,
+      currentTheme: settings.currentTheme || defaults.currentTheme
+    };
   }
 
   // ==================== 用户信息相关 ====================

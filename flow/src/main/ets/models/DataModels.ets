@@ -12,11 +12,37 @@ export interface MoodEntry {
 
 export type Priority = 'P0' | 'P1' | 'P2';
 
+export type ScheduleChangeType = 'edit' | 'delay' | 'advance' | 'delete' | 'complete' | 'carryover';
+
+export type ScheduleExecutionState = 'planned' | 'completed' | 'deferred' | 'cancelled';
+
 export interface TaskStep {
   id: string;
   title: string;
   completed: boolean;
   createdAt: number;
+}
+
+export interface RoutineTemplate {
+  id: string;
+  title: string;
+  description: string;
+  scheduledTime: string;
+  estimatedTime: number;
+  priority: Priority;
+  color: string;
+  steps?: string[];
+}
+
+export interface ScheduleChange {
+  id: string;
+  type: ScheduleChangeType;
+  timestamp: number;
+  note: string;
+  fromDueAt?: number;
+  toDueAt?: number;
+  fromDuration?: number;
+  toDuration?: number;
 }
 
 export interface Task {
@@ -30,6 +56,7 @@ export interface Task {
   note?: string;
   steps?: TaskStep[];
   isExpanded?: boolean;
+  routineId?: string;
 }
 
 export interface Schedule {
@@ -44,6 +71,30 @@ export interface Schedule {
   reminderMinutes?: number;
   createdAt: number;
   stats?: number[];
+  changeHistory?: ScheduleChange[];
+  state?: ScheduleExecutionState;
+  completedAt?: number;
+  deferredAt?: number;
+  cancelledAt?: number;
+  actualMinutes?: number;
+  stateNote?: string;
+  routineId?: string;
+}
+
+export interface ScheduleArchiveEntry {
+  id: string;
+  scheduleId: string;
+  taskId: string;
+  title: string;
+  estimatedTime: number;
+  priority: Priority;
+  scheduledDate?: number;
+  scheduledTime?: string;
+  dueAt?: number;
+  archivedAt: number;
+  reason: ScheduleChangeType;
+  note?: string;
+  changeHistory?: ScheduleChange[];
 }
 
 export interface FocusSession {
@@ -83,6 +134,7 @@ export interface ThemeConfig {
 export interface UserSettings {
   defaultFocusTime: number;
   defaultRestTime: number;
+  dailyCapacityMinutes: number;
   autoStartRest: boolean;
   notificationEnabled: boolean;
   soundEnabled: boolean;
