@@ -5,9 +5,11 @@
 import { DataManager } from '../utils/DataManager';
 import { NavigationManager } from '../utils/NavigationManager';
 import { TimeFormatter } from '../utils/TimeFormatter';
+import { ThemeContext } from '../utils/ThemeContext';
+import { ThemeTokens } from '../utils/ThemeTokens';
 import { ScheduleAnalyzer, ScheduleConflict } from '../utils/ScheduleAnalyzer';
 import { AutoPlanner, AutoPlanResult, AutoPlanSuggestion } from '../utils/AutoPlanner';
-import { Schedule, ScheduleChange, Task } from '../models/DataModels';
+import { Schedule, ScheduleChange, Task, ThemeConfig } from '../models/DataModels';
 
 interface PlanningStep {
   title: string;
@@ -17,6 +19,7 @@ interface PlanningStep {
 
 @Component
 export struct PlanPage {
+  @StorageLink(ThemeContext.getThemeLink()) currentTheme: ThemeConfig = ThemeContext.getCurrentTheme();
   @State tasks: Task[] = [];
   @State inboxTasks: Task[] = [];
   @State todaySchedules: Schedule[] = [];
@@ -44,7 +47,7 @@ export struct PlanPage {
   private readonly steps: PlanningStep[] = [
     { title: '回看', description: '先确认今天发生了什么，再决定下一步。', accent: '#607385' },
     { title: '选择', description: '从收集箱挑一个可以进入今天的任务。', accent: '#8A7CC3' },
-    { title: '估算', description: '检查计划量，不让一天从开始就超载。', accent: '#D59A45' },
+    { title: '估算', description: '检查计划量，不让一天从开始就超载。', accent: '#8EA1AE' },
     { title: '排序', description: '把任务排成可以自然推进的时间线。', accent: '#46AFA5' },
     { title: '开始', description: '确认第一段，回到今天执行。', accent: '#256D85' }
   ];
@@ -282,9 +285,9 @@ export struct PlanPage {
   }
 
   getWorkloadColor(): string {
-    if (this.conflicts.length > 0) return '#D96B5F';
-    if (this.plannedMinutes > this.getDailyCapacity()) return '#D96B5F';
-    if (this.plannedMinutes > this.getNearCapacityThreshold()) return '#D59A45';
+    if (this.conflicts.length > 0) return '#6F7F88';
+    if (this.plannedMinutes > this.getDailyCapacity()) return '#6F7F88';
+    if (this.plannedMinutes > this.getNearCapacityThreshold()) return '#8EA1AE';
     return '#46AFA5';
   }
 
@@ -592,7 +595,7 @@ export struct PlanPage {
 
   getAutoPlanHint(): string {
     if (this.conflicts.length > 0) return '今天的时间线已经有重叠，先调整冲突，再生成新的安排。';
-    if (this.inboxTasks.length === 0 && this.hasFutureCandidates()) return '收集箱暂时为空，但上方还有已经排到未来的事项。可以先把最重要的一项提前到今天，自动编排仍会只处理未安排的收集箱任务。';
+    if (this.inboxTasks.length === 0 && this.hasFutureCandidates()) return '收集箱暂时为空，可以先移入一个未来事项。';
     if (this.inboxTasks.length === 0) return '收集箱没有待安排任务，可以先捕捉下一件事。';
     if (this.excludedAutoPlanTaskIds.length === this.inboxTasks.length) return '当前收集箱任务都被排除，可以先恢复一项，或去收集箱补充新任务。';
     if (this.autoPlanSuggestions.length === 0 && this.autoPlanRemainingMinutes <= 0) return `今天 ${this.getDailyCapacity()} 分钟容量已经用完，建议先删减或移到明天。`;
@@ -602,9 +605,9 @@ export struct PlanPage {
   }
 
   getAutoPlanStatusColor(): string {
-    if (this.conflicts.length > 0) return '#D96B5F';
+    if (this.conflicts.length > 0) return '#6F7F88';
     if (this.getSelectedAutoPlanCount() > 0) return '#46AFA5';
-    if (this.autoPlanSuggestions.length > 0) return '#D59A45';
+    if (this.autoPlanSuggestions.length > 0) return '#8EA1AE';
     if (this.inboxTasks.length === 0 && this.hasFutureCandidates()) return '#256D85';
     return '#607385';
   }
@@ -619,7 +622,9 @@ export struct PlanPage {
   }
 
   navigateTo(url: string) {
-    NavigationManager.push(this.getUIContext(), url);
+    if (!NavigationManager.openMainTab(url)) {
+      NavigationManager.push(this.getUIContext(), url);
+    }
   }
 
   async handleAutoPlanAction() {
@@ -826,11 +831,11 @@ export struct PlanPage {
       Text('规划')
         .fontSize(30)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#182126')
+        .fontColor(ThemeTokens.text(this.currentTheme))
 
       Text('把今天变成一个可执行的时间线，而不是一张越来越长的清单。')
         .fontSize(12)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .margin({ top: 4 })
     }
     .alignItems(HorizontalAlign.Start)
@@ -846,11 +851,11 @@ export struct PlanPage {
           Text((index + 1).toString())
             .fontSize(12)
             .fontWeight(FontWeight.Bold)
-            .fontColor(this.activeStep === index + 1 ? '#FFFFFF' : (this.activeStep > index + 1 ? step.accent : '#8A969B'))
+            .fontColor(this.activeStep === index + 1 ? '#FFFFFF' : (this.activeStep > index + 1 ? step.accent : ThemeTokens.secondary(this.currentTheme)))
             .width(32)
             .height(32)
             .textAlign(TextAlign.Center)
-            .backgroundColor(this.activeStep === index + 1 ? step.accent : '#F0F4F3')
+            .backgroundColor(this.activeStep === index + 1 ? step.accent : ThemeTokens.subtle(this.currentTheme))
             .borderRadius(16)
             .margin({ right: 8 })
             .onClick(() => {
@@ -863,21 +868,22 @@ export struct PlanPage {
       Text(this.getCurrentStep().title)
         .fontSize(22)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#182126')
+        .fontColor(ThemeTokens.text(this.currentTheme))
         .margin({ top: 18 })
 
       Text(this.getCurrentStep().description)
         .fontSize(13)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .lineHeight(20)
         .margin({ top: 8 })
     }
     .alignItems(HorizontalAlign.Start)
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.elevated(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+    .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
   }
 
   @Builder
@@ -894,11 +900,11 @@ export struct PlanPage {
             Text(`${this.plannedMinutes}`)
               .fontSize(36)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#182126')
+              .fontColor(ThemeTokens.text(this.currentTheme))
 
             Text('分钟')
               .fontSize(13)
-              .fontColor('#62727A')
+              .fontColor(ThemeTokens.muted(this.currentTheme))
               .margin({ left: 6, top: 14 })
           }
           .margin({ top: 6 })
@@ -911,7 +917,7 @@ export struct PlanPage {
           .fontWeight(FontWeight.Medium)
           .fontColor(this.getWorkloadColor())
           .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .backgroundColor('#F7F8F6')
+          .backgroundColor(ThemeTokens.canvas(this.currentTheme))
           .borderRadius(8)
       }
       .width('100%')
@@ -920,7 +926,7 @@ export struct PlanPage {
         .width('100%')
         .height(6)
         .color(this.getWorkloadColor())
-        .backgroundColor('#DDE5E3')
+        .backgroundColor(ThemeTokens.hairline(this.currentTheme))
         .margin({ top: 14 })
 
       Row() {
@@ -934,9 +940,10 @@ export struct PlanPage {
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.elevated(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+    .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
     .margin({ top: 12 })
   }
 
@@ -946,10 +953,10 @@ export struct PlanPage {
       Text(value)
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#182126')
+        .fontColor(ThemeTokens.text(this.currentTheme))
       Text(label)
         .fontSize(10)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .margin({ top: 4 })
     }
     .alignItems(HorizontalAlign.Start)
@@ -964,11 +971,11 @@ export struct PlanPage {
           Text('可安排来源')
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#182126')
+            .fontColor(ThemeTokens.text(this.currentTheme))
 
           Text(this.getSourcePanelHint())
             .fontSize(12)
-            .fontColor('#62727A')
+            .fontColor(ThemeTokens.muted(this.currentTheme))
             .lineHeight(18)
             .margin({ top: 6 })
         }
@@ -980,7 +987,7 @@ export struct PlanPage {
           .fontWeight(FontWeight.Medium)
           .fontColor('#256D85')
           .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .backgroundColor('#E8F2F1')
+          .backgroundColor(ThemeTokens.selectedSurface(this.currentTheme))
           .borderRadius(8)
       }
       .width('100%')
@@ -1008,7 +1015,7 @@ export struct PlanPage {
         .alignItems(HorizontalAlign.Start)
         .width('100%')
         .padding({ left: 12, right: 12, top: 12, bottom: 12 })
-        .backgroundColor('#F7F8F6')
+        .backgroundColor(ThemeTokens.canvas(this.currentTheme))
         .borderRadius(10)
         .margin({ top: 12 })
       }
@@ -1016,9 +1023,10 @@ export struct PlanPage {
     .alignItems(HorizontalAlign.Start)
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.elevated(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+    .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
     .margin({ top: 12 })
   }
 
@@ -1029,13 +1037,13 @@ export struct PlanPage {
         Text(schedule.title)
           .fontSize(13)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#182126')
+          .fontColor(ThemeTokens.text(this.currentTheme))
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
 
         Text(this.getFutureSourceMeta(schedule))
           .fontSize(10)
-          .fontColor('#8A969B')
+          .fontColor(ThemeTokens.secondary(this.currentTheme))
           .margin({ top: 4 })
       }
       .alignItems(HorizontalAlign.Start)
@@ -1046,7 +1054,7 @@ export struct PlanPage {
         .fontWeight(FontWeight.Medium)
         .fontColor('#256D85')
         .height(30)
-        .backgroundColor('#E8F2F1')
+        .backgroundColor(ThemeTokens.selectedSurface(this.currentTheme))
         .borderRadius(8)
         .margin({ left: 10 })
         .onClick(() => {
@@ -1065,22 +1073,22 @@ export struct PlanPage {
           Text('时间冲突')
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#182126')
+            .fontColor(ThemeTokens.text(this.currentTheme))
             .layoutWeight(1)
 
           Text(`${this.conflicts.length} 处`)
             .fontSize(12)
             .fontWeight(FontWeight.Medium)
-            .fontColor('#D96B5F')
+            .fontColor('#6F7F88')
             .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-            .backgroundColor('#F9EAE7')
+            .backgroundColor(ThemeTokens.slateWash(this.currentTheme))
             .borderRadius(8)
         }
         .width('100%')
 
         Text('先解决重叠时间，再继续往今天加入新任务。')
           .fontSize(12)
-          .fontColor('#62727A')
+          .fontColor(ThemeTokens.muted(this.currentTheme))
           .lineHeight(18)
           .margin({ top: 8 })
 
@@ -1089,19 +1097,19 @@ export struct PlanPage {
             Text(`${TimeFormatter.formatTime(conflict.startAt)}-${TimeFormatter.formatTime(conflict.endAt)}`)
               .fontSize(11)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#D96B5F')
+              .fontColor('#6F7F88')
               .width(78)
 
             Text(`${conflict.firstTitle} / ${conflict.secondTitle}`)
               .fontSize(13)
-              .fontColor('#182126')
+              .fontColor(ThemeTokens.text(this.currentTheme))
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
               .layoutWeight(1)
 
             Text(`${conflict.overlapMinutes}m`)
               .fontSize(11)
-              .fontColor('#62727A')
+              .fontColor(ThemeTokens.muted(this.currentTheme))
           }
           .width('100%')
           .margin({ top: 10 })
@@ -1113,7 +1121,7 @@ export struct PlanPage {
           .fontColor('#FFFFFF')
           .height(40)
           .width('100%')
-          .backgroundColor('#D96B5F')
+          .backgroundColor('#6F7F88')
           .borderRadius(10)
           .margin({ top: 14 })
           .onClick(() => {
@@ -1123,9 +1131,10 @@ export struct PlanPage {
       .alignItems(HorizontalAlign.Start)
       .width('100%')
       .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-      .backgroundColor('#FFFFFF')
-      .borderRadius(12)
-      .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+      .backgroundColor(ThemeTokens.elevated(this.currentTheme))
+      .borderRadius(18)
+      .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+      .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
       .margin({ top: 12 })
     }
   }
@@ -1138,11 +1147,11 @@ export struct PlanPage {
           Text('自动编排')
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#182126')
+            .fontColor(ThemeTokens.text(this.currentTheme))
 
-          Text('按容量、优先级和空档生成可执行的时间块。')
+          Text('会优先安排紧急和重要事项，并避开已有时间。')
             .fontSize(12)
-            .fontColor('#62727A')
+            .fontColor(ThemeTokens.muted(this.currentTheme))
             .lineHeight(18)
             .margin({ top: 6 })
         }
@@ -1154,14 +1163,14 @@ export struct PlanPage {
           .fontWeight(FontWeight.Medium)
           .fontColor(this.getAutoPlanStatusColor())
           .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .backgroundColor('#F7F8F6')
+          .backgroundColor(ThemeTokens.canvas(this.currentTheme))
           .borderRadius(8)
       }
       .width('100%')
 
       Text(this.getAutoPlanHint())
         .fontSize(12)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .lineHeight(18)
         .margin({ top: 12 })
 
@@ -1195,7 +1204,7 @@ export struct PlanPage {
         .alignItems(HorizontalAlign.Start)
         .width('100%')
         .padding({ left: 12, right: 12, top: 12, bottom: 12 })
-        .backgroundColor('#F7F8F6')
+        .backgroundColor(ThemeTokens.canvas(this.currentTheme))
         .borderRadius(10)
         .margin({ top: 12 })
       }
@@ -1216,9 +1225,10 @@ export struct PlanPage {
     .alignItems(HorizontalAlign.Start)
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.elevated(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+    .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
     .margin({ top: 12 })
   }
 
@@ -1228,11 +1238,11 @@ export struct PlanPage {
       Text(value)
         .fontSize(16)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#182126')
+        .fontColor(ThemeTokens.text(this.currentTheme))
 
       Text(label)
         .fontSize(10)
-        .fontColor('#8A969B')
+        .fontColor(ThemeTokens.secondary(this.currentTheme))
         .margin({ top: 3 })
     }
     .alignItems(HorizontalAlign.Start)
@@ -1246,12 +1256,12 @@ export struct PlanPage {
         Text(this.isSuggestionSelected(suggestion.taskId) ? '✓' : '')
           .fontSize(12)
           .fontWeight(FontWeight.Bold)
-          .fontColor(this.isSuggestionSelected(suggestion.taskId) ? '#FFFFFF' : '#8A969B')
+          .fontColor(this.isSuggestionSelected(suggestion.taskId) ? '#FFFFFF' : ThemeTokens.secondary(this.currentTheme))
           .width(24)
           .height(24)
           .textAlign(TextAlign.Center)
-          .backgroundColor(this.isSuggestionSelected(suggestion.taskId) ? '#46AFA5' : '#FFFFFF')
-          .border({ width: 1, color: this.isSuggestionSelected(suggestion.taskId) ? '#46AFA5' : '#DDE5E3' })
+          .backgroundColor(this.isSuggestionSelected(suggestion.taskId) ? '#46AFA5' : ThemeTokens.surface(this.currentTheme))
+          .border({ width: 1, color: this.isSuggestionSelected(suggestion.taskId) ? '#46AFA5' : ThemeTokens.hairline(this.currentTheme) })
           .borderRadius(12)
           .margin({ right: 10 })
           .onClick(() => {
@@ -1262,11 +1272,11 @@ export struct PlanPage {
           Text(`${TimeFormatter.formatTime(suggestion.startAt)}-${TimeFormatter.formatTime(suggestion.endAt)}`)
             .fontSize(11)
             .fontWeight(FontWeight.Bold)
-            .fontColor(this.isSuggestionSelected(suggestion.taskId) ? '#256D85' : '#8A969B')
+            .fontColor(this.isSuggestionSelected(suggestion.taskId) ? '#256D85' : ThemeTokens.secondary(this.currentTheme))
 
           Text(suggestion.reason)
             .fontSize(10)
-            .fontColor('#8A969B')
+            .fontColor(ThemeTokens.secondary(this.currentTheme))
             .margin({ top: 3 })
         }
         .alignItems(HorizontalAlign.Start)
@@ -1274,7 +1284,7 @@ export struct PlanPage {
 
         Text(suggestion.title)
           .fontSize(13)
-          .fontColor(this.isSuggestionSelected(suggestion.taskId) ? '#182126' : '#607385')
+          .fontColor(this.isSuggestionSelected(suggestion.taskId) ? ThemeTokens.text(this.currentTheme) : '#607385')
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .layoutWeight(1)
@@ -1284,16 +1294,16 @@ export struct PlanPage {
           .fontWeight(FontWeight.Bold)
           .fontColor('#607385')
           .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-          .backgroundColor('#F0F4F3')
+          .backgroundColor(ThemeTokens.subtle(this.currentTheme))
           .borderRadius(6)
           .margin({ left: 8, right: 8 })
 
         Text('排除')
           .fontSize(10)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#D96B5F')
+          .fontColor('#6F7F88')
           .padding({ left: 8, right: 8, top: 5, bottom: 5 })
-          .backgroundColor('#F9EAE7')
+          .backgroundColor(ThemeTokens.slateWash(this.currentTheme))
           .borderRadius(8)
           .onClick(() => {
             this.excludeAutoPlanSuggestion(suggestion.taskId);
@@ -1304,7 +1314,7 @@ export struct PlanPage {
       Row() {
         Text('顺序')
           .fontSize(10)
-          .fontColor('#8A969B')
+          .fontColor(ThemeTokens.secondary(this.currentTheme))
           .width(34)
 
         this.MoveControl('↑', suggestion.taskId, -1)
@@ -1313,7 +1323,7 @@ export struct PlanPage {
 
         Text('时长')
           .fontSize(10)
-          .fontColor('#8A969B')
+          .fontColor(ThemeTokens.secondary(this.currentTheme))
           .margin({ left: 14 })
 
         this.DurationControl('-10', suggestion.taskId, -10, suggestion.estimatedTime > 15)
@@ -1321,7 +1331,7 @@ export struct PlanPage {
         Text(`${suggestion.estimatedTime}m`)
           .fontSize(11)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#182126')
+          .fontColor(ThemeTokens.text(this.currentTheme))
           .width(48)
           .textAlign(TextAlign.Center)
 
@@ -1332,8 +1342,8 @@ export struct PlanPage {
     }
     .width('100%')
     .padding({ left: 12, right: 12, top: 10, bottom: 10 })
-    .backgroundColor(this.isSuggestionSelected(suggestion.taskId) ? '#F7F8F6' : '#FFFFFF')
-    .border({ width: 1, color: this.isSuggestionSelected(suggestion.taskId) ? '#DDE5E3' : '#EEF2F1' })
+    .backgroundColor(this.isSuggestionSelected(suggestion.taskId) ? ThemeTokens.canvas(this.currentTheme) : ThemeTokens.surface(this.currentTheme))
+    .border({ width: 1, color: this.isSuggestionSelected(suggestion.taskId) ? ThemeTokens.hairline(this.currentTheme) : '#EEF2F1' })
     .borderRadius(10)
     .margin({ top: 10 })
   }
@@ -1347,7 +1357,7 @@ export struct PlanPage {
       .width(38)
       .height(24)
       .textAlign(TextAlign.Center)
-      .backgroundColor(this.canMoveSuggestion(taskId, direction) ? '#E8F2F1' : '#F0F4F3')
+      .backgroundColor(this.canMoveSuggestion(taskId, direction) ? '#E8F2F1' : ThemeTokens.subtle(this.currentTheme))
       .borderRadius(8)
       .margin({ left: 6 })
       .onClick(() => {
@@ -1364,7 +1374,7 @@ export struct PlanPage {
       .width(38)
       .height(24)
       .textAlign(TextAlign.Center)
-      .backgroundColor(active ? '#E8F2F1' : '#F0F4F3')
+      .backgroundColor(active ? '#E8F2F1' : ThemeTokens.subtle(this.currentTheme))
       .borderRadius(8)
       .margin({ left: 6 })
       .onClick(() => {
@@ -1379,7 +1389,7 @@ export struct PlanPage {
     Row() {
       Text(this.getTaskTitleById(taskId))
         .fontSize(12)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .layoutWeight(1)
@@ -1389,7 +1399,7 @@ export struct PlanPage {
         .fontWeight(FontWeight.Medium)
         .fontColor('#256D85')
         .padding({ left: 10, right: 10, top: 5, bottom: 5 })
-        .backgroundColor('#E8F2F1')
+        .backgroundColor(ThemeTokens.selectedSurface(this.currentTheme))
         .borderRadius(8)
         .onClick(() => {
           this.includeAutoPlanTask(taskId);
@@ -1404,7 +1414,7 @@ export struct PlanPage {
     Column() {
       Text(this.planFeedbackText.length > 0 ? this.planFeedbackText : (this.lastScheduledTitle.length > 0 ? `刚安排：${this.lastScheduledTitle}` : this.getDecisionHint()))
         .fontSize(13)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .lineHeight(20)
         .margin({ bottom: 14 })
 
@@ -1426,7 +1436,7 @@ export struct PlanPage {
           .fontWeight(FontWeight.Medium)
           .fontColor(this.getCurrentStep().accent)
           .height(44)
-          .backgroundColor('#F0F4F3')
+          .backgroundColor(ThemeTokens.subtle(this.currentTheme))
           .borderRadius(10)
           .layoutWeight(1)
           .margin({ left: 10 })
@@ -1439,9 +1449,10 @@ export struct PlanPage {
     .alignItems(HorizontalAlign.Start)
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.elevated(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+    .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
     .margin({ top: 12 })
   }
 
@@ -1492,14 +1503,14 @@ export struct PlanPage {
             Text(this.getHandoffTitle())
               .fontSize(19)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#182126')
+              .fontColor(ThemeTokens.text(this.currentTheme))
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
               .margin({ top: 5 })
 
             Text(this.getHandoffMeta())
               .fontSize(12)
-              .fontColor('#62727A')
+              .fontColor(ThemeTokens.muted(this.currentTheme))
               .margin({ top: 5 })
           }
           .alignItems(HorizontalAlign.Start)
@@ -1509,7 +1520,7 @@ export struct PlanPage {
 
         Text(this.getHandoffCopy())
           .fontSize(12)
-          .fontColor('#62727A')
+          .fontColor(ThemeTokens.muted(this.currentTheme))
           .lineHeight(18)
           .margin({ top: 12 })
 
@@ -1534,7 +1545,7 @@ export struct PlanPage {
             .fontWeight(FontWeight.Medium)
             .fontColor('#256D85')
             .height(44)
-            .backgroundColor('#E8F2F1')
+            .backgroundColor(ThemeTokens.selectedSurface(this.currentTheme))
             .borderRadius(10)
             .layoutWeight(1)
             .margin({ left: 10 })
@@ -1548,9 +1559,10 @@ export struct PlanPage {
       .alignItems(HorizontalAlign.Start)
       .width('100%')
       .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-      .backgroundColor('#FFFFFF')
-      .borderRadius(12)
-      .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+      .backgroundColor(ThemeTokens.elevated(this.currentTheme))
+      .borderRadius(18)
+      .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+      .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
       .margin({ top: 12 })
     }
   }
@@ -1561,13 +1573,13 @@ export struct PlanPage {
       Text('今日顺序')
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#182126')
+        .fontColor(ThemeTokens.text(this.currentTheme))
         .margin({ bottom: 8 })
 
       if (this.todaySchedules.length === 0) {
         Text('还没有时间块。从收集箱安排一个任务后，这里会出现今天的执行顺序。')
           .fontSize(12)
-          .fontColor('#62727A')
+          .fontColor(ThemeTokens.muted(this.currentTheme))
           .lineHeight(18)
       } else {
         ForEach(this.todaySchedules.slice(0, 4), (schedule: Schedule) => {
@@ -1580,14 +1592,14 @@ export struct PlanPage {
 
             Text(schedule.title)
               .fontSize(13)
-              .fontColor('#182126')
+              .fontColor(ThemeTokens.text(this.currentTheme))
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
               .layoutWeight(1)
 
             Text(`${schedule.estimatedTime}m`)
               .fontSize(11)
-              .fontColor('#62727A')
+              .fontColor(ThemeTokens.muted(this.currentTheme))
           }
           .width('100%')
           .margin({ top: 10 })
@@ -1597,9 +1609,10 @@ export struct PlanPage {
     .alignItems(HorizontalAlign.Start)
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.elevated(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+    .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
     .margin({ top: 12, bottom: 24 })
   }
 
@@ -1611,7 +1624,7 @@ export struct PlanPage {
           Text('明日结转')
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#182126')
+            .fontColor(ThemeTokens.text(this.currentTheme))
             .layoutWeight(1)
 
           Text(`${this.tomorrowCarryOverMinutes} 分钟`)
@@ -1619,14 +1632,14 @@ export struct PlanPage {
             .fontWeight(FontWeight.Medium)
             .fontColor('#8A7CC3')
             .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-            .backgroundColor('#F0F4F3')
+            .backgroundColor(ThemeTokens.subtle(this.currentTheme))
             .borderRadius(8)
         }
         .width('100%')
 
-        Text('这些是今天错过后结转到明天的时间块。明天规划时会先占用容量。')
+        Text('今天错过的时间块，会先放到明天等待确认。')
           .fontSize(12)
-          .fontColor('#62727A')
+          .fontColor(ThemeTokens.muted(this.currentTheme))
           .lineHeight(18)
           .margin({ top: 8 })
 
@@ -1640,14 +1653,14 @@ export struct PlanPage {
 
             Text(schedule.title)
               .fontSize(13)
-              .fontColor('#182126')
+              .fontColor(ThemeTokens.text(this.currentTheme))
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
               .layoutWeight(1)
 
             Text(`${schedule.estimatedTime}m`)
               .fontSize(11)
-              .fontColor('#62727A')
+              .fontColor(ThemeTokens.muted(this.currentTheme))
           }
           .width('100%')
           .margin({ top: 10 })
@@ -1656,9 +1669,10 @@ export struct PlanPage {
       .alignItems(HorizontalAlign.Start)
       .width('100%')
       .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-      .backgroundColor('#FFFFFF')
-      .borderRadius(12)
-      .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+      .backgroundColor(ThemeTokens.elevated(this.currentTheme))
+      .borderRadius(18)
+      .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+      .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
       .margin({ top: 12 })
     }
   }
@@ -1685,7 +1699,7 @@ export struct PlanPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F7F8F6')
+    .backgroundColor(ThemeTokens.canvas(this.currentTheme))
   }
 }
 

@@ -10,17 +10,22 @@ import { ReviewPage } from './ReviewPage';
 import { DataManager } from '../utils/DataManager';
 import { ThemeManager } from '../utils/ThemeManager';
 import { ThemeContext } from '../utils/ThemeContext';
+import { NavigationManager } from '../utils/NavigationManager';
+import { ThemeConfig } from '../models/DataModels';
 
 @Entry
 @Component
 struct Index {
-  @State currentTabIndex: number = 0;
+  @StorageLink(NavigationManager.getMainTabLink()) currentTabIndex: number = 0;
+  @StorageLink(NavigationManager.getTabBarCoverLink()) tabBarCovered: boolean = false;
+  @StorageLink(ThemeContext.getThemeLink()) currentTheme: ThemeConfig = ThemeContext.getCurrentTheme();
   @State dataReady: boolean = false;
 
   async aboutToAppear() {
     await DataManager.init(this.getUIContext().getHostContext() as Context);
     const theme = await ThemeManager.getCurrentTheme();
     ThemeContext.init(theme);
+    NavigationManager.setTabBarCovered(false);
     this.dataReady = true;
   }
 
@@ -29,12 +34,12 @@ struct Index {
     Column() {
       SymbolGlyph(iconResource)
         .fontSize(20)
-        .fontColor([this.currentTabIndex === index ? '#256D85' : '#8A969B'])
+        .fontColor([this.currentTabIndex === index ? this.currentTheme.primaryColor : '#8A969B'])
 
       Text(name)
         .fontSize(9)
         .fontWeight(this.currentTabIndex === index ? FontWeight.Bold : FontWeight.Regular)
-        .fontColor(this.currentTabIndex === index ? '#256D85' : '#8A969B')
+        .fontColor(this.currentTabIndex === index ? this.currentTheme.primaryColor : '#8A969B')
         .margin({ top: 3 })
     }
     .width('100%')
@@ -45,10 +50,10 @@ struct Index {
   @Builder
   LoadingState() {
     Column() {
-      Text('Flow State')
+      Text('流序')
         .fontSize(30)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#182126')
+        .fontColor(this.currentTheme.textColor)
 
       Text('正在准备本地数据')
         .fontSize(13)
@@ -59,7 +64,7 @@ struct Index {
     .height('100%')
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
-    .backgroundColor('#F7F8F6')
+    .backgroundColor(this.currentTheme.backgroundColor)
   }
 
   @Builder
@@ -94,10 +99,12 @@ struct Index {
     .height('100%')
     .barPosition(BarPosition.End)
     .barMode(BarMode.Fixed)
+    .barHeight(this.tabBarCovered ? 0 : 64)
     .onChange((index: number) => {
       this.currentTabIndex = index;
+      NavigationManager.setTabBarCovered(false);
     })
-    .backgroundColor('#F7F8F6')
+    .backgroundColor(this.currentTheme.backgroundColor)
   }
 
   build() {

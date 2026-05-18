@@ -225,13 +225,13 @@ export class ReviewAnalyzer {
       insights.push({
         title: `${rangeLabel}计划偏满`,
         detail: `已规划 ${plannedMinutes} 分钟，超过容量 ${plannedMinutes - capacityLimit} 分钟。下次先砍掉一个低优先级块。`,
-        color: '#D96B5F'
+        color: '#6F7F88'
       });
     } else if (plannedMinutes >= Math.round(capacityLimit * 0.8)) {
       insights.push({
         title: '计划接近上限',
         detail: `已规划 ${plannedMinutes} 分钟，剩余缓冲不多。适合保留一个空档处理突发。`,
-        color: '#D59A45'
+        color: '#8EA1AE'
       });
     } else {
       insights.push({
@@ -246,7 +246,7 @@ export class ReviewAnalyzer {
       insights.push({
         title: '存在时间冲突',
         detail: `${TimeFormatter.formatTime(first.startAt)}-${TimeFormatter.formatTime(first.endAt)} 有 ${first.overlapMinutes} 分钟重叠，优先调整其中一个时间块。`,
-        color: '#D96B5F'
+        color: '#6F7F88'
       });
     }
 
@@ -270,7 +270,7 @@ export class ReviewAnalyzer {
       insights.push({
         title: '计划被频繁改动',
         detail: `${rangeLabel}有 ${delayedCount} 次顺延、${editedCount} 次编辑、${archiveEntries.length} 次删除。下次规划时减少任务数量会更稳。`,
-        color: '#D59A45'
+        color: '#8EA1AE'
       });
     }
 

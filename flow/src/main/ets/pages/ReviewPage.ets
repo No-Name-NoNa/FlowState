@@ -6,12 +6,15 @@ import { DataManager } from '../utils/DataManager';
 import { NavigationManager } from '../utils/NavigationManager';
 import { ReviewAnalyzer, ReviewDayStat, ReviewInsight, ReviewReport } from '../utils/ReviewAnalyzer';
 import { TimeFormatter } from '../utils/TimeFormatter';
-import { FocusSession, MoodEntry, Schedule, ScheduleArchiveEntry, ScheduleChange } from '../models/DataModels';
+import { ThemeContext } from '../utils/ThemeContext';
+import { ThemeTokens } from '../utils/ThemeTokens';
+import { FocusSession, MoodEntry, Schedule, ScheduleArchiveEntry, ScheduleChange, ThemeConfig } from '../models/DataModels';
 
 type ReviewRange = 'today' | 'week';
 
 @Component
 export struct ReviewPage {
+  @StorageLink(ThemeContext.getThemeLink()) currentTheme: ThemeConfig = ThemeContext.getCurrentTheme();
   @State focusSessions: FocusSession[] = [];
   @State moodEntries: MoodEntry[] = [];
   @State schedules: Schedule[] = [];
@@ -173,8 +176,8 @@ export struct ReviewPage {
   }
 
   getMoodColor(): string {
-    if (this.averageMood <= 40) return '#D96B5F';
-    if (this.averageMood <= 70) return '#D59A45';
+    if (this.averageMood <= 40) return '#6F7F88';
+    if (this.averageMood <= 70) return '#8EA1AE';
     return '#46AFA5';
   }
 
@@ -192,7 +195,7 @@ export struct ReviewPage {
     if (change.type === 'carryover') return '#8A7CC3';
     if (change.type === 'advance') return '#46AFA5';
     if (change.type === 'complete') return '#7BAE7F';
-    if (change.type === 'delete') return '#D96B5F';
+    if (change.type === 'delete') return '#6F7F88';
     return '#607385';
   }
 
@@ -247,7 +250,9 @@ export struct ReviewPage {
   }
 
   navigateTo(url: string) {
-    NavigationManager.push(this.getUIContext(), url);
+    if (!NavigationManager.openMainTab(url)) {
+      NavigationManager.push(this.getUIContext(), url);
+    }
   }
 
   @Builder
@@ -256,11 +261,11 @@ export struct ReviewPage {
       Text('复盘')
         .fontSize(30)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#182126')
+        .fontColor(ThemeTokens.text(this.currentTheme))
 
       Text(`${this.getRangeLabel()}复盘要解释节奏，而不是只摆几组数字。`)
         .fontSize(12)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .margin({ top: 4 })
     }
     .alignItems(HorizontalAlign.Start)
@@ -283,11 +288,12 @@ export struct ReviewPage {
     Text(label)
       .fontSize(13)
       .fontWeight(FontWeight.Bold)
-      .fontColor(this.selectedRange === range ? '#FFFFFF' : '#607385')
+      .fontColor(this.selectedRange === range ? ThemeTokens.surface(this.currentTheme) : '#607385')
       .textAlign(TextAlign.Center)
       .height(36)
       .layoutWeight(1)
-      .backgroundColor(this.selectedRange === range ? '#256D85' : '#EEF4F5')
+      .backgroundColor(this.selectedRange === range ? '#256D85' : ThemeTokens.paperSoft(this.currentTheme))
+      .border({ width: 1, color: this.selectedRange === range ? '#256D85' : ThemeTokens.paperBorder(this.currentTheme) })
       .borderRadius(10)
       .margin({ right: range === 'today' ? 8 : 0 })
       .onClick(() => {
@@ -304,11 +310,11 @@ export struct ReviewPage {
       Text('下一步')
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#182126')
+        .fontColor(ThemeTokens.text(this.currentTheme))
 
       Text(this.getNextActionHint())
         .fontSize(12)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .lineHeight(18)
         .margin({ top: 8, bottom: 14 })
 
@@ -316,7 +322,7 @@ export struct ReviewPage {
         Button('回到今天')
           .fontSize(14)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#FFFFFF')
+          .fontColor(ThemeTokens.surface(this.currentTheme))
           .height(42)
           .backgroundColor('#256D85')
           .borderRadius(10)
@@ -330,7 +336,7 @@ export struct ReviewPage {
           .fontWeight(FontWeight.Medium)
           .fontColor('#256D85')
           .height(42)
-          .backgroundColor('#EAF2F5')
+          .backgroundColor(ThemeTokens.selectedSurface(this.currentTheme))
           .borderRadius(10)
           .layoutWeight(1)
           .margin({ left: 10 })
@@ -343,9 +349,10 @@ export struct ReviewPage {
     .alignItems(HorizontalAlign.Start)
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.paper(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+    .shadow({ radius: 24, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 11 })
     .margin({ top: 12 })
   }
 
@@ -355,11 +362,11 @@ export struct ReviewPage {
       Text(this.reviewReport.headline)
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#182126')
+        .fontColor(ThemeTokens.text(this.currentTheme))
 
       Text(this.getNarrative())
         .fontSize(13)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .lineHeight(20)
         .margin({ top: 10 })
 
@@ -369,30 +376,39 @@ export struct ReviewPage {
         .fontColor('#256D85')
         .lineHeight(18)
         .padding({ left: 12, right: 12, top: 10, bottom: 10 })
-        .backgroundColor('#EAF2F5')
-        .borderRadius(10)
+        .backgroundColor(ThemeTokens.tealWash(this.currentTheme))
+        .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+        .borderRadius(12)
         .margin({ top: 12 })
     }
     .alignItems(HorizontalAlign.Start)
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.paper(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+    .shadow({ radius: 24, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 11 })
   }
 
   @Builder
   StatsPanel() {
     Column() {
+      Text()
+        .width(46)
+        .height(3)
+        .borderRadius(2)
+        .backgroundColor('#46AFA5')
+        .margin({ bottom: 14 })
+
       Row() {
         Column() {
           Text(TimeFormatter.formatHours(this.totalFocusMinutes))
             .fontSize(34)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#182126')
+            .fontColor(ThemeTokens.text(this.currentTheme))
           Text('专注小时')
             .fontSize(12)
-            .fontColor('#62727A')
+            .fontColor(ThemeTokens.muted(this.currentTheme))
             .margin({ top: 3 })
         }
         .alignItems(HorizontalAlign.Start)
@@ -407,7 +423,7 @@ export struct ReviewPage {
           Text(`${this.getCompletionRate()}%`)
             .fontSize(16)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#182126')
+            .fontColor(ThemeTokens.text(this.currentTheme))
         }
         .width(90)
         .height(90)
@@ -415,18 +431,20 @@ export struct ReviewPage {
       .width('100%')
 
       Row() {
-        this.ReviewMetric(`${this.completedScheduleCount}`, '完成块', '#182126')
-        this.ReviewMetric(`${this.plannedBlockCount}`, '相关块', '#182126')
+        this.ReviewMetric(`${this.completedScheduleCount}`, '完成块', ThemeTokens.text(this.currentTheme))
+        this.ReviewMetric(`${this.plannedBlockCount}`, '相关块', ThemeTokens.text(this.currentTheme))
         this.ReviewMetric(`${this.averageMood}`, '心情', this.getMoodColor())
       }
       .width('100%')
       .margin({ top: 18 })
     }
+    .alignItems(HorizontalAlign.Start)
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.paper(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+    .shadow({ radius: 26, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 12 })
     .margin({ top: 12 })
   }
 
@@ -436,11 +454,11 @@ export struct ReviewPage {
       Text('先建立一条可复盘的时间线')
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#182126')
+        .fontColor(ThemeTokens.text(this.currentTheme))
 
       Text('复盘需要至少一个被安排或执行过的时间块。先完成下面任一步，回来这里就会有真实解释。')
         .fontSize(12)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .lineHeight(18)
         .margin({ top: 8, bottom: 12 })
 
@@ -452,7 +470,7 @@ export struct ReviewPage {
         Button('去收集')
           .fontSize(14)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#FFFFFF')
+          .fontColor(ThemeTokens.surface(this.currentTheme))
           .height(42)
           .backgroundColor('#256D85')
           .borderRadius(10)
@@ -466,7 +484,7 @@ export struct ReviewPage {
           .fontWeight(FontWeight.Medium)
           .fontColor('#256D85')
           .height(42)
-          .backgroundColor('#EAF2F5')
+          .backgroundColor(ThemeTokens.selectedSurface(this.currentTheme))
           .borderRadius(10)
           .layoutWeight(1)
           .margin({ left: 10 })
@@ -480,9 +498,10 @@ export struct ReviewPage {
     .alignItems(HorizontalAlign.Start)
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.paper(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+    .shadow({ radius: 24, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 11 })
     .margin({ top: 12 })
   }
 
@@ -492,7 +511,7 @@ export struct ReviewPage {
       Text(index)
         .fontSize(12)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#FFFFFF')
+        .fontColor(ThemeTokens.surface(this.currentTheme))
         .textAlign(TextAlign.Center)
         .width(24)
         .height(24)
@@ -504,10 +523,10 @@ export struct ReviewPage {
         Text(title)
           .fontSize(14)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#182126')
+          .fontColor(ThemeTokens.text(this.currentTheme))
         Text(detail)
           .fontSize(11)
-          .fontColor('#62727A')
+          .fontColor(ThemeTokens.muted(this.currentTheme))
           .lineHeight(16)
           .margin({ top: 3 })
       }
@@ -522,43 +541,60 @@ export struct ReviewPage {
   ReviewMetric(value: string, label: string, color: string) {
     Column() {
       Text(value)
-        .fontSize(18)
+        .fontSize(value.length > 5 ? 13 : 18)
         .fontWeight(FontWeight.Bold)
         .fontColor(color)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
       Text(label)
-        .fontSize(10)
-        .fontColor('#62727A')
+        .fontSize(9)
+        .fontColor(ThemeTokens.muted(this.currentTheme))
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
         .margin({ top: 4 })
     }
     .alignItems(HorizontalAlign.Start)
     .layoutWeight(1)
+    .padding({ left: 9, right: 8, top: 8, bottom: 8 })
+    .backgroundColor(ThemeTokens.paperInset(this.currentTheme))
+    .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+    .borderRadius(12)
+    .shadow({ radius: 10, color: ThemeTokens.paperThinShadow(this.currentTheme), offsetX: 0, offsetY: 4 })
+    .margin({ right: 7 })
   }
 
   @Builder
   PlanningPanel() {
     Column() {
+      Text()
+        .width(46)
+        .height(3)
+        .borderRadius(2)
+        .backgroundColor('#8A7CC3')
+        .margin({ bottom: 14 })
+
       Row() {
         Text('计划质量')
           .fontSize(18)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#182126')
+          .fontColor(ThemeTokens.text(this.currentTheme))
           .layoutWeight(1)
 
         Text(this.reviewReport.conflictText)
           .fontSize(12)
           .fontWeight(FontWeight.Medium)
-          .fontColor(this.reviewReport.conflictCount > 0 ? '#D96B5F' : '#62727A')
+          .fontColor(this.reviewReport.conflictCount > 0 ? '#6F7F88' : ThemeTokens.muted(this.currentTheme))
           .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .backgroundColor('#F7F8F6')
+          .backgroundColor(ThemeTokens.canvas(this.currentTheme))
           .borderRadius(8)
       }
       .width('100%')
 
       Row() {
-        this.ReviewMetric(`${this.reviewReport.plannedMinutes}`, '规划分钟', '#182126')
+        this.ReviewMetric(`${this.reviewReport.plannedMinutes}`, '规划分钟', ThemeTokens.text(this.currentTheme))
         this.ReviewMetric(`${this.reviewReport.completedMinutes}`, '专注分钟', '#46AFA5')
-        this.ReviewMetric(this.reviewReport.carryOverText, '结转', '#8A7CC3')
-        this.ReviewMetric(this.reviewReport.routineText, '模板', '#7BAE7F')
+        this.ReviewMetric(`${this.reviewReport.incomingCarryOverCount}/${this.reviewReport.outgoingCarryOverCount}`, '接收/结转', '#8A7CC3')
+        this.ReviewMetric(`${this.reviewReport.routineCount}`, '模板块', '#7BAE7F')
       }
       .width('100%')
       .margin({ top: 16 })
@@ -566,40 +602,49 @@ export struct ReviewPage {
       Text(this.reviewReport.estimateText)
         .fontSize(13)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#182126')
+        .fontColor(ThemeTokens.text(this.currentTheme))
         .padding({ left: 12, right: 12, top: 10, bottom: 10 })
-        .backgroundColor('#F0F4F3')
-        .borderRadius(10)
+        .backgroundColor(ThemeTokens.paperSoft(this.currentTheme))
+        .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+        .borderRadius(12)
         .margin({ top: 14 })
     }
     .alignItems(HorizontalAlign.Start)
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.paper(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+    .shadow({ radius: 26, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 12 })
     .margin({ top: 12 })
   }
 
   @Builder
   WeeklyRhythmPanel() {
     Column() {
+      Text()
+        .width(46)
+        .height(3)
+        .borderRadius(2)
+        .backgroundColor('#607385')
+        .margin({ bottom: 14 })
+
       Row() {
         Text('本周节奏')
           .fontSize(18)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#182126')
+          .fontColor(ThemeTokens.text(this.currentTheme))
           .layoutWeight(1)
 
         Text('计划 / 专注')
           .fontSize(11)
-          .fontColor('#8A969B')
+          .fontColor(ThemeTokens.secondary(this.currentTheme))
       }
       .width('100%')
 
       Text(this.getWeekRhythmHint())
         .fontSize(12)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .lineHeight(18)
         .margin({ top: 8, bottom: 10 })
 
@@ -610,9 +655,10 @@ export struct ReviewPage {
     .alignItems(HorizontalAlign.Start)
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.paper(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+    .shadow({ radius: 24, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 11 })
     .margin({ top: 12 })
   }
 
@@ -623,10 +669,10 @@ export struct ReviewPage {
         Text(`周${stat.label}`)
           .fontSize(12)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#182126')
+          .fontColor(ThemeTokens.text(this.currentTheme))
         Text(stat.dateText)
           .fontSize(9)
-          .fontColor('#8A969B')
+          .fontColor(ThemeTokens.secondary(this.currentTheme))
           .margin({ top: 2 })
       }
       .alignItems(HorizontalAlign.Start)
@@ -671,10 +717,10 @@ export struct ReviewPage {
         Text(`${stat.completedBlocks}/${stat.plannedBlocks}`)
           .fontSize(12)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#182126')
+          .fontColor(ThemeTokens.text(this.currentTheme))
         Text(stat.changeCount > 0 ? `${stat.changeCount} 改` : '稳定')
           .fontSize(9)
-          .fontColor(stat.changeCount > 0 ? '#D59A45' : '#46AFA5')
+          .fontColor(stat.changeCount > 0 ? '#8EA1AE' : '#46AFA5')
           .margin({ top: 2 })
       }
       .alignItems(HorizontalAlign.End)
@@ -688,10 +734,17 @@ export struct ReviewPage {
   @Builder
   InsightPanel() {
     Column() {
+      Text()
+        .width(46)
+        .height(3)
+        .borderRadius(2)
+        .backgroundColor('#46AFA5')
+        .margin({ bottom: 14 })
+
       Text('关键洞察')
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#182126')
+        .fontColor(ThemeTokens.text(this.currentTheme))
 
       ForEach(this.reviewReport.insights.slice(0, 4), (insight: ReviewInsight) => {
         this.InsightRow(insight)
@@ -700,9 +753,10 @@ export struct ReviewPage {
     .alignItems(HorizontalAlign.Start)
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.paper(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+    .shadow({ radius: 24, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 11 })
     .margin({ top: 12 })
   }
 
@@ -720,13 +774,13 @@ export struct ReviewPage {
         Text(insight.title)
           .fontSize(14)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#182126')
+          .fontColor(ThemeTokens.text(this.currentTheme))
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
 
         Text(insight.detail)
           .fontSize(12)
-          .fontColor('#62727A')
+          .fontColor(ThemeTokens.muted(this.currentTheme))
           .lineHeight(18)
           .maxLines(3)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -736,8 +790,11 @@ export struct ReviewPage {
       .layoutWeight(1)
     }
     .width('100%')
-    .padding({ top: 12, bottom: 10 })
-    .border({ width: { bottom: 1 }, color: '#EEF2F1' })
+    .padding({ left: 12, right: 12, top: 12, bottom: 12 })
+    .backgroundColor(ThemeTokens.paperInset(this.currentTheme))
+    .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+    .borderRadius(14)
+    .margin({ top: 10 })
   }
 
   @Builder
@@ -746,12 +803,12 @@ export struct ReviewPage {
       Text('变更记录')
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#182126')
+        .fontColor(ThemeTokens.text(this.currentTheme))
 
       if (this.changes.length === 0 && this.archiveEntries.length === 0) {
         Text(`${this.getRangeLabel()}还没有调整记录。完成、顺延、删除时间块后，这里会显示原因和时间。`)
           .fontSize(12)
-          .fontColor('#62727A')
+          .fontColor(ThemeTokens.muted(this.currentTheme))
           .lineHeight(18)
           .margin({ top: 10 })
       } else {
@@ -759,15 +816,16 @@ export struct ReviewPage {
           this.ChangeRow(this.getChangeLabel(change), change.note, change.timestamp, this.getChangeColor(change))
         }, (change: ScheduleChange) => change.id)
         ForEach(this.archiveEntries.slice(0, 3), (entry: ScheduleArchiveEntry) => {
-          this.ChangeRow('删除', entry.title, entry.archivedAt, '#D96B5F')
+          this.ChangeRow('删除', entry.title, entry.archivedAt, '#6F7F88')
         }, (entry: ScheduleArchiveEntry) => entry.id)
       }
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.paper(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+    .shadow({ radius: 24, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 11 })
     .margin({ top: 12, bottom: 24 })
   }
 
@@ -786,24 +844,28 @@ export struct ReviewPage {
           Text(title)
             .fontSize(14)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#182126')
+            .fontColor(ThemeTokens.text(this.currentTheme))
             .layoutWeight(1)
           Text(this.getChangeTimeText(timestamp))
             .fontSize(10)
-            .fontColor('#8A969B')
+            .fontColor(ThemeTokens.secondary(this.currentTheme))
         }
         .width('100%')
 
         Text(detail.length > 0 ? detail : '没有备注')
           .fontSize(11)
-          .fontColor('#62727A')
+          .fontColor(ThemeTokens.muted(this.currentTheme))
           .margin({ top: 3 })
       }
       .alignItems(HorizontalAlign.Start)
       .layoutWeight(1)
     }
     .width('100%')
-    .margin({ top: 14 })
+    .padding({ left: 12, right: 12, top: 10, bottom: 10 })
+    .backgroundColor(ThemeTokens.paperInset(this.currentTheme))
+    .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+    .borderRadius(12)
+    .margin({ top: 10 })
   }
 
   build() {
@@ -833,7 +895,7 @@ export struct ReviewPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F7F8F6')
+    .backgroundColor(ThemeTokens.canvas(this.currentTheme))
   }
 }
 

@@ -6,7 +6,9 @@ import { DataManager } from '../utils/DataManager';
 import { NavigationManager } from '../utils/NavigationManager';
 import { PickerDateTime } from '../utils/PickerDateTime';
 import { TimeFormatter } from '../utils/TimeFormatter';
-import { Priority, Schedule, Task, TaskStep } from '../models/DataModels';
+import { ThemeContext } from '../utils/ThemeContext';
+import { ThemeTokens } from '../utils/ThemeTokens';
+import { Priority, Schedule, Task, TaskStep, ThemeConfig } from '../models/DataModels';
 
 interface DateOption {
   label: string;
@@ -21,6 +23,7 @@ interface TimeOption {
 
 @Component
 export struct InboxPage {
+  @StorageLink(ThemeContext.getThemeLink()) currentTheme: ThemeConfig = ThemeContext.getCurrentTheme();
   @State tasks: Task[] = [];
   @State inboxTasks: Task[] = [];
   @State quickTitle: string = '';
@@ -110,11 +113,13 @@ export struct InboxPage {
     this.triageTime = this.getNextTimePoint();
     this.triageSteps = this.cloneTaskSteps(task.steps || []);
     this.triageNewStepTitle = '';
+    NavigationManager.setTabBarCovered(true);
     this.showTriageSheet = true;
   }
 
   closeTriageSheet() {
     this.showTriageSheet = false;
+    NavigationManager.setTabBarCovered(false);
     this.triageTask = null;
     this.triageTitle = '';
     this.triageNote = '';
@@ -307,7 +312,9 @@ export struct InboxPage {
   }
 
   navigateTo(url: string) {
-    NavigationManager.push(this.getUIContext(), url);
+    if (!NavigationManager.openMainTab(url)) {
+      NavigationManager.push(this.getUIContext(), url);
+    }
   }
 
   getDateOptions(): DateOption[] {
@@ -367,8 +374,8 @@ export struct InboxPage {
   }
 
   getPriorityColor(priority: Priority): string {
-    if (priority === 'P0') return '#D96B5F';
-    if (priority === 'P1') return '#D59A45';
+    if (priority === 'P0') return '#2F6F86';
+    if (priority === 'P1') return '#58B7AE';
     return '#607385';
   }
 
@@ -384,11 +391,11 @@ export struct InboxPage {
       Text('收集')
         .fontSize(30)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#182126')
+        .fontColor(ThemeTokens.text(this.currentTheme))
 
       Text('先捕捉，再整理。不要让想法打断当前的时间线。')
         .fontSize(12)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .margin({ top: 4 })
     }
     .alignItems(HorizontalAlign.Start)
@@ -402,7 +409,9 @@ export struct InboxPage {
       TextInput({ placeholder: '输入一个想法、任务或待办', text: this.quickTitle })
         .width('100%')
         .height(48)
-        .backgroundColor('#F7F8F6')
+        .fontColor(ThemeTokens.text(this.currentTheme))
+        .placeholderColor(ThemeTokens.secondary(this.currentTheme))
+        .backgroundColor(ThemeTokens.canvas(this.currentTheme))
         .borderRadius(10)
         .onChange((value: string) => {
           this.quickTitle = value;
@@ -415,13 +424,13 @@ export struct InboxPage {
 
         Blank()
 
-        Button(this.quickTitle.trim().length > 0 ? '收集' : '输入后收集')
+        Button('收集')
           .fontSize(14)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#FFFFFF')
+          .fontColor(this.quickTitle.trim().length > 0 ? '#FFFFFF' : ThemeTokens.muted(this.currentTheme))
           .height(40)
           .borderRadius(10)
-          .backgroundColor(this.quickTitle.trim().length > 0 ? '#256D85' : '#8A969B')
+          .backgroundColor(this.quickTitle.trim().length > 0 ? '#256D85' : ThemeTokens.selectedSurface(this.currentTheme))
           .onClick(() => {
             this.captureTask();
           })
@@ -431,9 +440,10 @@ export struct InboxPage {
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.elevated(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+    .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
   }
 
   @Builder
@@ -452,13 +462,13 @@ export struct InboxPage {
             Text(`已安排：${this.lastScheduledTitle}`)
               .fontSize(15)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#182126')
+              .fontColor(ThemeTokens.text(this.currentTheme))
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
 
             Text(this.lastScheduledMeta)
               .fontSize(12)
-              .fontColor('#62727A')
+              .fontColor(ThemeTokens.muted(this.currentTheme))
               .margin({ top: 5 })
           }
           .alignItems(HorizontalAlign.Start)
@@ -484,7 +494,7 @@ export struct InboxPage {
             .fontWeight(FontWeight.Medium)
             .fontColor('#256D85')
             .height(38)
-            .backgroundColor('#EAF2F5')
+            .backgroundColor(ThemeTokens.selectedSurface(this.currentTheme))
             .borderRadius(10)
             .layoutWeight(1)
             .margin({ left: 10 })
@@ -498,9 +508,10 @@ export struct InboxPage {
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 16, bottom: 16 })
-      .backgroundColor('#FFFFFF')
-      .borderRadius(12)
-      .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+      .backgroundColor(ThemeTokens.elevated(this.currentTheme))
+      .borderRadius(18)
+      .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+      .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
       .margin({ top: 12 })
     }
   }
@@ -512,7 +523,7 @@ export struct InboxPage {
       .fontWeight(FontWeight.Medium)
       .fontColor(this.selectedPriority === priority ? '#FFFFFF' : this.getPriorityColor(priority))
       .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-      .backgroundColor(this.selectedPriority === priority ? this.getPriorityColor(priority) : '#F0F4F3')
+      .backgroundColor(this.selectedPriority === priority ? this.getPriorityColor(priority) : ThemeTokens.subtle(this.currentTheme))
       .borderRadius(8)
       .margin({ right: 8 })
       .onClick(() => {
@@ -524,12 +535,15 @@ export struct InboxPage {
   TriagePriorityChip(priority: Priority) {
     Text(this.getPriorityLabel(priority))
       .fontSize(12)
-      .fontWeight(FontWeight.Medium)
+      .fontWeight(FontWeight.Bold)
       .fontColor(this.triagePriority === priority ? '#FFFFFF' : this.getPriorityColor(priority))
-      .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-      .backgroundColor(this.triagePriority === priority ? this.getPriorityColor(priority) : '#F0F4F3')
-      .borderRadius(8)
-      .margin({ right: 8, bottom: 8 })
+      .width(86)
+      .height(38)
+      .textAlign(TextAlign.Center)
+      .backgroundColor(this.triagePriority === priority ? this.getPriorityColor(priority) : ThemeTokens.subtle(this.currentTheme))
+      .borderRadius(18)
+      .border({ width: 1, color: this.triagePriority === priority ? this.getPriorityColor(priority) : ThemeTokens.cardBorder(this.currentTheme) })
+      .margin({ left: 4, right: 4 })
       .onClick(() => {
         this.triagePriority = priority;
       })
@@ -542,7 +556,7 @@ export struct InboxPage {
         Text('待整理')
           .fontSize(18)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#182126')
+          .fontColor(ThemeTokens.text(this.currentTheme))
           .layoutWeight(1)
 
         Text(`${this.inboxTasks.length} 个`)
@@ -557,17 +571,17 @@ export struct InboxPage {
           Text('收集箱是空的')
             .fontSize(16)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#182126')
+            .fontColor(ThemeTokens.text(this.currentTheme))
           Text('这里仅显示未安排任务。点“今天/明天”后，它会进入时间线，不会继续留在收集箱。')
             .fontSize(12)
-            .fontColor('#62727A')
+            .fontColor(ThemeTokens.muted(this.currentTheme))
             .lineHeight(18)
             .margin({ top: 6 })
         }
         .alignItems(HorizontalAlign.Start)
         .width('100%')
         .padding({ left: 14, right: 14, top: 22, bottom: 22 })
-        .backgroundColor('#F7F8F6')
+        .backgroundColor(ThemeTokens.canvas(this.currentTheme))
         .borderRadius(10)
       } else {
         ForEach(this.inboxTasks, (task: Task) => {
@@ -577,9 +591,10 @@ export struct InboxPage {
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
-    .borderRadius(12)
-    .shadow({ radius: 16, color: '#1821260D', offsetX: 0, offsetY: 8 })
+    .backgroundColor(ThemeTokens.elevated(this.currentTheme))
+    .borderRadius(18)
+    .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+    .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
     .margin({ top: 12, bottom: 24 })
   }
 
@@ -598,13 +613,13 @@ export struct InboxPage {
           Text(task.title)
             .fontSize(15)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#182126')
+            .fontColor(ThemeTokens.text(this.currentTheme))
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
 
           Text(`${this.getPriorityLabel(task.priority)} · 等待安排${task.note ? ' · 有备注' : ''}${(task.steps || []).length > 0 ? ` · 子任务 ${this.getTaskStepSummary(task)}` : ''}`)
             .fontSize(11)
-            .fontColor('#62727A')
+            .fontColor(ThemeTokens.muted(this.currentTheme))
             .margin({ top: 5 })
         }
         .alignItems(HorizontalAlign.Start)
@@ -613,7 +628,7 @@ export struct InboxPage {
         Button('整理')
           .fontSize(11)
           .fontColor('#256D85')
-          .backgroundColor('#EAF2F5')
+          .backgroundColor(ThemeTokens.selectedSurface(this.currentTheme))
           .borderRadius(8)
           .height(32)
           .onClick(() => {
@@ -637,7 +652,7 @@ export struct InboxPage {
         Button('明天')
           .fontSize(11)
           .fontColor('#256D85')
-          .backgroundColor('#EAF2F5')
+          .backgroundColor(ThemeTokens.selectedSurface(this.currentTheme))
           .borderRadius(8)
           .height(30)
           .layoutWeight(1)
@@ -659,16 +674,16 @@ export struct InboxPage {
       Text(option.label)
         .fontSize(12)
         .fontWeight(FontWeight.Medium)
-        .fontColor(this.triageDate === option.value ? '#FFFFFF' : '#182126')
+        .fontColor(this.triageDate === option.value ? '#FFFFFF' : ThemeTokens.text(this.currentTheme))
       Text(option.subLabel)
         .fontSize(10)
-        .fontColor(this.triageDate === option.value ? '#EAF2F5' : '#62727A')
+        .fontColor(this.triageDate === option.value ? '#EAF8F8' : ThemeTokens.muted(this.currentTheme))
         .margin({ top: 2 })
     }
     .alignItems(HorizontalAlign.Center)
     .width(54)
     .padding({ top: 8, bottom: 8 })
-    .backgroundColor(this.triageDate === option.value ? '#256D85' : '#F0F4F3')
+    .backgroundColor(this.triageDate === option.value ? '#256D85' : ThemeTokens.subtle(this.currentTheme))
     .borderRadius(10)
     .margin({ right: 8, bottom: 8 })
     .onClick(() => {
@@ -681,14 +696,79 @@ export struct InboxPage {
     Text(option.label)
       .fontSize(12)
       .fontWeight(FontWeight.Medium)
-      .fontColor(this.triageTime === option.value ? '#FFFFFF' : '#182126')
+      .fontColor(this.triageTime === option.value ? '#FFFFFF' : ThemeTokens.text(this.currentTheme))
       .padding({ left: 12, right: 12, top: 9, bottom: 9 })
-      .backgroundColor(this.triageTime === option.value ? '#256D85' : '#F0F4F3')
+      .backgroundColor(this.triageTime === option.value ? '#256D85' : ThemeTokens.subtle(this.currentTheme))
       .borderRadius(10)
       .margin({ right: 8, bottom: 8 })
       .onClick(() => {
         this.triageTime = option.value;
       })
+  }
+
+  @Builder
+  TriageSchedulePicker() {
+    Column() {
+      Row() {
+        Column() {
+          Text('安排时间')
+            .fontSize(14)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(ThemeTokens.text(this.currentTheme))
+          Text('选择日期和结束时间，系统会按时长推算开始点')
+            .fontSize(11)
+            .fontColor(ThemeTokens.muted(this.currentTheme))
+            .margin({ top: 3 })
+        }
+        .alignItems(HorizontalAlign.Start)
+        .layoutWeight(1)
+
+        Text(`${TimeFormatter.formatDate(this.triageDate)} · ${this.triageTime}`)
+          .fontSize(11)
+          .fontWeight(FontWeight.Bold)
+          .fontColor('#256D85')
+          .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+          .backgroundColor(ThemeTokens.selectedSurface(this.currentTheme))
+          .borderRadius(12)
+      }
+      .width('100%')
+
+      Text('日期')
+        .fontSize(12)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(ThemeTokens.muted(this.currentTheme))
+        .margin({ top: 14, bottom: 6 })
+
+      DatePicker({ start: this.getPickerStartDate(), end: this.getPickerEndDate(), selected: this.getTriageSelectedDate() })
+        .width('100%')
+        .height(104)
+        .backgroundColor(ThemeTokens.elevated(this.currentTheme))
+        .borderRadius(14)
+        .onDateChange((value: Date) => {
+          this.applyTriageDate(value);
+        })
+
+      Text('结束时间')
+        .fontSize(12)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(ThemeTokens.muted(this.currentTheme))
+        .margin({ top: 12, bottom: 6 })
+
+      TimePicker({ selected: this.getTriageSelectedTime(), format: TimePickerFormat.HOUR_MINUTE })
+        .width('100%')
+        .height(100)
+        .backgroundColor(ThemeTokens.elevated(this.currentTheme))
+        .borderRadius(14)
+        .onChange((value: TimePickerResult) => {
+          this.applyTriageTime(value);
+        })
+    }
+    .width('100%')
+    .padding({ left: 14, right: 14, top: 14, bottom: 14 })
+    .backgroundColor(ThemeTokens.mist(this.currentTheme))
+    .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+    .borderRadius(18)
+    .margin({ top: 14 })
   }
 
   @Builder
@@ -699,10 +779,10 @@ export struct InboxPage {
           Text('整理任务')
             .fontSize(20)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#182126')
+            .fontColor(ThemeTokens.text(this.currentTheme))
           Text(`编辑任务深度 · 子任务 ${this.getTriageStepSummary()}`)
             .fontSize(12)
-            .fontColor('#62727A')
+            .fontColor(ThemeTokens.muted(this.currentTheme))
             .margin({ top: 4 })
         }
         .alignItems(HorizontalAlign.Start)
@@ -711,7 +791,7 @@ export struct InboxPage {
         Button('关闭')
           .fontSize(12)
           .fontColor('#607385')
-          .backgroundColor('#F0F4F3')
+          .backgroundColor(ThemeTokens.subtle(this.currentTheme))
           .borderRadius(9)
           .height(34)
           .onClick(() => {
@@ -722,9 +802,14 @@ export struct InboxPage {
 
       TextInput({ placeholder: '任务标题', text: this.triageTitle })
         .width('100%')
-        .height(46)
-        .backgroundColor('#F7F8F6')
-        .borderRadius(10)
+        .height(50)
+        .fontSize(16)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(ThemeTokens.text(this.currentTheme))
+        .placeholderColor(ThemeTokens.secondary(this.currentTheme))
+        .backgroundColor(ThemeTokens.mist(this.currentTheme))
+        .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+        .borderRadius(16)
         .margin({ top: 16 })
         .onChange((value: string) => {
           this.triageTitle = value;
@@ -732,9 +817,12 @@ export struct InboxPage {
 
       TextArea({ placeholder: '备注、背景、链接或下一步', text: this.triageNote })
         .width('100%')
-        .height(72)
-        .backgroundColor('#F7F8F6')
-        .borderRadius(10)
+        .height(78)
+        .fontSize(14)
+        .fontColor(ThemeTokens.text(this.currentTheme))
+        .backgroundColor(ThemeTokens.mist(this.currentTheme))
+        .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+        .borderRadius(16)
         .margin({ top: 10 })
         .onChange((value: string) => {
           this.triageNote = value;
@@ -742,8 +830,10 @@ export struct InboxPage {
 
       Text('优先级')
         .fontSize(13)
-        .fontWeight(FontWeight.Medium)
-        .fontColor('#182126')
+        .fontWeight(FontWeight.Bold)
+        .fontColor(ThemeTokens.text(this.currentTheme))
+        .textAlign(TextAlign.Center)
+        .width('100%')
         .margin({ top: 14, bottom: 8 })
 
       Row() {
@@ -752,19 +842,20 @@ export struct InboxPage {
         this.TriagePriorityChip('P2')
       }
       .width('100%')
+      .justifyContent(FlexAlign.Center)
 
       Row() {
         Text('子任务')
           .fontSize(16)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#182126')
+          .fontColor(ThemeTokens.text(this.currentTheme))
           .layoutWeight(1)
 
         Text(this.getTriageStepSummary())
           .fontSize(12)
           .fontColor('#607385')
           .padding({ left: 10, right: 10, top: 5, bottom: 5 })
-          .backgroundColor('#F0F4F3')
+          .backgroundColor(ThemeTokens.subtle(this.currentTheme))
           .borderRadius(8)
       }
       .width('100%')
@@ -773,9 +864,13 @@ export struct InboxPage {
       if (this.triageSteps.length === 0) {
         Text('还没有子任务。可以把一个大任务拆成 2-5 个可执行步骤。')
           .fontSize(12)
-          .fontColor('#8A969B')
+          .fontColor(ThemeTokens.secondary(this.currentTheme))
           .lineHeight(18)
-          .margin({ top: 8 })
+          .padding({ left: 12, right: 12, top: 11, bottom: 11 })
+          .backgroundColor(ThemeTokens.mist(this.currentTheme))
+          .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+          .borderRadius(14)
+          .margin({ top: 10 })
       } else {
         ForEach(this.triageSteps, (step: TaskStep) => {
           this.TriageStepRow(step)
@@ -786,7 +881,9 @@ export struct InboxPage {
         TextInput({ placeholder: '添加一个子任务', text: this.triageNewStepTitle })
           .height(40)
           .layoutWeight(1)
-          .backgroundColor('#F7F8F6')
+          .fontColor(ThemeTokens.text(this.currentTheme))
+          .placeholderColor(ThemeTokens.secondary(this.currentTheme))
+          .backgroundColor(ThemeTokens.canvas(this.currentTheme))
           .borderRadius(10)
           .onChange((value: string) => {
             this.triageNewStepTitle = value;
@@ -812,13 +909,13 @@ export struct InboxPage {
         Text('时长')
           .fontSize(13)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#182126')
+          .fontColor(ThemeTokens.text(this.currentTheme))
           .layoutWeight(1)
 
         Button('-10')
           .fontSize(12)
           .fontColor('#256D85')
-          .backgroundColor('#EAF2F5')
+          .backgroundColor(ThemeTokens.selectedSurface(this.currentTheme))
           .borderRadius(8)
           .height(34)
           .onClick(() => {
@@ -829,7 +926,9 @@ export struct InboxPage {
           .type(InputType.Number)
           .width(72)
           .height(34)
-          .backgroundColor('#F7F8F6')
+          .fontColor(ThemeTokens.text(this.currentTheme))
+          .textAlign(TextAlign.Center)
+          .backgroundColor(ThemeTokens.canvas(this.currentTheme))
           .borderRadius(8)
           .margin({ left: 8, right: 8 })
           .onChange((value: string) => {
@@ -839,7 +938,7 @@ export struct InboxPage {
         Button('+10')
           .fontSize(12)
           .fontColor('#256D85')
-          .backgroundColor('#EAF2F5')
+          .backgroundColor(ThemeTokens.selectedSurface(this.currentTheme))
           .borderRadius(8)
           .height(34)
           .onClick(() => {
@@ -848,51 +947,20 @@ export struct InboxPage {
 
         Text('分钟')
           .fontSize(12)
-          .fontColor('#62727A')
+          .fontColor(ThemeTokens.muted(this.currentTheme))
           .margin({ left: 8 })
       }
       .width('100%')
       .margin({ top: 8 })
 
-      Text('日期')
-        .fontSize(13)
-        .fontWeight(FontWeight.Medium)
-        .fontColor('#182126')
-        .margin({ top: 16, bottom: 8 })
-
-      DatePicker({ start: this.getPickerStartDate(), end: this.getPickerEndDate(), selected: this.getTriageSelectedDate() })
-        .width('100%')
-        .height(118)
-        .backgroundColor('#F7F8F6')
-        .borderRadius(10)
-        .onDateChange((value: Date) => {
-          this.applyTriageDate(value);
-        })
-      .width('100%')
-
-      Text('结束时间')
-        .fontSize(13)
-        .fontWeight(FontWeight.Medium)
-        .fontColor('#182126')
-        .margin({ top: 8, bottom: 8 })
-
-      TimePicker({ selected: this.getTriageSelectedTime(), format: TimePickerFormat.HOUR_MINUTE })
-        .width('100%')
-        .height(112)
-        .backgroundColor('#F7F8F6')
-        .borderRadius(10)
-        .onChange((value: TimePickerResult) => {
-          this.applyTriageTime(value);
-        })
-      .width('100%')
-
+      this.TriageSchedulePicker()
       Row() {
         Button(this.triageTitle.trim().length > 0 ? '仅保存' : '先填标题')
           .fontSize(12)
-          .fontColor(this.triageTitle.trim().length > 0 ? '#256D85' : '#8A969B')
-          .backgroundColor(this.triageTitle.trim().length > 0 ? '#EAF2F5' : '#F0F4F3')
-          .borderRadius(10)
-          .height(40)
+          .fontColor(this.triageTitle.trim().length > 0 ? '#256D85' : ThemeTokens.secondary(this.currentTheme))
+          .backgroundColor(this.triageTitle.trim().length > 0 ? ThemeTokens.selectedSurface(this.currentTheme) : ThemeTokens.subtle(this.currentTheme))
+          .borderRadius(16)
+          .height(42)
           .layoutWeight(1)
           .onClick(() => {
             this.saveTriageTaskOnly();
@@ -900,10 +968,10 @@ export struct InboxPage {
 
         Button('删除')
           .fontSize(12)
-          .fontColor('#D96B5F')
-          .backgroundColor('#F9EAE7')
-          .borderRadius(10)
-          .height(40)
+          .fontColor('#6F7F88')
+          .backgroundColor(ThemeTokens.slateWash(this.currentTheme))
+          .borderRadius(16)
+          .height(42)
           .layoutWeight(1)
           .margin({ left: 10 })
           .onClick(() => {
@@ -917,9 +985,9 @@ export struct InboxPage {
         .fontSize(15)
         .fontWeight(FontWeight.Bold)
         .fontColor('#FFFFFF')
-        .height(46)
+        .height(48)
         .width('100%')
-        .borderRadius(12)
+        .borderRadius(18)
         .backgroundColor(this.triageTitle.trim().length > 0 ? '#256D85' : '#A8B2B6')
         .margin({ top: 12 })
         .onClick(() => {
@@ -928,9 +996,9 @@ export struct InboxPage {
     }
     .width('100%')
     .padding({ left: 20, right: 20, top: 20, bottom: 22 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(ThemeTokens.surface(this.currentTheme))
     .borderRadius(22)
-    .shadow({ radius: 24, color: '#18212622', offsetX: 0, offsetY: -8 })
+    .shadow({ radius: 24, color: '#22182126', offsetX: 0, offsetY: -8 })
   }
 
   getTaskStepSummary(task: Task): string {
@@ -955,7 +1023,7 @@ export struct InboxPage {
         .width(22)
         .height(22)
         .textAlign(TextAlign.Center)
-        .backgroundColor(step.completed ? '#46AFA5' : '#DDE5E3')
+        .backgroundColor(step.completed ? '#46AFA5' : ThemeTokens.hairline(this.currentTheme))
         .borderRadius(11)
         .margin({ right: 10 })
         .onClick(() => {
@@ -963,8 +1031,9 @@ export struct InboxPage {
         })
 
       Text(step.title)
-        .fontSize(13)
-        .fontColor(step.completed ? '#8A969B' : '#182126')
+        .fontSize(14)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(step.completed ? ThemeTokens.secondary(this.currentTheme) : ThemeTokens.text(this.currentTheme))
         .decoration({ type: step.completed ? TextDecorationType.LineThrough : TextDecorationType.None })
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -972,18 +1041,19 @@ export struct InboxPage {
 
       Text('删除')
         .fontSize(11)
-        .fontColor('#D96B5F')
+        .fontColor('#6F7F88')
         .padding({ left: 8, right: 8, top: 5, bottom: 5 })
-        .backgroundColor('#F9EAE7')
+        .backgroundColor(ThemeTokens.slateWash(this.currentTheme))
         .borderRadius(8)
         .onClick(() => {
           this.deleteTriageStep(step.id);
         })
     }
     .width('100%')
-    .padding({ left: 10, right: 8, top: 8, bottom: 8 })
-    .backgroundColor('#F7F8F6')
-    .borderRadius(10)
+    .padding({ left: 12, right: 10, top: 10, bottom: 10 })
+    .backgroundColor(ThemeTokens.mist(this.currentTheme))
+    .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+    .borderRadius(14)
     .margin({ top: 8 })
   }
 
@@ -1004,7 +1074,7 @@ export struct InboxPage {
       }
       .width('100%')
       .height('100%')
-      .backgroundColor('#F7F8F6')
+      .backgroundColor(ThemeTokens.canvas(this.currentTheme))
 
       if (this.showTriageSheet) {
         Column() {
@@ -1013,12 +1083,12 @@ export struct InboxPage {
         }
         .width('100%')
         .height('100%')
-        .backgroundColor('#18212666')
+        .backgroundColor('#66182126')
       }
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F7F8F6')
+    .backgroundColor(ThemeTokens.canvas(this.currentTheme))
   }
 }
 

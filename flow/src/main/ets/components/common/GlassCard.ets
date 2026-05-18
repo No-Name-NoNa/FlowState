@@ -5,8 +5,8 @@
 @Component
 export struct GlassCard {
   @Prop cardPadding: number = 18;
-  @Prop cardBorderRadius: number = 8;
-  @Prop cardBackgroundColor: string = '#FFFFFF';
+  @Prop cardBorderRadius: number = 18;
+  @Prop cardBackgroundColor: string = '#FCFEFE';
   @BuilderParam content: () => void;
 
   build() {
@@ -17,9 +17,10 @@ export struct GlassCard {
     .padding(this.cardPadding)
     .borderRadius(this.cardBorderRadius)
     .backgroundColor(this.cardBackgroundColor)
+    .border({ width: 1, color: '#E3EBEE' })
     .shadow({
-      radius: 18,
-      color: '#23313A0F',
+      radius: 22,
+      color: '#0F23313A',
       offsetX: 0,
       offsetY: 10
     })

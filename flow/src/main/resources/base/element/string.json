@@ -2,19 +2,19 @@
   "string": [
     {
       "name": "module_desc",
-      "value": "Flow State - 专注与计划工具"
+      "value": "流序 - 时间线计划工具"
     },
     {
       "name": "FlowAbility_desc",
-      "value": "Flow State 主应用"
+      "value": "流序"
     },
     {
       "name": "FlowAbility_label",
-      "value": "Flow State"
+      "value": "流序"
     },
     {
       "name": "app_name",
-      "value": "Flow State"
+      "value": "流序"
     },
     {
       "name": "tab_tasks",

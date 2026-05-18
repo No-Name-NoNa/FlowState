@@ -235,14 +235,15 @@ Use semantic color, not decorative color.
 - Primary action: `#256D85`
 - Focus teal: `#46AFA5`
 - Calm green: `#7BAE7F`
-- Attention amber: `#D59A45`
-- Urgent coral: `#D96B5F`
+- Attention slate: `#8EA1AE`
+- Urgent slate: `#6F7F88`
 - Lavender context: `#8A7CC3`
 - Slate context: `#607385`
 
 Rules:
 
 - Do not use large yellow panels.
+- Do not introduce saturated red into the blue/green system; urgent states should be low-saturation slate or muted clay at chip scale only.
 - Do not use gradient blobs or decorative orbs.
 - Most screens should be 70% neutral, 20% soft structural color, 10% accent.
 - Time blocks can use tinted left rails or small chips; avoid full-card saturation.
@@ -262,8 +263,16 @@ Rules:
 - Use edge-to-edge sections with constrained inner padding.
 - Cards only for repeated items, sheets, and real controls.
 - Avoid nested cards.
+- Primary cards should use a calm elevated treatment: off-white or deep slate fill, 1px hairline border, very soft shadow, and restrained radius.
+- The current card direction is Layered Paper: outer cards use paper surfaces and soft lift; important values sit in inset paper tiles; active states use small accent rails or short top markers rather than full-card saturation.
+- Important cards can contain quiet inner metric tiles or tonal action pills so they feel designed, not empty.
+- Dark mode should be deep blue-gray, not pure black. Primary text must resolve to near-white, muted text to a readable blue-gray, and any light-only surface must use theme tokens instead of fixed pale colors.
+- Editing sheets should avoid isolated picker blocks. Date/time controls should live inside a single schedule card with a clear selected summary.
+- Destructive or completion actions should use the same rounded tonal button language as Focus controls, not raw flat color blocks.
+- Do not use trailing-alpha CSS color strings in ArkUI. Translucent color strings in the app should use leading alpha to avoid accidental saturated colors.
 - Stable dimensions for timeline blocks, icon buttons, tabs, and chips.
 - Bottom sheets should be rounded modestly and occupy 80-92% height.
+- Full-screen editing sheets must own the modal layer. When a detail sheet is open from Today, Inbox, or Future, the root bottom tab bar should be hidden instead of floating above the sheet.
 - Keep the default path simple: show common actions first, then reveal advanced fields only when requested.
 - Prefer progressive disclosure over showing every editable field at once.
 
@@ -366,6 +375,16 @@ Main:
 - Most delayed items.
 - Empty-state guide with Collect and Plan actions before any timeline exists.
 
+### Focus Screen
+
+Direction:
+
+- Treat Focus as the most immersive surface in the app, not another list page.
+- Use a local natural landscape background with muted blue/green tones, translucent overlays, and glass-like panels.
+- Keep hierarchy simple: back control, state title, linked task card, timer ring, one primary action, two secondary actions, and a compact rhythm strip.
+- Typography should feel calm and iOS-like: larger timer numerals, softer metadata, rounded controls, and no loud red/orange interruption colors.
+- Completion should not push stacked pages; returning to Today or starting the next block must preserve a shallow route hierarchy.
+
 ## Implementation Strategy
 
 The next implementation should not keep patching the current screen order. It should migrate toward the new IA in controlled stages.
@@ -411,3 +430,11 @@ The app is moving in the right direction only when:
 - The app has enough color to distinguish meaning, but still feels calm.
 - No page looks like a demo placeholder.
 - The roadmap and progress docs stay updated after every phase.
+
+## Product Language Rules
+
+- The app name is `流序`.
+- User-facing priority language is `优先 / 重要 / 常规`; internal values such as `P0 / P1 / P2` must not appear in visible copy.
+- Page copy should explain the next action, not the implementation. Avoid phrases such as sorting order, creation time, internal capacity logic, official verification, or placeholder/demo wording.
+- Empty states should be short and task-oriented: tell the user what is true now and what they can do next.
+- Settings may disclose limits, but the wording should stay product-facing and concise.

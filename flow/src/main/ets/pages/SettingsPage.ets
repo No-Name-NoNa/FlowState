@@ -60,18 +60,39 @@ struct SettingsPage {
     this.archiveCount = archives.length;
   }
 
+  getMutedTextColor(): string {
+    return this.currentTheme.isDark ? '#A7B6BE' : '#6C7A84';
+  }
+
+  getSubtleSurfaceColor(): string {
+    return this.currentTheme.isDark ? '#22313A' : '#F4F7F8';
+  }
+
+  getOverlayColor(): string {
+    return this.currentTheme.isDark ? '#99050B0F' : '#6617212A';
+  }
+
+  getCurrentThemeName(): string {
+    for (let theme of this.themes) {
+      if (theme.id === this.settings.currentTheme) {
+        return theme.name;
+      }
+    }
+    return this.settings.currentTheme;
+  }
+
   @Builder
   Header() {
     Row() {
       Button() {
         Text('<')
           .fontSize(22)
-          .fontColor('#151C22')
+          .fontColor(this.currentTheme.textColor)
       }
       .width(42)
       .height(42)
       .borderRadius(8)
-      .backgroundColor('#FFFFFF')
+      .backgroundColor(this.currentTheme.cardColor)
       .margin({ right: 12 })
       .onClick(() => {
         NavigationManager.back(this.getUIContext());
@@ -81,11 +102,11 @@ struct SettingsPage {
         Text('设置')
           .fontSize(28)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#151C22')
+          .fontColor(this.currentTheme.textColor)
 
         Text('只保留影响体验的选项')
           .fontSize(12)
-          .fontColor('#6C7A84')
+          .fontColor(this.getMutedTextColor())
           .margin({ top: 4 })
       }
       .alignItems(HorizontalAlign.Start)
@@ -118,9 +139,9 @@ struct SettingsPage {
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(this.currentTheme.cardColor)
     .borderRadius(8)
-    .shadow({ radius: 18, color: '#23313A0F', offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 18, color: '#0F23313A', offsetX: 0, offsetY: 10 })
     .margin({ top: 14 })
   }
 
@@ -142,9 +163,9 @@ struct SettingsPage {
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(this.currentTheme.cardColor)
     .borderRadius(8)
-    .shadow({ radius: 18, color: '#23313A0F', offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 18, color: '#0F23313A', offsetX: 0, offsetY: 10 })
     .margin({ top: 14 })
   }
 
@@ -152,7 +173,7 @@ struct SettingsPage {
   NotificationSettings() {
     Column() {
       this.SectionTitle('提醒偏好')
-      this.SectionNote('当前先保存你的提醒偏好。真正的系统通知、声音和振动需要在真机或模拟器上完成官方能力验证后再接入。')
+      this.SectionNote('先保存偏好。真机验证后，会接入系统通知。')
       this.ToggleRow($r('sys.symbol.bell'), '通知偏好', this.settings.notificationEnabled, (value: boolean) => {
         this.settings.notificationEnabled = value;
         this.saveSettings();
@@ -168,9 +189,9 @@ struct SettingsPage {
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(this.currentTheme.cardColor)
     .borderRadius(8)
-    .shadow({ radius: 18, color: '#23313A0F', offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 18, color: '#0F23313A', offsetX: 0, offsetY: 10 })
     .margin({ top: 14 })
   }
 
@@ -180,14 +201,14 @@ struct SettingsPage {
       this.SectionTitle('应用能力')
       this.CapabilityRow('核心流程', '收集、安排、专注、复盘已经连通', '#46AFA5')
       this.CapabilityRow('本地数据', '任务、日程、设置会保存在本机', '#46AFA5')
-      this.CapabilityRow('系统提醒', '偏好已保存，真实通知待真机验证', '#D59A45')
+      this.CapabilityRow('系统提醒', '偏好已保存，真实通知待真机验证', '#8EA1AE')
       this.CapabilityRow('发布签名', '发布前需要配置正式签名', '#8A7CC3')
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(this.currentTheme.cardColor)
     .borderRadius(8)
-    .shadow({ radius: 18, color: '#23313A0F', offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 18, color: '#0F23313A', offsetX: 0, offsetY: 10 })
     .margin({ top: 14 })
   }
 
@@ -197,15 +218,15 @@ struct SettingsPage {
       this.SectionTitle('体验状态')
       this.SectionNote('当前版本适合走完整主流程体验；正式发布前还需要真机点按、签名和系统提醒能力验证。')
       this.CapabilityRow('静态构建', 'assembleApp 当前可通过', '#46AFA5')
-      this.CapabilityRow('真机点按', '等待 hdc 识别到设备或模拟器', '#D59A45')
-      this.CapabilityRow('系统提醒', '偏好可保存，通知投递尚未接入', '#D59A45')
+      this.CapabilityRow('真机点按', '等待 hdc 识别到设备或模拟器', '#8EA1AE')
+      this.CapabilityRow('系统提醒', '偏好可保存，通知投递尚未接入', '#8EA1AE')
       this.CapabilityRow('发布签名', '正式分发前仍需配置签名', '#8A7CC3')
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(this.currentTheme.cardColor)
     .borderRadius(8)
-    .shadow({ radius: 18, color: '#23313A0F', offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 18, color: '#0F23313A', offsetX: 0, offsetY: 10 })
     .margin({ top: 14 })
   }
 
@@ -225,9 +246,9 @@ struct SettingsPage {
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(this.currentTheme.cardColor)
     .borderRadius(8)
-    .shadow({ radius: 18, color: '#23313A0F', offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 18, color: '#0F23313A', offsetX: 0, offsetY: 10 })
     .margin({ top: 14 })
   }
 
@@ -244,10 +265,10 @@ struct SettingsPage {
       Text(title)
         .fontSize(14)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#151C22')
+        .fontColor(this.currentTheme.textColor)
       Text(label)
         .fontSize(10)
-        .fontColor('#6C7A84')
+        .fontColor(this.getMutedTextColor())
         .margin({ top: 4 })
     }
     .alignItems(HorizontalAlign.Center)
@@ -269,10 +290,10 @@ struct SettingsPage {
       Text(value)
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#151C22')
+        .fontColor(this.currentTheme.textColor)
       Text(label)
         .fontSize(10)
-        .fontColor('#6C7A84')
+        .fontColor(this.getMutedTextColor())
         .margin({ top: 4 })
     }
     .alignItems(HorizontalAlign.Start)
@@ -286,17 +307,17 @@ struct SettingsPage {
       Row() {
         SymbolGlyph($r('sys.symbol.paintpalette'))
           .fontSize(20)
-          .fontColor(['#2F6F86'])
+          .fontColor([this.currentTheme.primaryColor])
           .margin({ right: 12 })
 
         Column() {
           Text('主题')
             .fontSize(15)
             .fontWeight(FontWeight.Medium)
-            .fontColor('#151C22')
-          Text('当前：' + this.settings.currentTheme)
+            .fontColor(this.currentTheme.textColor)
+          Text('当前：' + this.getCurrentThemeName())
             .fontSize(11)
-            .fontColor('#6C7A84')
+            .fontColor(this.getMutedTextColor())
             .margin({ top: 4 })
         }
         .alignItems(HorizontalAlign.Start)
@@ -304,7 +325,7 @@ struct SettingsPage {
 
         Text('更换')
           .fontSize(13)
-          .fontColor('#2F6F86')
+          .fontColor(this.currentTheme.primaryColor)
           .fontWeight(FontWeight.Medium)
       }
       .width('100%')
@@ -315,9 +336,9 @@ struct SettingsPage {
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(this.currentTheme.cardColor)
     .borderRadius(8)
-    .shadow({ radius: 18, color: '#23313A0F', offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 18, color: '#0F23313A', offsetX: 0, offsetY: 10 })
     .margin({ top: 14 })
   }
 
@@ -325,21 +346,21 @@ struct SettingsPage {
   AboutCard() {
     Column() {
       this.SectionTitle('关于')
-      Text('Flow State')
+      Text('流序')
         .fontSize(17)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#151C22')
+        .fontColor(this.currentTheme.textColor)
       Text('体验版 0.9.7 · 时间线计划工具')
         .fontSize(12)
-        .fontColor('#6C7A84')
+        .fontColor(this.getMutedTextColor())
         .margin({ top: 6 })
     }
     .alignItems(HorizontalAlign.Start)
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(this.currentTheme.cardColor)
     .borderRadius(8)
-    .shadow({ radius: 18, color: '#23313A0F', offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 18, color: '#0F23313A', offsetX: 0, offsetY: 10 })
     .margin({ top: 14, bottom: 24 })
   }
 
@@ -348,7 +369,7 @@ struct SettingsPage {
     Text(title)
       .fontSize(18)
       .fontWeight(FontWeight.Bold)
-      .fontColor('#151C22')
+      .fontColor(this.currentTheme.textColor)
       .width('100%')
       .margin({ bottom: 10 })
   }
@@ -357,11 +378,11 @@ struct SettingsPage {
   SectionNote(text: string) {
     Text(text)
       .fontSize(12)
-      .fontColor('#6C7A84')
+      .fontColor(this.getMutedTextColor())
       .lineHeight(18)
       .width('100%')
       .padding({ left: 12, right: 12, top: 10, bottom: 10 })
-      .backgroundColor('#F4F7F8')
+      .backgroundColor(this.getSubtleSurfaceColor())
       .borderRadius(8)
       .margin({ bottom: 8 })
   }
@@ -380,10 +401,10 @@ struct SettingsPage {
         Text(title)
           .fontSize(15)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#151C22')
+          .fontColor(this.currentTheme.textColor)
         Text(detail)
           .fontSize(11)
-          .fontColor('#6C7A84')
+          .fontColor(this.getMutedTextColor())
           .lineHeight(16)
           .margin({ top: 4 })
       }
@@ -399,14 +420,17 @@ struct SettingsPage {
     Row() {
       Text(title)
         .fontSize(15)
-        .fontColor('#151C22')
+        .fontColor(this.currentTheme.textColor)
         .layoutWeight(1)
 
       TextInput({ text: value.toString() })
         .type(InputType.Number)
         .width(74)
         .height(40)
-        .backgroundColor('#F4F7F8')
+        .fontColor(this.currentTheme.textColor)
+        .placeholderColor(this.getMutedTextColor())
+        .textAlign(TextAlign.Center)
+        .backgroundColor(this.getSubtleSurfaceColor())
         .borderRadius(8)
         .onChange((input: string) => {
           onChange(parseInt(input) || value);
@@ -414,7 +438,7 @@ struct SettingsPage {
 
       Text(unit)
         .fontSize(12)
-        .fontColor('#6C7A84')
+        .fontColor(this.getMutedTextColor())
         .margin({ left: 8 })
     }
     .width('100%')
@@ -432,16 +456,16 @@ struct SettingsPage {
     Row() {
       SymbolGlyph(iconResource)
         .fontSize(20)
-        .fontColor(['#2F6F86'])
+        .fontColor([this.currentTheme.primaryColor])
         .margin({ right: 12 })
 
       Text(title)
         .fontSize(15)
-        .fontColor('#151C22')
+        .fontColor(this.currentTheme.textColor)
         .layoutWeight(1)
 
       Toggle({ type: ToggleType.Switch, isOn: value })
-        .selectedColor('#2F6F86')
+        .selectedColor(this.currentTheme.primaryColor)
         .onChange((isOn: boolean) => {
           onChange(isOn);
         })
@@ -457,7 +481,7 @@ struct SettingsPage {
         Text('选择主题')
           .fontSize(22)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#151C22')
+          .fontColor(this.currentTheme.textColor)
           .margin({ bottom: 16 })
 
         ForEach(this.themes, (theme: ThemeConfig) => {
@@ -473,10 +497,10 @@ struct SettingsPage {
               Text(theme.name)
                 .fontSize(15)
                 .fontWeight(FontWeight.Medium)
-                .fontColor('#151C22')
+                .fontColor(this.currentTheme.textColor)
               Text(theme.isDark ? '深色' : '浅色')
                 .fontSize(11)
-                .fontColor('#6C7A84')
+                .fontColor(this.getMutedTextColor())
                 .margin({ top: 4 })
             }
             .alignItems(HorizontalAlign.Start)
@@ -485,13 +509,13 @@ struct SettingsPage {
             if (this.settings.currentTheme === theme.id) {
               Text('当前')
                 .fontSize(12)
-                .fontColor('#2F6F86')
+                .fontColor(this.currentTheme.primaryColor)
                 .fontWeight(FontWeight.Bold)
             }
           }
           .width('100%')
           .padding({ left: 12, right: 12, top: 12, bottom: 12 })
-          .backgroundColor(this.settings.currentTheme === theme.id ? '#EAF2F5' : '#F4F7F8')
+          .backgroundColor(this.settings.currentTheme === theme.id ? (this.currentTheme.isDark ? '#213641' : '#EAF2F5') : this.getSubtleSurfaceColor())
           .borderRadius(8)
           .margin({ bottom: 10 })
           .onClick(() => {
@@ -502,8 +526,8 @@ struct SettingsPage {
         Button('关闭')
           .width('100%')
           .height(44)
-          .fontColor('#52626D')
-          .backgroundColor('#F0F3F5')
+          .fontColor(this.getMutedTextColor())
+          .backgroundColor(this.getSubtleSurfaceColor())
           .borderRadius(8)
           .onClick(() => {
             this.showThemeSelector = false;
@@ -511,7 +535,7 @@ struct SettingsPage {
       }
       .width('90%')
       .padding({ left: 20, right: 20, top: 22, bottom: 20 })
-      .backgroundColor('#FFFFFF')
+      .backgroundColor(this.currentTheme.cardColor)
       .borderRadius(8)
     }
   }
@@ -539,7 +563,7 @@ struct SettingsPage {
       }
       .width('100%')
       .height('100%')
-      .backgroundColor('#F4F7F8')
+      .backgroundColor(this.currentTheme.backgroundColor)
 
       if (this.showThemeSelector) {
         Column() {
@@ -549,7 +573,7 @@ struct SettingsPage {
         .height('100%')
         .justifyContent(FlexAlign.Center)
         .alignItems(HorizontalAlign.Center)
-        .backgroundColor('#17212A66')
+        .backgroundColor(this.getOverlayColor())
       }
     }
   }

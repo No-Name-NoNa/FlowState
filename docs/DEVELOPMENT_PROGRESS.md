@@ -1636,10 +1636,355 @@ Verification:
 - `git diff --check` passed on 2026-05-16 with line-ending warnings only.
 - `hvigor assembleApp --no-daemon` passed on 2026-05-16. Remaining warnings are obfuscation and signing configuration warnings.
 
+## Phase 53: Route Stack And Theme Polish
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/ets/utils/NavigationManager.ets`
+- `flow/src/main/ets/pages/Index.ets`
+- `flow/src/main/ets/pages/TodayPage.ets`
+- `flow/src/main/ets/pages/FocusPage.ets`
+- `flow/src/main/ets/pages/InboxPage.ets`
+- `flow/src/main/ets/pages/PlanPage.ets`
+- `flow/src/main/ets/pages/ReviewPage.ets`
+- `flow/src/main/ets/pages/UpcomingPage.ets`
+- `flow/src/main/ets/pages/SettingsPage.ets`
+- `flow/src/main/ets/utils/AutoPlanner.ets`
+- `flow/src/main/ets/utils/Constants.ets`
+- `flow/src/main/ets/utils/ReviewAnalyzer.ets`
+- `docs/MASTER_FEATURE_CHECKLIST.md`
+- `docs/PRODUCT_UI_BLUEPRINT.md`
+- `docs/DEVELOPMENT_PROGRESS.md`
+
+Implemented:
+
+- Reduced route-stack growth in the main loop: tab-to-tab actions now switch the root Tabs instead of pushing routed tab pages.
+- Focus completion now sets Today as the active root tab and backs out of Focus; starting the next Focus block uses `replaceUrl` so the Focus page does not stack repeatedly.
+- Replaced the Today settings entry icon from the barrage/settings symbol to a gear symbol.
+- Made theme selection visibly affect root tab colors, Today background/header controls, and Settings surfaces.
+- Added an in-UI explanation for auto-plan logic: P0 -> P1 -> P2 priority, then creation order, while respecting existing blocks, capacity, and available gaps.
+- Rebalanced harsh red/orange accents into low-saturation slate colors so alerts stay visible without breaking the cool blue/green visual direction.
+
+Official docs context:
+
+- HarmonyOS application development guide: https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/application-dev-guide
+- HarmonyOS API reference entry: https://developer.huawei.com/consumer/cn/doc/harmonyos-references/development-intro-api
+- ArkUI portal: https://developer.huawei.com/consumer/cn/arkui/
+- HarmonyOS design concept: https://developer.huawei.com/consumer/cn/design/concept/
+
+Verification:
+
+- `git diff --check` passed on 2026-05-17 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-17. Remaining warnings are obfuscation and signing configuration warnings.
+
+## Phase 54: Theme Token And Focus Atmosphere Upgrade
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/ets/utils/ThemeTokens.ets`
+- `flow/src/main/ets/pages/FocusPage.ets`
+- `flow/src/main/resources/base/media/focus_nature.png`
+- `flow/src/main/ets/pages/TodayPage.ets`
+- `flow/src/main/ets/pages/InboxPage.ets`
+- `flow/src/main/ets/pages/PlanPage.ets`
+- `flow/src/main/ets/pages/ReviewPage.ets`
+- `flow/src/main/ets/pages/UpcomingPage.ets`
+- `docs/MASTER_FEATURE_CHECKLIST.md`
+- `docs/PRODUCT_UI_BLUEPRINT.md`
+- `docs/DEVELOPMENT_PROGRESS.md`
+
+Implemented:
+
+- Added shared theme tokens for canvas, surface, subtle fills, selected fills, hairlines, muted text, accent colors, and primary foreground colors.
+- Extended theme-linked rendering across Today, Inbox, Plan, Future, and Review so switching themes changes real page surfaces instead of only isolated controls.
+- Rebuilt the Focus page visual layer around a local natural landscape resource, translucent overlays, glass-like cards, softer action controls, cleaner back affordance, and higher-contrast timer typography.
+- Kept the Focus completion route-stack fix from Phase 53: completing a block returns to the root Today tab, while starting the next block uses replace navigation.
+- Preserved the simple daily-loop interaction model while raising visual texture: natural atmosphere on Focus, calm blue/green/slate theme tokens elsewhere, and fewer harsh warning accents.
+
+Official docs context:
+
+- HarmonyOS application development guide: https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/application-dev-guide
+- HarmonyOS API reference entry: https://developer.huawei.com/consumer/cn/doc/harmonyos-references/development-intro-api
+- ArkUI portal: https://developer.huawei.com/consumer/cn/arkui/
+- HarmonyOS design concept: https://developer.huawei.com/consumer/cn/design/concept/
+
+Verification:
+
+- `git diff --check` passed on 2026-05-17 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-17. Remaining warnings are obfuscation and signing configuration warnings.
+
+## Phase 55: Card Aesthetic And ArkUI Alpha Fix
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/ets/pages/FocusPage.ets`
+- `flow/src/main/ets/utils/ThemeTokens.ets`
+- `flow/src/main/ets/components/common/GlassCard.ets`
+- `flow/src/main/ets/pages/TodayPage.ets`
+- `flow/src/main/ets/pages/InboxPage.ets`
+- `flow/src/main/ets/pages/PlanPage.ets`
+- `flow/src/main/ets/pages/ReviewPage.ets`
+- `flow/src/main/ets/pages/UpcomingPage.ets`
+- `docs/DEVELOPMENT_PROGRESS.md`
+
+Implemented:
+
+- Fixed the bright yellow Focus rendering caused by CSS-style trailing-alpha colors. ArkUI color strings in this pass now use leading alpha for translucent colors.
+- Replaced the malformed text-based Focus back affordance with a supported HarmonyOS symbol glyph.
+- Retuned the Focus glass layers, timer ring, secondary controls, and rhythm strip so the natural background stays calm instead of becoming a saturated flat color.
+- Upgraded the main-page card language toward a Structured/TickTick-style elevated surface: off-white card fill, hairline border, softer shadow, and more deliberate separation from the canvas.
+- Updated `GlassCard` defaults so future shared cards inherit the same quieter visual system.
+
+Official docs context:
+
+- HarmonyOS application development guide: https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/application-dev-guide
+- HarmonyOS API reference entry: https://developer.huawei.com/consumer/cn/doc/harmonyos-references/development-intro-api
+- ArkUI portal: https://developer.huawei.com/consumer/cn/arkui/
+- HarmonyOS design concept: https://developer.huawei.com/consumer/cn/design/concept/
+
+Reference product context:
+
+- Structured App Store page: https://apps.apple.com/us/app/structured-daily-planner-todo/id1499198946
+- TickTick App Store page: https://apps.apple.com/app/tick-tick/id626144601
+
+Verification:
+
+- `git diff --check` passed on 2026-05-17 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-17. Remaining warnings are obfuscation and signing configuration warnings.
+
+## Phase 56: Focus Safety Area And Material Card Polish
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/ets/pages/FocusPage.ets`
+- `flow/src/main/ets/pages/TodayPage.ets`
+- `flow/src/main/ets/pages/ReviewPage.ets`
+- `docs/DEVELOPMENT_PROGRESS.md`
+
+Implemented:
+
+- Made the Focus timer ring visually heavier by layering the ring background and active progress ring.
+- Reduced the Focus primary pause/start button size and moved the lower completion controls upward to avoid the bottom home indicator area.
+- Forced the Today header subtitle into one line with ellipsis so it no longer wraps into two lines beside the settings button.
+- Restyled the Today next-action / review prompt from a flat purple action into a calmer elevated card with a muted left rail and tonal button.
+- Added subtle metric tiles inside Today workload and Review metrics so the cards feel more deliberate without adding workflow complexity.
+- Changed Review plan-quality carry-over and routine metrics to compact values so the right-side metrics no longer wrap into two lines.
+
+Official docs context:
+
+- HarmonyOS application development guide: https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/application-dev-guide
+- HarmonyOS API reference entry: https://developer.huawei.com/consumer/cn/doc/harmonyos-references/development-intro-api
+- ArkUI portal: https://developer.huawei.com/consumer/cn/arkui/
+- HarmonyOS design concept: https://developer.huawei.com/consumer/cn/design/concept/
+
+Design reference context:
+
+- Material Design foundations: https://m3.material.io/foundations
+- Structured App Store page: https://apps.apple.com/us/app/structured-daily-planner-todo/id1499198946
+- TickTick App Store page: https://apps.apple.com/app/tick-tick/id626144601
+
+Verification:
+
+- `git diff --check` passed on 2026-05-17 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-17. Remaining warnings are obfuscation and signing configuration warnings.
+
+## Phase 57: Planning Sheet Form Polish
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/ets/pages/InboxPage.ets`
+- `flow/src/main/ets/pages/TodayPage.ets`
+- `flow/src/main/ets/pages/FocusPage.ets`
+- `docs/DEVELOPMENT_PROGRESS.md`
+
+Implemented:
+
+- Changed the Focus primary pause/start control from a square-like button to a wider rounded rectangle, matching the preferred Focus process button language.
+- Reworked the Inbox "整理任务" sheet priority controls so the priority section is centered and uses balanced pill chips.
+- Restyled task title, note, subtask empty states, and subtask rows in the triage and schedule editor sheets with quieter typography, soft filled surfaces, hairline borders, and more deliberate spacing.
+- Replaced the separated date and end-time pickers with a unified "安排时间" card that shows the selected date/time summary and explains that the start point is inferred from duration.
+- Restyled the Today schedule editor actions: "标记完成" is now a soft tonal button instead of a blunt green block; quick time actions and the save button now follow the same rounded, calm button system as the Focus flow.
+
+Official docs context:
+
+- HarmonyOS application development guide: https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/application-dev-guide
+- HarmonyOS API reference entry: https://developer.huawei.com/consumer/cn/doc/harmonyos-references/development-intro-api
+- ArkUI portal: https://developer.huawei.com/consumer/cn/arkui/
+
+Verification:
+
+- `git diff --check` passed on 2026-05-17 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-17. Remaining warnings are obfuscation and signing configuration warnings.
+
+## Phase 58: Modal Sheet Tab Bar Ownership
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/ets/utils/NavigationManager.ets`
+- `flow/src/main/ets/pages/Index.ets`
+- `flow/src/main/ets/pages/TodayPage.ets`
+- `flow/src/main/ets/pages/InboxPage.ets`
+- `flow/src/main/ets/pages/UpcomingPage.ets`
+- `docs/DEVELOPMENT_PROGRESS.md`
+- `docs/PRODUCT_UI_BLUEPRINT.md`
+- `docs/MASTER_FEATURE_CHECKLIST.md`
+
+Implemented:
+
+- Added a shared `flowTabBarCovered` AppStorage flag in `NavigationManager` so child tab pages can tell the root `Tabs` shell when a detail sheet needs full-screen ownership.
+- Root `Index.ets` now collapses the bottom tab bar while a modal editing sheet is open, then restores it on tab change or page re-entry.
+- Today schedule editing, Inbox triage, and Future schedule editing now hide the root tab bar when their detail sheets open and restore it when the sheet closes.
+- This fixes the visual hierarchy issue where the bottom navigation appeared above the "adjust time block" detail sheet.
+
+Official docs context:
+
+- HarmonyOS application development guide: https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/application-dev-guide
+- HarmonyOS API reference entry: https://developer.huawei.com/consumer/cn/doc/harmonyos-references/development-intro-api
+- ArkUI portal: https://developer.huawei.com/consumer/cn/arkui/
+- HarmonyOS design concept: https://developer.huawei.com/consumer/cn/design/concept/
+
+Verification:
+
+- `git diff --check` passed on 2026-05-17 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-17. Remaining warnings are obfuscation and signing configuration warnings.
+
+## Phase 59: Layered Paper Card System
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/ets/utils/ThemeTokens.ets`
+- `flow/src/main/ets/pages/TodayPage.ets`
+- `flow/src/main/ets/pages/ReviewPage.ets`
+- `docs/DEVELOPMENT_PROGRESS.md`
+- `docs/PRODUCT_UI_BLUEPRINT.md`
+- `docs/MASTER_FEATURE_CHECKLIST.md`
+
+Implemented:
+
+- Added a Layered Paper token set: paper surfaces, inset paper, soft paper wash, paper border, thin shadow, heavier paper shadow, and calm teal/slate/green/lavender washes.
+- Refined Today as the first card-system sample: workload, next action, timeline, free-space rows, schedule blocks, inbox strip, tomorrow preview, and routine/start/conflict/replan cards now use stronger material hierarchy instead of identical flat cards.
+- Refined Review as the second sample: range chips, narrative recommendation, stats, planning quality, weekly rhythm, insights, and change feed now use paper cards, inset metric tiles, subtle separators, and quieter low-saturation status color.
+- Improved timeline block states without changing scheduling logic: ongoing, completed, conflict, and missed blocks now get different soft surfaces while keeping the same task actions.
+- Preserved the simple product flow: no new screens, no new required decisions, only visual hierarchy and card affordance upgrades.
+
+Official docs context:
+
+- HarmonyOS application development guide: https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/application-dev-guide
+- HarmonyOS API reference entry: https://developer.huawei.com/consumer/cn/doc/harmonyos-references/development-intro-api
+- ArkUI portal: https://developer.huawei.com/consumer/cn/arkui/
+- HarmonyOS design concept: https://developer.huawei.com/consumer/cn/design/concept/
+
+Design reference context:
+
+- Material Design foundations: https://m3.material.io/foundations
+- Structured App Store page: https://apps.apple.com/us/app/structured-daily-planner-todo/id1499198946
+- TickTick App Store page: https://apps.apple.com/app/tick-tick/id626144601
+
+Verification:
+
+- `git diff --check` passed on 2026-05-17 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-17. Remaining warnings are obfuscation and signing configuration warnings.
+
+## Phase 60: Dark Theme Contrast And Branding Direction
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/ets/utils/Constants.ets`
+- `flow/src/main/ets/utils/ThemeTokens.ets`
+- `flow/src/main/ets/pages/FocusPage.ets`
+- `flow/src/main/ets/pages/PlanPage.ets`
+- `flow/src/main/ets/pages/InboxPage.ets`
+- `flow/src/main/ets/pages/TodayPage.ets`
+- `flow/src/main/ets/pages/UpcomingPage.ets`
+- `docs/DEVELOPMENT_PROGRESS.md`
+- `docs/PRODUCT_UI_BLUEPRINT.md`
+- `docs/MASTER_FEATURE_CHECKLIST.md`
+
+Implemented:
+
+- Softened the preset dark theme from near-black to a calmer deep blue-gray background.
+- Raised dark-theme primary text contrast from pale gray to near-white so main content remains readable.
+- Rebalanced dark card, paper, inset, border, wash, muted, secondary, and selected-surface tokens so night mode looks softer instead of overly black.
+- Replaced remaining hardcoded black text in the Focus completion flow with theme text tokens.
+- Replaced light-only Focus completion dialog surfaces with dark-aware card, mist, selected-surface, border, and muted text tokens.
+- Replaced several light-only slate action backgrounds in Inbox, Plan, Today, and Future with dark-aware slate wash tokens.
+- Kept the app-name/icon change as a branding decision: candidate names and icon-generation prompt are ready for user selection before resource replacement.
+
+Official docs context:
+
+- HarmonyOS application development guide: https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/application-dev-guide
+- HarmonyOS API reference entry: https://developer.huawei.com/consumer/cn/doc/harmonyos-references/development-intro-api
+- ArkUI portal: https://developer.huawei.com/consumer/cn/arkui/
+- HarmonyOS design concept: https://developer.huawei.com/consumer/cn/design/concept/
+
+Verification:
+
+- `git diff --check` passed on 2026-05-17 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-17. Remaining warnings are obfuscation and signing configuration warnings.
+
+## Phase 61: Liuxu Branding And User-Facing Copy
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/resources/base/element/string.json`
+- `flow/src/main/module.json5`
+- `flow/src/main/resources/base/media/startIcon.png`
+- `flow/src/main/ets/pages/FocusPage.ets`
+- `flow/src/main/ets/pages/Index.ets`
+- `flow/src/main/ets/pages/InboxPage.ets`
+- `flow/src/main/ets/pages/PlanPage.ets`
+- `flow/src/main/ets/pages/SettingsPage.ets`
+- `flow/src/main/ets/pages/TodayPage.ets`
+- `flow/src/main/ets/pages/UpcomingPage.ets`
+- `flow/src/main/ets/utils/AutoPlanner.ets`
+- `docs/DEVELOPMENT_PROGRESS.md`
+- `docs/PRODUCT_UI_BLUEPRINT.md`
+- `docs/MASTER_FEATURE_CHECKLIST.md`
+
+Implemented:
+
+- Renamed the product from Flow State to `流序` in app strings, root surface text, Settings About, and Focus fallback title.
+- Replaced the application icon resource with the user-provided glass document icon and pointed the module icon to the same single PNG resource.
+- Fixed remaining dark-theme contrast gaps in Settings numeric inputs and capture/edit text inputs by applying theme-aware text and placeholder colors.
+- Replaced selected-chip and primary-button text colors that used card-surface colors with white text so dark mode remains readable.
+- Removed user-visible `P0 / P1 / P2` wording from plan explanations, future schedule priority badges, and auto-plan reasons; user-facing labels now read as priority intent such as `优先`, `重要`, and `常规`.
+- Shortened developer-facing copy in Settings reminders, Today next-action guidance, Plan auto-arrange explanation, and tomorrow carry-over explanation.
+- Kept the underlying priority enum and scheduling logic unchanged; only the visible language and contrast were changed.
+
+Official docs context:
+
+- HarmonyOS application development guide: https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/application-dev-guide
+- HarmonyOS API reference entry: https://developer.huawei.com/consumer/cn/doc/harmonyos-references/development-intro-api
+- ArkUI portal: https://developer.huawei.com/consumer/cn/arkui/
+- HarmonyOS design concept: https://developer.huawei.com/consumer/cn/design/concept/
+
+Verification:
+
+- `git diff --check` passed on 2026-05-17 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-17. Remaining warnings are obfuscation and signing configuration warnings.
+
 ## Next Phase Candidates
 
 1. Run device/emulator runtime QA across collect -> schedule -> focus -> complete -> review.
-2. Update `MASTER_FEATURE_CHECKLIST.md` after every completed implementation phase.
+2. Continue the Phase 59 card-polish system across Inbox/Plan/Future detail sheets.
 3. Extract shared task-depth ArkUI builder only if it stays simpler than the current local builders.
 4. Expand routines only after the default template strip feels useful in real use.
 5. Start Projects/Tags only after the core collect -> schedule -> focus loop remains easy.

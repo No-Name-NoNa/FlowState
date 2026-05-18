@@ -4,17 +4,20 @@
 
 import { DataManager } from '../utils/DataManager';
 import { NavigationManager } from '../utils/NavigationManager';
+import { ThemeContext } from '../utils/ThemeContext';
+import { ThemeTokens } from '../utils/ThemeTokens';
 import { TimeFormatter } from '../utils/TimeFormatter';
-import { FocusSession, Schedule, ScheduleChange, Task } from '../models/DataModels';
+import { FocusSession, Schedule, ScheduleChange, Task, ThemeConfig } from '../models/DataModels';
 
 @Entry
 @Component
 struct FocusPage {
+  @StorageLink(ThemeContext.getThemeLink()) currentTheme: ThemeConfig = ThemeContext.getCurrentTheme();
   @State duration: number = 25;
   @State scheduleId: string = '';
   @State taskId: string = '';
   @State focusTitle: string = '专注时间块';
-  @State parentTitle: string = 'Flow State';
+  @State parentTitle: string = '流序';
   @State plannedWindow: string = '按当前计划执行';
   @State remainingSeconds: number = 0;
   @State isRunning: boolean = false;
@@ -293,11 +296,12 @@ struct FocusPage {
   }
 
   navigateToToday() {
-    NavigationManager.push(this.getUIContext(), 'pages/TodayPage');
+    NavigationManager.setMainTabIndex(0);
+    NavigationManager.back(this.getUIContext());
   }
 
   navigateToNextFocus() {
-    NavigationManager.push(this.getUIContext(), 'pages/FocusPage', {
+    NavigationManager.replace(this.getUIContext(), 'pages/FocusPage', {
       duration: this.nextScheduleDuration,
       scheduleId: this.nextScheduleId,
       taskId: this.nextScheduleTaskId,
@@ -330,9 +334,30 @@ struct FocusPage {
   }
 
   getPrimaryActionColor(): string {
-    if (this.isRunning) return '#D59A45';
-    if (this.isPaused) return '#46AFA5';
-    return '#46AFA5';
+    if (this.isRunning) return '#DDEDF3F4';
+    if (this.isPaused) return '#F2E9F8F4';
+    return '#F2F6FBF8';
+  }
+
+  getPrimaryActionTextColor(): string {
+    if (this.isRunning) return '#25343B';
+    return '#16342F';
+  }
+
+  getFocusAccent(): string {
+    return this.currentTheme.isDark ? '#9AE4D9' : ThemeTokens.accent(this.currentTheme);
+  }
+
+  getGlassFill(): string {
+    return this.currentTheme.isDark ? '#CC10232B' : '#4DFFFFFF';
+  }
+
+  getGlassStroke(): string {
+    return this.currentTheme.isDark ? '#24FFFFFF' : '#73FFFFFF';
+  }
+
+  getSoftText(): string {
+    return this.currentTheme.isDark ? '#D8E8EB' : '#F7FBFB';
   }
 
   getProgressValue(): number {
@@ -364,7 +389,7 @@ struct FocusPage {
 
   getCompletionDeltaColor(): string {
     const delta = this.getCompletionDeltaMinutes();
-    if (delta > 5) return '#D59A45';
+    if (delta > 5) return '#8EA1AE';
     if (delta < -5) return '#8A7CC3';
     return '#46AFA5';
   }
@@ -391,17 +416,41 @@ struct FocusPage {
   }
 
   @Builder
+  FocusBackground() {
+    Stack() {
+      Image($r('app.media.focus_nature'))
+        .width('100%')
+        .height('100%')
+        .objectFit(ImageFit.Cover)
+        .opacity(0.88)
+
+      Text()
+        .width('100%')
+        .height('100%')
+        .backgroundColor(this.currentTheme.isDark ? '#99061116' : '#6618323A')
+
+      Text()
+        .width('100%')
+        .height('100%')
+        .backgroundColor(this.currentTheme.isDark ? '#66071216' : '#24F9FCFC')
+    }
+    .width('100%')
+    .height('100%')
+  }
+
+  @Builder
   Header() {
     Row() {
       Button() {
-        Text('<')
+        SymbolGlyph($r('sys.symbol.chevron_left'))
           .fontSize(22)
-          .fontColor('#EAF2F5')
+          .fontColor(['#F6FBFB'])
       }
-      .width(42)
-      .height(42)
-      .borderRadius(10)
-      .backgroundColor('#213139')
+      .width(46)
+      .height(46)
+      .borderRadius(23)
+      .backgroundColor('#24FFFFFF')
+      .border({ width: 1, color: '#2EFFFFFF' })
       .onClick(() => {
         if (this.isRunning || this.isPaused) {
           this.handleCancel();
@@ -411,26 +460,27 @@ struct FocusPage {
       })
 
       Column() {
-        Text('Focus')
-          .fontSize(18)
+        Text('专注')
+          .fontSize(24)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#FFFFFF')
+          .fontColor('#F8FCFC')
         Text(this.getStateText())
-          .fontSize(11)
-          .fontColor('#9BAAB2')
+          .fontSize(12)
+          .fontColor('#99D7E6E8')
           .margin({ top: 2 })
       }
       .alignItems(HorizontalAlign.Start)
-      .margin({ left: 12 })
+      .margin({ left: 14 })
       .layoutWeight(1)
 
       Text(this.getModeLabel())
         .fontSize(12)
-        .fontWeight(FontWeight.Medium)
-        .fontColor('#BFD4D0')
-        .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-        .backgroundColor('#213139')
-        .borderRadius(10)
+        .fontWeight(FontWeight.Bold)
+        .fontColor('#F6FBFB')
+        .padding({ left: 14, right: 14, top: 9, bottom: 9 })
+        .backgroundColor('#24FFFFFF')
+        .border({ width: 1, color: '#30FFFFFF' })
+        .borderRadius(18)
         .onClick(() => {
           if (!this.isRunning) {
             this.toggleMode();
@@ -438,7 +488,7 @@ struct FocusPage {
         })
     }
     .width('100%')
-    .padding({ left: 20, right: 20, top: 18, bottom: 8 })
+    .padding({ left: 22, right: 22, top: 20, bottom: 10 })
   }
 
   @Builder
@@ -446,40 +496,44 @@ struct FocusPage {
     Column() {
       Text(this.parentTitle)
         .fontSize(12)
-        .fontWeight(FontWeight.Medium)
-        .fontColor('#9BAAB2')
+        .fontWeight(FontWeight.Bold)
+        .fontColor('#A6E7F2F2')
 
       Text(this.focusTitle)
-        .fontSize(24)
+        .fontSize(27)
         .fontWeight(FontWeight.Bold)
         .fontColor('#FFFFFF')
         .maxLines(2)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
-        .margin({ top: 8 })
+        .lineHeight(34)
+        .margin({ top: 9 })
 
       Row() {
         Text(this.plannedWindow)
-          .fontSize(12)
-          .fontColor('#BFD4D0')
+          .fontSize(13)
+          .fontColor('#A8F0FAFA')
           .layoutWeight(1)
 
         Text(this.scheduleId ? '来自时间线' : '自由专注')
           .fontSize(11)
-          .fontColor('#46AFA5')
-          .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .backgroundColor('#203F3D')
-          .borderRadius(9)
+          .fontWeight(FontWeight.Bold)
+          .fontColor('#EAFBF7')
+          .padding({ left: 11, right: 11, top: 7, bottom: 7 })
+          .backgroundColor('#3D5DD7C5')
+          .border({ width: 1, color: '#4DBCEFE5' })
+          .borderRadius(14)
       }
       .width('100%')
-      .margin({ top: 14 })
+      .margin({ top: 16 })
     }
     .alignItems(HorizontalAlign.Start)
     .width('100%')
-    .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#1B2A31')
-    .borderRadius(14)
-    .border({ width: 1, color: '#2A3C44' })
-    .margin({ left: 20, right: 20, top: 10 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 20 })
+    .backgroundColor(this.getGlassFill())
+    .borderRadius(26)
+    .border({ width: 1, color: this.getGlassStroke() })
+    .shadow({ radius: 24, color: '#40021018', offsetX: 0, offsetY: 14 })
+    .margin({ left: 18, right: 18, top: 12 })
   }
 
   @Builder
@@ -487,36 +541,46 @@ struct FocusPage {
     Column() {
       Stack({ alignContent: Alignment.Center }) {
         Progress({ value: 100, total: 100, type: ProgressType.Ring })
-          .width(254)
-          .height(254)
-          .color('#213139')
+          .width(272)
+          .height(272)
+          .color('#3AFFFFFF')
+
+        Progress({ value: 100, total: 100, type: ProgressType.Ring })
+          .width(258)
+          .height(258)
+          .color('#22FFFFFF')
 
         Progress({ value: this.getProgressValue(), total: 100, type: ProgressType.Ring })
-          .width(254)
-          .height(254)
-          .color('#46AFA5')
+          .width(272)
+          .height(272)
+          .color(this.getFocusAccent())
+
+        Progress({ value: this.getProgressValue(), total: 100, type: ProgressType.Ring })
+          .width(258)
+          .height(258)
+          .color(this.getFocusAccent())
 
         Column() {
           Text(TimeFormatter.formatSeconds(this.remainingSeconds))
-            .fontSize(54)
+            .fontSize(60)
             .fontWeight(FontWeight.Bold)
             .fontColor('#FFFFFF')
 
           Text(this.isCountdown ? '剩余时间' : '已专注')
             .fontSize(12)
-            .fontColor('#9BAAB2')
+            .fontColor('#A6E8F5F5')
             .margin({ top: 8 })
 
           Text(`${this.duration} 分钟计划`)
             .fontSize(11)
-            .fontColor('#607885')
+            .fontColor('#7AE8F5F5')
             .margin({ top: 4 })
         }
         .alignItems(HorizontalAlign.Center)
       }
-      .width(270)
-      .height(270)
-      .margin({ top: 22, bottom: 20 })
+      .width(292)
+      .height(292)
+      .margin({ top: 24, bottom: 22 })
 
       this.ControlDock()
       this.RhythmStrip()
@@ -530,14 +594,15 @@ struct FocusPage {
   ControlDock() {
     Column() {
       Button(this.getPrimaryActionText())
-        .fontSize(18)
+        .fontSize(19)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#FFFFFF')
-        .width(116)
-        .height(116)
-        .borderRadius(58)
+        .fontColor(this.getPrimaryActionTextColor())
+        .width(156)
+        .height(78)
+        .borderRadius(28)
         .backgroundColor(this.getPrimaryActionColor())
-        .shadow({ radius: 24, color: '#46AFA544', offsetX: 0, offsetY: 10 })
+        .border({ width: 1, color: '#80FFFFFF' })
+        .shadow({ radius: 28, color: '#6FD7F1E9', offsetX: 0, offsetY: 14 })
         .onClick(() => {
           this.handlePrimaryAction();
         })
@@ -545,11 +610,12 @@ struct FocusPage {
       Row() {
         Button('完成')
           .fontSize(14)
-          .fontWeight(FontWeight.Medium)
+          .fontWeight(FontWeight.Bold)
           .fontColor('#FFFFFF')
-          .height(42)
-          .backgroundColor('#256D85')
-          .borderRadius(10)
+          .height(46)
+          .backgroundColor('#D9287D91')
+          .border({ width: 1, color: '#4DA9DFE6' })
+          .borderRadius(16)
           .layoutWeight(1)
           .onClick(() => {
             this.completeSession();
@@ -557,20 +623,21 @@ struct FocusPage {
 
         Button('放弃')
           .fontSize(14)
-          .fontWeight(FontWeight.Medium)
-          .fontColor('#B8C6CB')
-          .height(42)
-          .backgroundColor('#213139')
-          .borderRadius(10)
+          .fontWeight(FontWeight.Bold)
+          .fontColor('#CCE9F3F4')
+          .height(46)
+          .backgroundColor('#20FFFFFF')
+          .border({ width: 1, color: '#2EFFFFFF' })
+          .borderRadius(16)
           .layoutWeight(1)
-          .margin({ left: 10 })
+          .margin({ left: 12 })
           .onClick(() => {
             this.handleCancel();
           })
       }
       .width('100%')
-      .padding({ left: 34, right: 34 })
-      .margin({ top: 28 })
+      .padding({ left: 30, right: 30 })
+      .margin({ top: 20, bottom: 18 })
     }
     .alignItems(HorizontalAlign.Center)
     .width('100%')
@@ -584,11 +651,12 @@ struct FocusPage {
       this.FocusMetric(`${this.pauseCount}`, '暂停')
     }
     .width('100%')
-    .padding({ left: 20, right: 20, top: 16, bottom: 16 })
-    .backgroundColor('#1B2A31')
-    .borderRadius(14)
-    .border({ width: 1, color: '#2A3C44' })
-    .margin({ left: 20, right: 20, top: 24, bottom: 20 })
+    .padding({ left: 20, right: 20, top: 17, bottom: 17 })
+    .backgroundColor('#1FFFFFFF')
+    .borderRadius(24)
+    .border({ width: 1, color: '#2EFFFFFF' })
+    .shadow({ radius: 18, color: '#26021018', offsetX: 0, offsetY: 10 })
+    .margin({ left: 18, right: 18, top: 16, bottom: 34 })
   }
 
   @Builder
@@ -600,7 +668,7 @@ struct FocusPage {
         .fontColor('#FFFFFF')
       Text(label)
         .fontSize(10)
-        .fontColor('#8EA1AE')
+        .fontColor('#8CE7F2F2')
         .margin({ top: 4 })
     }
     .alignItems(HorizontalAlign.Start)
@@ -619,7 +687,7 @@ struct FocusPage {
 
       Text(label)
         .fontSize(10)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .margin({ top: 4 })
     }
     .alignItems(HorizontalAlign.Start)
@@ -640,19 +708,19 @@ struct FocusPage {
         Column() {
           Text('下一段')
             .fontSize(11)
-            .fontColor('#62727A')
+            .fontColor(ThemeTokens.muted(this.currentTheme))
 
           Text(this.nextScheduleTitle)
             .fontSize(15)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#182126')
+            .fontColor(ThemeTokens.text(this.currentTheme))
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .margin({ top: 4 })
 
           Text(this.nextScheduleWindow)
             .fontSize(11)
-            .fontColor('#62727A')
+            .fontColor(ThemeTokens.muted(this.currentTheme))
             .margin({ top: 3 })
         }
         .alignItems(HorizontalAlign.Start)
@@ -660,16 +728,18 @@ struct FocusPage {
       }
       .width('100%')
       .padding({ left: 12, right: 12, top: 12, bottom: 12 })
-      .backgroundColor('#F0F4F3')
+      .backgroundColor(ThemeTokens.subtle(this.currentTheme))
+      .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
       .borderRadius(12)
       .margin({ top: 14 })
     } else {
       Text('今天暂时没有后续时间块，可以回到 Today 检查时间线或结束工作。')
         .fontSize(12)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .lineHeight(18)
         .padding({ left: 12, right: 12, top: 12, bottom: 12 })
-        .backgroundColor('#F0F4F3')
+        .backgroundColor(ThemeTokens.subtle(this.currentTheme))
+        .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
         .borderRadius(12)
         .margin({ top: 14 })
     }
@@ -682,24 +752,25 @@ struct FocusPage {
         Text('这段完成了')
           .fontSize(24)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#182126')
+          .fontColor(ThemeTokens.text(this.currentTheme))
           .margin({ bottom: 8 })
 
         Text(this.focusTitle)
           .fontSize(13)
-          .fontColor('#62727A')
+          .fontColor(ThemeTokens.muted(this.currentTheme))
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .margin({ bottom: 14 })
 
         Row() {
-          this.CompletionMetric(`${this.duration}m`, '计划', '#182126')
+          this.CompletionMetric(`${this.duration}m`, '计划', ThemeTokens.text(this.currentTheme))
           this.CompletionMetric(`${this.completionActualMinutes}m`, '实际', '#46AFA5')
           this.CompletionMetric(this.getCompletionDeltaText(), '偏差', this.getCompletionDeltaColor())
         }
         .width('100%')
         .padding({ left: 12, right: 12, top: 12, bottom: 12 })
-        .backgroundColor('#F7F8F6')
+        .backgroundColor(ThemeTokens.mist(this.currentTheme))
+        .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
         .borderRadius(12)
 
         this.NextBlockPreview()
@@ -707,7 +778,9 @@ struct FocusPage {
         TextArea({ placeholder: '记录完成了什么，或者下次从哪里继续', text: this.reflection })
           .width('100%')
           .height(96)
-          .backgroundColor('#F7F8F6')
+          .fontColor(ThemeTokens.text(this.currentTheme))
+          .backgroundColor(ThemeTokens.mist(this.currentTheme))
+          .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
           .borderRadius(10)
           .margin({ top: 14 })
           .onChange((value: string) => {
@@ -720,7 +793,7 @@ struct FocusPage {
             .fontSize(13)
             .fontColor('#256D85')
             .fontWeight(FontWeight.Medium)
-            .backgroundColor('#EAF2F5')
+            .backgroundColor(ThemeTokens.selectedSurface(this.currentTheme))
             .borderRadius(12)
             .layoutWeight(1)
             .onClick(() => {
@@ -749,14 +822,17 @@ struct FocusPage {
       }
       .width('90%')
       .padding({ left: 20, right: 20, top: 24, bottom: 20 })
-      .backgroundColor('#FFFFFF')
+      .backgroundColor(ThemeTokens.surface(this.currentTheme))
+      .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
       .borderRadius(16)
-      .shadow({ radius: 24, color: '#00000033', offsetX: 0, offsetY: 12 })
+      .shadow({ radius: 24, color: '#33000000', offsetX: 0, offsetY: 12 })
     }
   }
 
   build() {
     Stack() {
+      this.FocusBackground()
+
       Column() {
         this.Header()
         this.ContextCard()
@@ -764,7 +840,6 @@ struct FocusPage {
       }
       .width('100%')
       .height('100%')
-      .backgroundColor('#111C22')
 
       if (this.showCompletionDialog) {
         Column() {
@@ -774,11 +849,11 @@ struct FocusPage {
         .height('100%')
         .justifyContent(FlexAlign.Center)
         .alignItems(HorizontalAlign.Center)
-        .backgroundColor('#111C22CC')
+        .backgroundColor('#B8061116')
       }
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#111C22')
+    .backgroundColor(this.currentTheme.isDark ? '#071216' : ThemeTokens.canvas(this.currentTheme))
   }
 }

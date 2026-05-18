@@ -1,6 +1,6 @@
 # Flow State Master Feature Checklist
 
-Updated: 2026-05-16
+Updated: 2026-05-17
 
 This is the execution checklist for Flow State. Future work should be chosen from this file, then reflected back into `DEVELOPMENT_PROGRESS.md` after implementation.
 
@@ -15,7 +15,7 @@ Status legend:
 
 Current estimated completion for a high-quality first usable app: **about 99%**.
 
-This does not mean every ambitious feature is 99% done. It means the core collect -> schedule -> focus -> review loop is now usable, Focus completion is clearer, local data has a versioned migration path, repeated task-depth data logic has a shared contract, page navigation has been moved behind a UIContext Router boundary, app startup now waits for local data/theme initialization before mounting the main tabs, the main loop now has clearer next-step actions and empty-input states, bottom tabs are more distinguishable, Today has a state-aware next-action card, Plan can now see both Inbox and future schedule sources and can pull future work into today when Inbox is empty, Settings exposes the product mainline, local data status, and honest experience/release status without over-promising system reminders, routed pages no longer use exported `@Entry` components, obsolete Home/Task/Records migration pages are no longer shipped, Review now supports both today and this-week scopes with a lightweight weekly rhythm chart plus a cleaner empty-state guide, device QA now has a concrete checklist, and release handoff state is documented. Remaining work is mostly device testing, release signing, reminder/system capabilities, and secondary organization.
+This does not mean every ambitious feature is 99% done. It means the core collect -> schedule -> focus -> review loop is now usable, Focus completion is clearer, local data has a versioned migration path, repeated task-depth data logic has a shared contract, page navigation has been moved behind a UIContext Router boundary, modal detail sheets now hide the root bottom tab bar while they are open, app startup now waits for local data/theme initialization before mounting the main tabs, theme selection now changes the major page surfaces through shared tokens, dark mode now has softer blue-gray surfaces and readable near-white text, Focus has a more premium natural-atmosphere execution surface, the main loop now has clearer next-step actions and empty-input states, Today and Review now establish the Layered Paper card system for the rest of the app, bottom tabs are more distinguishable, Today has a state-aware next-action card, Plan can now see both Inbox and future schedule sources and can pull future work into today when Inbox is empty, Settings exposes the product mainline, local data status, and honest experience/release status without over-promising system reminders, routed pages no longer use exported `@Entry` components, obsolete Home/Task/Records migration pages are no longer shipped, Review now supports both today and this-week scopes with a lightweight weekly rhythm chart plus a cleaner empty-state guide, device QA now has a concrete checklist, and release handoff state is documented. Remaining work is mostly device testing, release signing, reminder/system capabilities, secondary organization, and final device-led visual tuning.
 
 Estimated remaining work to reach a polished first release:
 
@@ -26,7 +26,7 @@ Estimated remaining work to reach a polished first release:
 | Reminder/system capability review | 4% | Reminder preferences are honest in Settings; real reminders still need official HarmonyOS API work. |
 | Projects/tags or light organization | 3% | Useful later, but should not complicate the daily loop now. |
 | Device/runtime QA and signing | 3% | Static build is cleaner and the device QA checklist exists; device route stack, keyboard, picker, sheet height, and signing still need final verification. |
-| Final visual/interaction polish | 0% | Main-loop copy and next actions are cleaner; device testing should drive any last adjustments. |
+| Final visual/interaction polish | 1% | Theme-visible surfaces, dark-mode contrast, Focus atmosphere, ArkUI alpha-color handling, Layered Paper card hierarchy for Today/Review, Focus safe-area controls, key metric-card typography, editing-sheet form controls, and modal/tab-bar hierarchy have been upgraded; remaining polish should come from real device screenshots and tap testing. |
 
 ## P0: Core Daily Loop
 
@@ -49,27 +49,29 @@ Estimated remaining work to reach a polished first release:
 | Inbox | Delete Inbox task | ✅ | Existing task deletion path. | Add archive later if needed. |
 | Plan | Guided five-step planning ritual | ✅ | Review / choose / estimate / order / start flow exists, with source awareness for Inbox and scheduled-later work. | Tighten copy only after device testing. |
 | Plan | Planning source panel | ✅ | Plan shows Inbox count, future schedule count, today's planned minutes, can move a future schedule into today while preserving history, and now treats future work as the next step when Inbox is empty. | Device-test source actions. |
-| Plan | Capacity-aware auto-plan suggestions | ✅ | `AutoPlanner` respects existing blocks and capacity. | Add routines as an auto-source later if it stays simple. |
+| Plan | Capacity-aware auto-plan suggestions | ✅ | `AutoPlanner` respects existing blocks and capacity, and Plan now explains the priority/order/gap logic in the UI. | Add routines as an auto-source later if it stays simple. |
 | Plan | Select, exclude, reorder, and resize suggestions | ✅ | Suggestions are editable before applying. | Keep controls compact. |
 | Plan | Handoff to Focus after planning | ✅ | First created block can auto-start Focus. | Keep the handoff obvious. |
 | Future | Tomorrow / this week / later groups | ✅ | `UpcomingPage.ets` owns scheduled-later work. | Add calendar views later. |
 | Future | Move future item to Today or back to Inbox | ✅ | Schedule update/delete flows active. | Preserve clear feedback. |
 | Future | Edit future item and linked task depth | ✅ | Future editor mirrors Today simple disclosure. | Extract shared editor later. |
-| Focus | Linked timer from schedule/task | ✅ | Focus accepts schedule/task params, can auto-start from Plan/Today, and previews the next block after completion. | Device-test auto-start and next-block handoff. |
+| Focus | Linked timer from schedule/task | ✅ | Focus accepts schedule/task params, can auto-start from Plan/Today, previews the next block after completion, and now uses a local natural landscape plus glass-like execution surface. | Device-test auto-start, readability, and next-block handoff. |
 | Focus | Save session and update schedule completion | ✅ | Completion freezes actual minutes, updates the linked schedule, and can return to Today or start the next block. | Device-test completion edge cases later. |
 | Review | Basic narrative and real data metrics | ✅ | Review uses focus/change/archive data, explains plan quality, can switch between today and this week, shows a weekly rhythm chart, and presents a task-oriented guide when there is no reviewable data yet. | Device-test range switching and empty-state actions. |
-| Navigation | UIContext Router boundary | ✅ | `NavigationManager` wraps `UIContext.getRouter()` and typed route params for page jumps/back navigation. | Device-test stack/back behavior. |
+| Navigation | UIContext Router boundary | ✅ | `NavigationManager` wraps `UIContext.getRouter()`, typed route params, tab switching, and replace navigation for Focus handoff so main pages no longer stack repeatedly. | Device-test stack/back behavior. |
 | Navigation | Startup readiness guard | ✅ | Root `Index` shows a local-data loading state until Preferences and theme initialization complete, then mounts the main tabs. | Device-test first launch timing. |
-| Navigation | Distinguishable bottom tabs | ✅ | Review no longer shares the same clock glyph as Future. | Device-test symbol rendering. |
+| Navigation | Distinguishable bottom tabs | ✅ | Review no longer shares the same clock glyph as Future; Today settings now uses a gear entry icon. | Device-test symbol rendering. |
+| Navigation | Modal sheets cover bottom navigation | ✅ | Today schedule editing, Inbox triage, and Future schedule editing set a shared tab-bar-covered state so the root `Tabs` shell collapses the bottom bar while detail sheets are open. | Device-test sheet open/close and hardware back behavior. |
 | Flow Polish | Main-loop next-step actions and disabled-looking empty states | ✅ | Today/Review have state-aware next actions; Review no longer shows a dense zero-state analytics stack; Future empty state routes to Collect/Plan; empty title buttons no longer look fully active. | Device-test with real thumb flow. |
 | Release Readiness | Route entry/component split | ✅ | Exported page components are no longer decorated with `@Entry`; each routed page has a non-exported entry wrapper. | Device-test routed pages. |
 | Release Readiness | Remove obsolete legacy pages | ✅ | `HomePage`, `TaskPage`, and `RecordsPage` are removed from active page profile/source; shipped surface is Today/Inbox/Plan/Future/Review plus Focus/Settings. | Device-test route profile. |
 | Release Readiness | Honest system-capability status | ✅ | Settings explains reminder preferences, core flow, local data, system reminder verification, and signing status. | Replace status copy after real reminders/signing ship. |
 | Release Readiness | Static handoff package | ✅ | `docs/RELEASE_HANDOFF.md` records build command, HAP path, device check, install command, and final acceptance boundary. | Use it once a device/emulator target is available. |
 | Release Readiness | User manual and quick-start guide | ✅ | `docs/USER_MANUAL.md` explains the product mental model, pages, workflows, task states, current limits, and official HarmonyOS documentation context. | Use it for first experience testing and future onboarding copy. |
-| Settings | Product mainline summary | ✅ | Settings shows the compact 收集 -> 安排 -> 专注 -> 复盘 loop without turning into a guide page. | Keep concise. |
+| Settings | Product mainline summary | ✅ | Settings shows the compact 收集 -> 安排 -> 专注 -> 复盘 loop without turning into a guide page, and theme changes now visibly affect root/Today/Inbox/Plan/Future/Review/Settings surfaces. | Keep concise and verify contrast by theme. |
 | Settings | Local data status | ✅ | Settings shows schema version and local counts for tasks, schedules, focus sessions, and archives. | Add export/import only after permission review. |
 | Settings | Experience/release status | ✅ | Settings shows build, device QA, system reminder, and signing readiness honestly, and the About card uses experience-version wording. | Replace copy after device QA/signing pass. |
+| Brand | App name, icon, and user-facing language | ✅ | Product name is now `流序`; the provided icon is wired to the app module; user-visible copy avoids `P0/P1/P2` and implementation wording. | Keep copy short during future feature work. |
 
 ## P1: Mature Planning
 

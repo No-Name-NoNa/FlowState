@@ -214,9 +214,9 @@ export class AutoPlanner {
   }
 
   private static buildReason(priority: Priority, duration: number): string {
-    if (priority === 'P0') return `优先处理 · ${duration}m`;
-    if (priority === 'P1') return `重要推进 · ${duration}m`;
-    return `轻量安排 · ${duration}m`;
+    if (priority === 'P0') return `优先处理 · 避开冲突 · ${duration}m`;
+    if (priority === 'P1') return `重要事项 · 容量内 · ${duration}m`;
+    return `常规安排 · 补位 · ${duration}m`;
   }
 
   private static clampDuration(duration: number): number {

@@ -35,7 +35,7 @@ export class TaskColors {
   static gray: string = '#7D8C96';
   static green: string = '#58B7AE';
   static orange: string = '#8EA1AE';
-  static red: string = '#9C5B5B';
+  static red: string = '#6F7F88';
   static purple: string = '#7E86A8';
 }
 
@@ -66,42 +66,42 @@ export const PRESET_THEMES: ThemeConfig[] = [
   },
   {
     id: 'dark',
-    name: '深色主题',
-    primaryColor: '#0A84FF',
-    backgroundColor: '#1C1C1E',
-    cardColor: '#2C2C2E',
-    textColor: '#F5F5F7',
-    accentColor: '#30D158',
+    name: '夜航主题',
+    primaryColor: '#9BD7E2',
+    backgroundColor: '#17262D',
+    cardColor: '#22333B',
+    textColor: '#F7FBFB',
+    accentColor: '#88DDD0',
     isDark: true
   },
   {
     id: 'warm',
-    name: '石墨主题',
-    primaryColor: '#2F6F86',
-    backgroundColor: '#F4F7F8',
+    name: '石灰主题',
+    primaryColor: '#506B78',
+    backgroundColor: '#F3F6F4',
     cardColor: '#FFFFFF',
-    textColor: '#151C22',
-    accentColor: '#58B7AE',
+    textColor: '#172126',
+    accentColor: '#8FB8AE',
     isDark: false
   },
   {
     id: 'cool',
-    name: '冷色主题',
-    primaryColor: '#5856D6',
-    backgroundColor: '#F0F4F8',
+    name: '冰川主题',
+    primaryColor: '#3E7C92',
+    backgroundColor: '#EFF5F7',
     cardColor: '#FFFFFF',
-    textColor: '#1A1A1A',
-    accentColor: '#64D2FF',
+    textColor: '#162229',
+    accentColor: '#6DAFBB',
     isDark: false
   },
   {
     id: 'nature',
-    name: '自然主题',
-    primaryColor: '#34C759',
-    backgroundColor: '#F0F9F4',
+    name: '薄荷主题',
+    primaryColor: '#347C72',
+    backgroundColor: '#F0F8F6',
     cardColor: '#FFFFFF',
-    textColor: '#1F3A2C',
-    accentColor: '#87CEEB',
+    textColor: '#17312E',
+    accentColor: '#86C8BD',
     isDark: false
   }
 ];
