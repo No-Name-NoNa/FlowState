@@ -201,9 +201,9 @@ export struct ReviewPage {
 
   getNextActionHint(): string {
     const label = this.getRangeLabel();
-    if (this.plannedBlockCount === 0) return `${label}还没有可复盘的时间线，先回到规划，把下一段安排出来。`;
-    if (this.completedScheduleCount === 0) return `${label}已经有计划但还没有完成记录，回到今天页开始下一段最直接。`;
-    if (this.getPlanningChangeCount() > 2) return `${label}调整较多，下一次规划先少排一点，让时间线更稳。`;
+    if (this.plannedBlockCount === 0) return `${label}未成时间线，先定下一段。`;
+    if (this.completedScheduleCount === 0) return `${label}已有计划，先完成一段。`;
+    if (this.getPlanningChangeCount() > 2) return `${label}多有调整，下次宜轻。`;
     return '复盘已经足够，下一步回到今天继续执行，或打开规划微调剩余安排。';
   }
 
@@ -242,11 +242,11 @@ export struct ReviewPage {
       totalFocus += stat.focusMinutes;
     }
 
-    if (activeDays === 0) return '本周还没有形成稳定时间线，先把今天安排清楚就够了。';
-    if (overloadedDays > 0) return `本周有 ${overloadedDays} 天计划偏满，下次先给这些天留出缓冲。`;
-    if (activeDays <= 2) return '本周任务集中在少数几天，适合把可拆分任务往空白日分摊。';
+    if (activeDays === 0) return '本周未成节奏，先把今日安顿好。';
+    if (overloadedDays > 0) return `本周有 ${overloadedDays} 天偏满，下次留白更稳。`;
+    if (activeDays <= 2) return '任务偏聚，宜分散到空白日。';
     if (totalFocus > 0) return '本周已经有可复用的节奏，下一步是保留稳定日期，减少临时改动。';
-    return '本周有规划但执行样本还少，先完成一个时间块再复盘会更准。';
+    return '先完成一段，复盘才有凭据。';
   }
 
   navigateTo(url: string) {
@@ -262,13 +262,25 @@ export struct ReviewPage {
         .fontSize(30)
         .fontWeight(FontWeight.Bold)
         .fontColor(ThemeTokens.text(this.currentTheme))
+        .textAlign(TextAlign.Center)
+        .width('100%')
 
-      Text(`${this.getRangeLabel()}复盘要解释节奏，而不是只摆几组数字。`)
+      Text(`${this.getRangeLabel()}复盘，温故知新。`)
         .fontSize(12)
         .fontColor(ThemeTokens.muted(this.currentTheme))
+        .textAlign(TextAlign.Center)
+        .width('100%')
         .margin({ top: 4 })
+
+      Text()
+        .width(42)
+        .height(3)
+        .borderRadius(2)
+        .backgroundColor(this.currentTheme.primaryColor)
+        .opacity(0.72)
+        .margin({ top: 10 })
     }
-    .alignItems(HorizontalAlign.Start)
+    .alignItems(HorizontalAlign.Center)
     .width('100%')
     .padding({ left: 20, right: 20, top: 18, bottom: 8 })
   }
@@ -292,9 +304,10 @@ export struct ReviewPage {
       .textAlign(TextAlign.Center)
       .height(36)
       .layoutWeight(1)
-      .backgroundColor(this.selectedRange === range ? '#256D85' : ThemeTokens.paperSoft(this.currentTheme))
-      .border({ width: 1, color: this.selectedRange === range ? '#256D85' : ThemeTokens.paperBorder(this.currentTheme) })
-      .borderRadius(10)
+      .backgroundColor(this.selectedRange === range ? ThemeTokens.actionSurface(this.currentTheme) : ThemeTokens.paperSoft(this.currentTheme))
+      .border({ width: 1, color: this.selectedRange === range ? ThemeTokens.actionSurface(this.currentTheme) : ThemeTokens.paperBorder(this.currentTheme) })
+      .borderRadius(16)
+      .shadow({ radius: this.selectedRange === range ? 12 : 0, color: ThemeTokens.paperThinShadow(this.currentTheme), offsetX: 0, offsetY: 5 })
       .margin({ right: range === 'today' ? 8 : 0 })
       .onClick(() => {
         if (this.selectedRange !== range) {
@@ -348,11 +361,11 @@ export struct ReviewPage {
     }
     .alignItems(HorizontalAlign.Start)
     .width('100%')
-    .padding({ left: 18, right: 18, top: 18, bottom: 18 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 20 })
     .backgroundColor(ThemeTokens.paper(this.currentTheme))
-    .borderRadius(18)
+    .borderRadius(24)
     .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
-    .shadow({ radius: 24, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 11 })
+    .shadow({ radius: 32, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 15 })
     .margin({ top: 12 })
   }
 
@@ -383,11 +396,11 @@ export struct ReviewPage {
     }
     .alignItems(HorizontalAlign.Start)
     .width('100%')
-    .padding({ left: 18, right: 18, top: 18, bottom: 18 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 20 })
     .backgroundColor(ThemeTokens.paper(this.currentTheme))
-    .borderRadius(18)
+    .borderRadius(24)
     .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
-    .shadow({ radius: 24, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 11 })
+    .shadow({ radius: 32, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 15 })
   }
 
   @Builder
@@ -440,11 +453,11 @@ export struct ReviewPage {
     }
     .alignItems(HorizontalAlign.Start)
     .width('100%')
-    .padding({ left: 18, right: 18, top: 18, bottom: 18 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 20 })
     .backgroundColor(ThemeTokens.paper(this.currentTheme))
-    .borderRadius(18)
+    .borderRadius(24)
     .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
-    .shadow({ radius: 26, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 12 })
+    .shadow({ radius: 34, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 16 })
     .margin({ top: 12 })
   }
 
@@ -456,15 +469,15 @@ export struct ReviewPage {
         .fontWeight(FontWeight.Bold)
         .fontColor(ThemeTokens.text(this.currentTheme))
 
-      Text('复盘需要至少一个被安排或执行过的时间块。先完成下面任一步，回来这里就会有真实解释。')
+      Text('有行迹，才有复盘。先让一段时间落地。')
         .fontSize(12)
         .fontColor(ThemeTokens.muted(this.currentTheme))
         .lineHeight(18)
         .margin({ top: 8, bottom: 12 })
 
-      this.EmptyGuideRow('1', '收集任务', '把脑子里的事先放进收集箱。', '#8A7CC3')
-      this.EmptyGuideRow('2', '安排时间', '把任务放到今天或本周的具体时间。', '#256D85')
-      this.EmptyGuideRow('3', '开始专注', '完成一次专注后，复盘会解释节奏。', '#46AFA5')
+      this.EmptyGuideRow('1', '收集任务', '念起即记，不扰当下。', '#8A7CC3')
+      this.EmptyGuideRow('2', '安排时间', '事入其时，心中有序。', '#256D85')
+      this.EmptyGuideRow('3', '开始专注', '做完一段，节奏自现。', '#46AFA5')
 
       Row() {
         Button('去收集')
@@ -555,11 +568,11 @@ export struct ReviewPage {
     }
     .alignItems(HorizontalAlign.Start)
     .layoutWeight(1)
-    .padding({ left: 9, right: 8, top: 8, bottom: 8 })
+    .padding({ left: 10, right: 9, top: 10, bottom: 10 })
     .backgroundColor(ThemeTokens.paperInset(this.currentTheme))
     .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
-    .borderRadius(12)
-    .shadow({ radius: 10, color: ThemeTokens.paperThinShadow(this.currentTheme), offsetX: 0, offsetY: 4 })
+    .borderRadius(16)
+    .shadow({ radius: 14, color: ThemeTokens.paperThinShadow(this.currentTheme), offsetX: 0, offsetY: 6 })
     .margin({ right: 7 })
   }
 
@@ -611,11 +624,11 @@ export struct ReviewPage {
     }
     .alignItems(HorizontalAlign.Start)
     .width('100%')
-    .padding({ left: 18, right: 18, top: 18, bottom: 18 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 20 })
     .backgroundColor(ThemeTokens.paper(this.currentTheme))
-    .borderRadius(18)
+    .borderRadius(24)
     .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
-    .shadow({ radius: 26, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 12 })
+    .shadow({ radius: 34, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 16 })
     .margin({ top: 12 })
   }
 
@@ -806,7 +819,7 @@ export struct ReviewPage {
         .fontColor(ThemeTokens.text(this.currentTheme))
 
       if (this.changes.length === 0 && this.archiveEntries.length === 0) {
-        Text(`${this.getRangeLabel()}还没有调整记录。完成、顺延、删除时间块后，这里会显示原因和时间。`)
+        Text(`${this.getRangeLabel()}暂无变更，节奏尚稳。`)
           .fontSize(12)
           .fontColor(ThemeTokens.muted(this.currentTheme))
           .lineHeight(18)
@@ -852,7 +865,7 @@ export struct ReviewPage {
         }
         .width('100%')
 
-        Text(detail.length > 0 ? detail : '没有备注')
+        Text(detail.length > 0 ? detail : '无备注')
           .fontSize(11)
           .fontColor(ThemeTokens.muted(this.currentTheme))
           .margin({ top: 3 })

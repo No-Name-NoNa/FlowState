@@ -45,11 +45,11 @@ export struct PlanPage {
   @State excludedAutoPlanTaskIds: string[] = [];
 
   private readonly steps: PlanningStep[] = [
-    { title: '回看', description: '先确认今天发生了什么，再决定下一步。', accent: '#607385' },
-    { title: '选择', description: '从收集箱挑一个可以进入今天的任务。', accent: '#8A7CC3' },
-    { title: '估算', description: '检查计划量，不让一天从开始就超载。', accent: '#8EA1AE' },
-    { title: '排序', description: '把任务排成可以自然推进的时间线。', accent: '#46AFA5' },
-    { title: '开始', description: '确认第一段，回到今天执行。', accent: '#256D85' }
+    { title: '回看', description: '知其所来，方知所往。', accent: '#607385' },
+    { title: '选择', description: '取其要者，先入今日。', accent: '#8A7CC3' },
+    { title: '估算', description: '留有余地，方能从容。', accent: '#8EA1AE' },
+    { title: '排序', description: '事有先后，行有节奏。', accent: '#46AFA5' },
+    { title: '开始', description: '定下一段，即刻前行。', accent: '#256D85' }
   ];
 
   async aboutToAppear() {
@@ -174,17 +174,17 @@ export struct PlanPage {
   }
 
   getFutureSourceMeta(schedule: Schedule): string {
-    return `${this.getFutureSourceLabel(schedule)} ${TimeFormatter.formatTime(this.getScheduleDueAt(schedule))} · ${schedule.estimatedTime}m · ${schedule.priority}`;
+    return `${this.getFutureSourceLabel(schedule)} ${TimeFormatter.formatTime(this.getScheduleDueAt(schedule))} · ${schedule.estimatedTime}m · ${this.getPriorityLabel(schedule.priority)}`;
   }
 
   getSourcePanelHint(): string {
     if (this.inboxCount === 0 && this.futureCandidateSchedules.length === 0) {
-      return '现在没有待安排来源。先去收集箱写下一件事，规划页就会给出可执行安排。';
+      return '暂无可排之事。先写下一件，今日才有起点。';
     }
     if (this.futureCandidateSchedules.length > 0) {
-      return '规划不只看收集箱，也可以把未来事项提前到今天。先拉回最重要的一件，再让今天保持轻。';
+      return '未来可前移，今日仍需轻。';
     }
-    return '收集箱里的任务可以自动编排到今天。先处理少量高优先级事项，避免把一天塞满。';
+    return '少排一分，多留一分从容。';
   }
 
   buildPlanMoveChange(schedule: Schedule, toDueAt: number): ScheduleChange {
@@ -275,6 +275,12 @@ export struct PlanPage {
     if (priority === 'P0') return 0;
     if (priority === 'P1') return 1;
     return 2;
+  }
+
+  getPriorityLabel(priority: string): string {
+    if (priority === 'P0') return '优先';
+    if (priority === 'P1') return '重要';
+    return '常规';
   }
 
   getWorkloadStatus(): string {
@@ -489,14 +495,14 @@ export struct PlanPage {
 
   getHandoffMeta(): string {
     const schedule = this.getHandoffSchedule();
-    if (!schedule) return '回到今天查看完整时间线';
-    return `${this.getScheduleWindowText(schedule)} · ${schedule.estimatedTime} 分钟 · ${schedule.priority}`;
+    if (!schedule) return '回到今天，查看全局';
+    return `${this.getScheduleWindowText(schedule)} · ${schedule.estimatedTime} 分钟 · ${this.getPriorityLabel(schedule.priority)}`;
   }
 
   getHandoffCopy(): string {
     const schedule = this.getHandoffSchedule();
     if (!schedule) return '计划已经生成，下一步回到今天检查完整顺序。';
-    return '计划已经落到今天。可以直接开始第一段，也可以先回到今天看完整时间线。';
+    return '计划已落地，第一段可启程。';
   }
 
   startFocusFromPlan(schedule: Schedule) {
@@ -577,7 +583,7 @@ export struct PlanPage {
     const reflowed = AutoPlanner.reflowTodaySuggestions(suggestions, this.todaySchedules, range[0], Date.now());
     if (reflowed.length === suggestions.length) {
       this.autoPlanSuggestions = reflowed;
-      this.planFeedbackText = '已重新计算建议时间线';
+      this.planFeedbackText = '节奏已重排';
       return;
     }
     this.planFeedbackText = '当前空档放不下这个调整';
@@ -594,14 +600,14 @@ export struct PlanPage {
   }
 
   getAutoPlanHint(): string {
-    if (this.conflicts.length > 0) return '今天的时间线已经有重叠，先调整冲突，再生成新的安排。';
-    if (this.inboxTasks.length === 0 && this.hasFutureCandidates()) return '收集箱暂时为空，可以先移入一个未来事项。';
-    if (this.inboxTasks.length === 0) return '收集箱没有待安排任务，可以先捕捉下一件事。';
-    if (this.excludedAutoPlanTaskIds.length === this.inboxTasks.length) return '当前收集箱任务都被排除，可以先恢复一项，或去收集箱补充新任务。';
-    if (this.autoPlanSuggestions.length === 0 && this.autoPlanRemainingMinutes <= 0) return `今天 ${this.getDailyCapacity()} 分钟容量已经用完，建议先删减或移到明天。`;
-    if (this.autoPlanSuggestions.length === 0) return '剩余容量存在，但没有足够连续的空档容纳新的专注块。';
-    if (this.getSelectedAutoPlanCount() === 0) return '先勾选适合今天节奏的建议；不想今天处理的任务可以排除，系统会用后面的任务补位。';
-    return `已选 ${this.getSelectedAutoPlanMinutes()} 分钟，可上移、下移或微调时长；应用后还剩 ${this.getSelectedAutoPlanRemainingAfterMinutes()} 分钟容量。`;
+    if (this.conflicts.length > 0) return '时段相叠，先理顺再前行。';
+    if (this.inboxTasks.length === 0 && this.hasFutureCandidates()) return '收集箱已清，可从未来取一件入今日。';
+    if (this.inboxTasks.length === 0) return '暂无待排之事，先收一念。';
+    if (this.excludedAutoPlanTaskIds.length === this.inboxTasks.length) return '今日暂不承接，恢复一项即可继续。';
+    if (this.autoPlanSuggestions.length === 0 && this.autoPlanRemainingMinutes <= 0) return `今日 ${this.getDailyCapacity()} 分钟已满，减一事，留一隙。`;
+    if (this.autoPlanSuggestions.length === 0) return '有余量，但缺一段完整的空白。';
+    if (this.getSelectedAutoPlanCount() === 0) return '择其合拍者入今日，其余暂且留后。';
+    return `已定 ${this.getSelectedAutoPlanMinutes()} 分钟，仍余 ${this.getSelectedAutoPlanRemainingAfterMinutes()} 分钟可周转。`;
   }
 
   getAutoPlanStatusColor(): string {
@@ -832,13 +838,25 @@ export struct PlanPage {
         .fontSize(30)
         .fontWeight(FontWeight.Bold)
         .fontColor(ThemeTokens.text(this.currentTheme))
+        .textAlign(TextAlign.Center)
+        .width('100%')
 
-      Text('把今天变成一个可执行的时间线，而不是一张越来越长的清单。')
+      Text('先定其序，再行其事。')
         .fontSize(12)
         .fontColor(ThemeTokens.muted(this.currentTheme))
+        .textAlign(TextAlign.Center)
+        .width('100%')
         .margin({ top: 4 })
+
+      Text()
+        .width(42)
+        .height(3)
+        .borderRadius(2)
+        .backgroundColor(this.currentTheme.primaryColor)
+        .opacity(0.72)
+        .margin({ top: 10 })
     }
-    .alignItems(HorizontalAlign.Start)
+    .alignItems(HorizontalAlign.Center)
     .width('100%')
     .padding({ left: 20, right: 20, top: 18, bottom: 8 })
   }
@@ -852,11 +870,13 @@ export struct PlanPage {
             .fontSize(12)
             .fontWeight(FontWeight.Bold)
             .fontColor(this.activeStep === index + 1 ? '#FFFFFF' : (this.activeStep > index + 1 ? step.accent : ThemeTokens.secondary(this.currentTheme)))
-            .width(32)
-            .height(32)
+            .width(34)
+            .height(34)
             .textAlign(TextAlign.Center)
             .backgroundColor(this.activeStep === index + 1 ? step.accent : ThemeTokens.subtle(this.currentTheme))
-            .borderRadius(16)
+            .borderRadius(17)
+            .border({ width: 1, color: this.activeStep === index + 1 ? step.accent : ThemeTokens.cardBorder(this.currentTheme) })
+            .shadow({ radius: this.activeStep === index + 1 ? 12 : 0, color: ThemeTokens.paperThinShadow(this.currentTheme), offsetX: 0, offsetY: 5 })
             .margin({ right: 8 })
             .onClick(() => {
               this.activeStep = index + 1;
@@ -879,11 +899,11 @@ export struct PlanPage {
     }
     .alignItems(HorizontalAlign.Start)
     .width('100%')
-    .padding({ left: 18, right: 18, top: 18, bottom: 18 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 20 })
     .backgroundColor(ThemeTokens.elevated(this.currentTheme))
-    .borderRadius(18)
+    .borderRadius(24)
     .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
-    .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 32, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 15 })
   }
 
   @Builder
@@ -924,7 +944,7 @@ export struct PlanPage {
 
       Progress({ value: this.getWorkloadPercent(), total: 100, type: ProgressType.Linear })
         .width('100%')
-        .height(6)
+        .height(8)
         .color(this.getWorkloadColor())
         .backgroundColor(ThemeTokens.hairline(this.currentTheme))
         .margin({ top: 14 })
@@ -939,11 +959,11 @@ export struct PlanPage {
       .margin({ top: 16 })
     }
     .width('100%')
-    .padding({ left: 18, right: 18, top: 18, bottom: 18 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 20 })
     .backgroundColor(ThemeTokens.elevated(this.currentTheme))
-    .borderRadius(18)
+    .borderRadius(24)
     .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
-    .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 32, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 15 })
     .margin({ top: 12 })
   }
 
@@ -961,6 +981,12 @@ export struct PlanPage {
     }
     .alignItems(HorizontalAlign.Start)
     .layoutWeight(1)
+    .padding({ left: 10, right: 10, top: 10, bottom: 10 })
+    .backgroundColor(ThemeTokens.paperInset(this.currentTheme))
+    .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+    .borderRadius(16)
+    .shadow({ radius: 12, color: ThemeTokens.paperThinShadow(this.currentTheme), offsetX: 0, offsetY: 5 })
+    .margin({ right: 7 })
   }
 
   @Builder
@@ -1086,7 +1112,7 @@ export struct PlanPage {
         }
         .width('100%')
 
-        Text('先解决重叠时间，再继续往今天加入新任务。')
+        Text('先让时段归位，再添新事。')
           .fontSize(12)
           .fontColor(ThemeTokens.muted(this.currentTheme))
           .lineHeight(18)
@@ -1149,7 +1175,7 @@ export struct PlanPage {
             .fontWeight(FontWeight.Bold)
             .fontColor(ThemeTokens.text(this.currentTheme))
 
-          Text('会优先安排紧急和重要事项，并避开已有时间。')
+          Text('择要而行，避繁就简。')
             .fontSize(12)
             .fontColor(ThemeTokens.muted(this.currentTheme))
             .lineHeight(18)
@@ -1457,29 +1483,29 @@ export struct PlanPage {
   }
 
   getDecisionHint(): string {
-    if (this.activeStep === 1) return '先看复盘，避免把昨天已经暴露的问题带进今天。';
+    if (this.activeStep === 1) return '先观昨日，再定今日。';
     if (this.activeStep === 2) return this.getStepTwoDecisionHint();
-    if (this.conflicts.length > 0) return '今天有时间块重叠，先去今天页调整冲突，再继续安排新的任务。';
-    if (this.activeStep === 3) return this.carryOverSchedules.length > 0 ? `明天已有 ${this.carryOverSchedules.length} 个结转块，今天继续加任务前要先看负荷。` : `负荷超过 ${this.getDailyCapacity()} 分钟时，今天会更容易失控。先删减再开始。`;
-    if (this.activeStep === 4) return '进入今天页后，点按时间块可以继续微调顺序和时间。';
-    return '计划已经足够具体，下一步就是开始第一个时间块。';
+    if (this.conflicts.length > 0) return '时段相叠，先让今日归位。';
+    if (this.activeStep === 3) return this.carryOverSchedules.length > 0 ? `明天已有 ${this.carryOverSchedules.length} 段待续，今日宜轻。` : `超过 ${this.getDailyCapacity()} 分钟时，宜减不宜加。`;
+    if (this.activeStep === 4) return '顺序已成，细处可再微调。';
+    return '计划已明，第一步便是开始。';
   }
 
   getStepTwoDecisionHint(): string {
     if (this.hasAutoPlanSuggestions()) {
       if (this.getSelectedAutoPlanCount() > 0) {
-        return `推荐先安排已选的 ${this.getSelectedAutoPlanCount()} 个时间块，让今天先成形。`;
+        return `先定 ${this.getSelectedAutoPlanCount()} 段，让今日成形。`;
       }
-      return '先选择适合今天的建议，不合适的任务可以排除。';
+      return '择其合拍，余者暂缓。';
     }
     if (this.inboxTasks.length > 0) {
-      return `推荐先安排：${this.inboxTasks[0].title}`;
+      return `先从这一件开始：${this.inboxTasks[0].title}`;
     }
     const candidate = this.getFirstFutureCandidate();
     if (candidate) {
-      return `收集箱为空，但未来已有安排。可以先提前：${candidate.title}`;
+      return `未来已有一事，可提前入今日：${candidate.title}`;
     }
-    return '收集箱为空，可以先捕捉一个任务。';
+    return '收集箱为空，先写下一件事。';
   }
 
   @Builder
@@ -1577,7 +1603,7 @@ export struct PlanPage {
         .margin({ bottom: 8 })
 
       if (this.todaySchedules.length === 0) {
-        Text('还没有时间块。从收集箱安排一个任务后，这里会出现今天的执行顺序。')
+        Text('一事入时，今日有序。')
           .fontSize(12)
           .fontColor(ThemeTokens.muted(this.currentTheme))
           .lineHeight(18)
@@ -1637,7 +1663,7 @@ export struct PlanPage {
         }
         .width('100%')
 
-        Text('今天错过的时间块，会先放到明天等待确认。')
+        Text('今日未竟，明日再续。')
           .fontSize(12)
           .fontColor(ThemeTokens.muted(this.currentTheme))
           .lineHeight(18)

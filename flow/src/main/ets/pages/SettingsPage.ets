@@ -104,7 +104,7 @@ struct SettingsPage {
           .fontWeight(FontWeight.Bold)
           .fontColor(this.currentTheme.textColor)
 
-        Text('只保留影响体验的选项')
+        Text('少即是多，顺手为先。')
           .fontSize(12)
           .fontColor(this.getMutedTextColor())
           .margin({ top: 4 })
@@ -173,7 +173,7 @@ struct SettingsPage {
   NotificationSettings() {
     Column() {
       this.SectionTitle('提醒偏好')
-      this.SectionNote('先保存偏好。真机验证后，会接入系统通知。')
+      this.SectionNote('先定偏好，提醒随心而至。')
       this.ToggleRow($r('sys.symbol.bell'), '通知偏好', this.settings.notificationEnabled, (value: boolean) => {
         this.settings.notificationEnabled = value;
         this.saveSettings();
@@ -200,9 +200,9 @@ struct SettingsPage {
     Column() {
       this.SectionTitle('应用能力')
       this.CapabilityRow('核心流程', '收集、安排、专注、复盘已经连通', '#46AFA5')
-      this.CapabilityRow('本地数据', '任务、日程、设置会保存在本机', '#46AFA5')
-      this.CapabilityRow('系统提醒', '偏好已保存，真实通知待真机验证', '#8EA1AE')
-      this.CapabilityRow('发布签名', '发布前需要配置正式签名', '#8A7CC3')
+      this.CapabilityRow('本地数据', '一切记录，留在本机', '#46AFA5')
+      this.CapabilityRow('系统提醒', '偏好已就绪，待真机接入', '#8EA1AE')
+      this.CapabilityRow('发布签名', '正式发布前完成签名', '#8A7CC3')
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
@@ -216,11 +216,11 @@ struct SettingsPage {
   ReleaseReadiness() {
     Column() {
       this.SectionTitle('体验状态')
-      this.SectionNote('当前版本适合走完整主流程体验；正式发布前还需要真机点按、签名和系统提醒能力验证。')
-      this.CapabilityRow('静态构建', 'assembleApp 当前可通过', '#46AFA5')
-      this.CapabilityRow('真机点按', '等待 hdc 识别到设备或模拟器', '#8EA1AE')
-      this.CapabilityRow('系统提醒', '偏好可保存，通知投递尚未接入', '#8EA1AE')
-      this.CapabilityRow('发布签名', '正式分发前仍需配置签名', '#8A7CC3')
+      this.SectionNote('当前适合完整体验主流程；发布前再完成真机、签名与提醒接入。')
+      this.CapabilityRow('静态构建', '构建状态稳定', '#46AFA5')
+      this.CapabilityRow('真机点按', '等待设备体验', '#8EA1AE')
+      this.CapabilityRow('系统提醒', '偏好已备，提醒待接入', '#8EA1AE')
+      this.CapabilityRow('发布签名', '发布前完成签名', '#8A7CC3')
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
@@ -234,7 +234,7 @@ struct SettingsPage {
   DataStatus() {
     Column() {
       this.SectionTitle('本地数据')
-      this.SectionNote(`当前数据结构 v${CURRENT_DATA_SCHEMA_VERSION}。任务、日程、专注和归档记录保存在本机；导入导出需要后续存储权限审查后再开放。`)
+      this.SectionNote(`数据结构 v${CURRENT_DATA_SCHEMA_VERSION}。任务、日程、专注与归档均保存在本机。`)
       Row() {
         this.DataMetric(`${this.taskCount}`, '任务')
         this.DataMetric(`${this.scheduleCount}`, '日程')

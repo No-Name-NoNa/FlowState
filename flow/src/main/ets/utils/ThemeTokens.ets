@@ -10,35 +10,35 @@ export class ThemeTokens {
   }
 
   static elevated(theme: ThemeConfig): string {
-    return theme.isDark ? '#24363F' : '#FCFEFE';
+    return theme.isDark ? '#263C45' : '#FEFFFF';
   }
 
   static paper(theme: ThemeConfig): string {
-    return theme.isDark ? '#24363F' : '#FEFFFF';
+    return theme.isDark ? '#263B44' : '#FFFFFF';
   }
 
   static paperInset(theme: ThemeConfig): string {
-    return theme.isDark ? '#1B2C34' : '#F5FAFA';
+    return theme.isDark ? '#1C3038' : '#F5FAFB';
   }
 
   static paperSoft(theme: ThemeConfig): string {
-    return theme.isDark ? '#2A3E47' : '#EEF6F6';
+    return theme.isDark ? '#2E4650' : '#F0F7F8';
   }
 
   static paperBorder(theme: ThemeConfig): string {
-    return theme.isDark ? '#405761' : '#DDE9EC';
+    return theme.isDark ? '#4B6873' : '#D9E8EC';
   }
 
   static paperHighlight(theme: ThemeConfig): string {
-    return theme.isDark ? '#4B6670' : '#FFFFFF';
+    return theme.isDark ? '#5E7D88' : '#FFFFFF';
   }
 
   static paperShadow(theme: ThemeConfig): string {
-    return theme.isDark ? '#32000000' : '#14182126';
+    return theme.isDark ? '#44000000' : '#1D16324A';
   }
 
   static paperThinShadow(theme: ThemeConfig): string {
-    return theme.isDark ? '#22000000' : '#0A182126';
+    return theme.isDark ? '#2E000000' : '#14163242';
   }
 
   static tealWash(theme: ThemeConfig): string {
@@ -58,11 +58,11 @@ export class ThemeTokens {
   }
 
   static subtle(theme: ThemeConfig): string {
-    return theme.isDark ? '#2A3E47' : '#EEF4F5';
+    return theme.isDark ? '#2D434C' : '#F0F5F6';
   }
 
   static mist(theme: ThemeConfig): string {
-    return theme.isDark ? '#1B2C34' : '#F7FAFB';
+    return theme.isDark ? '#1D3038' : '#F8FBFC';
   }
 
   static text(theme: ThemeConfig): string {
@@ -94,15 +94,15 @@ export class ThemeTokens {
   }
 
   static hairline(theme: ThemeConfig): string {
-    return theme.isDark ? '#405761' : '#DCE7EA';
+    return theme.isDark ? '#455F69' : '#D9E7EA';
   }
 
   static cardBorder(theme: ThemeConfig): string {
-    return theme.isDark ? '#405761' : '#E3EBEE';
+    return theme.isDark ? '#4B6873' : '#DCEAED';
   }
 
   static cardShadow(theme: ThemeConfig): string {
-    return theme.isDark ? '#26000000' : '#12182126';
+    return theme.isDark ? '#42000000' : '#1A17364A';
   }
 
   static slate(theme: ThemeConfig): string {
@@ -110,10 +110,38 @@ export class ThemeTokens {
   }
 
   static selectedSurface(theme: ThemeConfig): string {
-    return theme.isDark ? '#2C4853' : '#E6F0F3';
+    return theme.isDark ? '#31545F' : '#E7F3F6';
   }
 
   static shadow(theme: ThemeConfig): string {
     return ThemeTokens.cardShadow(theme);
+  }
+
+  static actionSurface(theme: ThemeConfig): string {
+    return theme.isDark ? '#DDF7F4' : '#1F7C92';
+  }
+
+  static actionText(theme: ThemeConfig): string {
+    return theme.isDark ? '#10252B' : '#FFFFFF';
+  }
+
+  static quietAction(theme: ThemeConfig): string {
+    return theme.isDark ? '#324D57' : '#E8F3F6';
+  }
+
+  static brandLine(theme: ThemeConfig): string {
+    return theme.isDark ? '#8DE5DE' : '#39AFA9';
+  }
+
+  static brandBlue(theme: ThemeConfig): string {
+    return theme.isDark ? '#A7DCEF' : '#2F86A1';
+  }
+
+  static brandLavender(theme: ThemeConfig): string {
+    return theme.isDark ? '#C9C0F4' : '#8D7BC7';
+  }
+
+  static glassVeil(theme: ThemeConfig): string {
+    return theme.isDark ? '#253F49' : '#F8FCFD';
   }
 }

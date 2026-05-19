@@ -224,19 +224,19 @@ export class ReviewAnalyzer {
     if (plannedMinutes > capacityLimit) {
       insights.push({
         title: `${rangeLabel}计划偏满`,
-        detail: `已规划 ${plannedMinutes} 分钟，超过容量 ${plannedMinutes - capacityLimit} 分钟。下次先砍掉一个低优先级块。`,
+        detail: `已规划 ${plannedMinutes} 分钟，略过今日容量。下次少排一段，更稳。`,
         color: '#6F7F88'
       });
     } else if (plannedMinutes >= Math.round(capacityLimit * 0.8)) {
       insights.push({
         title: '计划接近上限',
-        detail: `已规划 ${plannedMinutes} 分钟，剩余缓冲不多。适合保留一个空档处理突发。`,
+        detail: `已规划 ${plannedMinutes} 分钟，余量不多。留一段空白，更能应变。`,
         color: '#8EA1AE'
       });
     } else {
       insights.push({
         title: '计划容量还健康',
-        detail: `已规划 ${plannedMinutes} 分钟，没有明显超载。可以保持这个节奏。`,
+        detail: `已规划 ${plannedMinutes} 分钟，节奏平稳，可继续保持。`,
         color: '#46AFA5'
       });
     }
@@ -245,7 +245,7 @@ export class ReviewAnalyzer {
       const first = conflicts[0];
       insights.push({
         title: '存在时间冲突',
-        detail: `${TimeFormatter.formatTime(first.startAt)}-${TimeFormatter.formatTime(first.endAt)} 有 ${first.overlapMinutes} 分钟重叠，优先调整其中一个时间块。`,
+        detail: `${TimeFormatter.formatTime(first.startAt)}-${TimeFormatter.formatTime(first.endAt)} 有重叠，先让时间归位。`,
         color: '#6F7F88'
       });
     }
@@ -253,7 +253,7 @@ export class ReviewAnalyzer {
     if (outgoingCarryOverCount > 0 || incomingCarryOverCount > 0) {
       insights.push({
         title: '结转需要关注',
-        detail: `${rangeLabel}接收 ${incomingCarryOverCount} 个结转块，又结转 ${outgoingCarryOverCount} 个块。连续结转的任务应该拆小或降低目标。`,
+        detail: `${rangeLabel}有结转往来。常被顺延的事，宜拆小再做。`,
         color: '#8A7CC3'
       });
     }
@@ -261,7 +261,7 @@ export class ReviewAnalyzer {
     if (routineCount > 0) {
       insights.push({
         title: '模板帮你减少了重复安排',
-        detail: `${rangeLabel}有 ${routineCount} 个常用模板块。保留真正有用的模板，别让模板变成新的负担。`,
+        detail: `${rangeLabel}有 ${routineCount} 个常用模板。常用之事，贵在轻便。`,
         color: '#7BAE7F'
       });
     }
@@ -269,27 +269,27 @@ export class ReviewAnalyzer {
     if (archiveEntries.length > 0 || delayedCount + editedCount >= 3) {
       insights.push({
         title: '计划被频繁改动',
-        detail: `${rangeLabel}有 ${delayedCount} 次顺延、${editedCount} 次编辑、${archiveEntries.length} 次删除。下次规划时减少任务数量会更稳。`,
+        detail: `${rangeLabel}多次调整。下次少排一点，节奏会更稳。`,
         color: '#8EA1AE'
       });
     }
 
-    let headline = `${rangeLabel}还没有足够数据`;
-    let summary = '先完成一个时间块，复盘会开始解释你的计划质量。';
+    let headline = `${rangeLabel}还在积累节奏`;
+    let summary = '先完成一段时间，复盘才有凭据。';
     if (rangeSchedules.length > 0 || completedMinutes > 0) {
       headline = completedBlocks > 0 ? `${rangeLabel}已经形成执行记录` : `${rangeLabel}已经形成计划`;
       summary = `${rangeLabel}规划 ${rangeSchedules.length} 个时间块，完成 ${completedBlocks} 个，专注 ${completedMinutes} 分钟。${estimateText}。`;
     }
 
-    let recommendation = rangeLabel === '本周' ? '下周先保留一个更轻的起步日，再逐步补充其它任务。' : '明天先安排一个最重要的时间块，再补其它任务。';
+    let recommendation = rangeLabel === '本周' ? '下周先轻起步，再慢慢加事。' : '明天先定最重要的一段。';
     if (plannedMinutes > capacityLimit) {
-      recommendation = '下一次规划先减少一个低优先级时间块，给当天留出恢复空间。';
+      recommendation = '下一次少排一段，给当天留白。';
     } else if (conflicts.length > 0) {
-      recommendation = '先处理冲突时间段，再开始专注，避免一开始就进入混乱状态。';
+      recommendation = '先理顺冲突，再开始专注。';
     } else if (outgoingCarryOverCount > 0) {
-      recommendation = '被结转的任务明天先拆成更小的一段，降低再次拖延的概率。';
+      recommendation = '被结转的事，明天先拆小。';
     } else if (completedBlocks > 0 && completedMinutes > 0) {
-      recommendation = `保留${rangeLabel}有效的节奏，把估时偏差大的块作为下一次规划的调整重点。`;
+      recommendation = `保留${rangeLabel}有效节奏，偏差大的块下次再调。`;
     }
 
     return {

@@ -11,6 +11,7 @@ import { DataManager } from '../utils/DataManager';
 import { ThemeManager } from '../utils/ThemeManager';
 import { ThemeContext } from '../utils/ThemeContext';
 import { NavigationManager } from '../utils/NavigationManager';
+import { ThemeTokens } from '../utils/ThemeTokens';
 import { ThemeConfig } from '../models/DataModels';
 
 @Entry
@@ -32,19 +33,38 @@ struct Index {
   @Builder
   TabBuilder(index: number, name: string, iconResource: Resource) {
     Column() {
-      SymbolGlyph(iconResource)
-        .fontSize(20)
-        .fontColor([this.currentTabIndex === index ? this.currentTheme.primaryColor : '#8A969B'])
+      Column() {
+        SymbolGlyph(iconResource)
+          .fontSize(this.currentTabIndex === index ? 21 : 20)
+          .fontColor([this.currentTabIndex === index ? this.currentTheme.primaryColor : ThemeTokens.secondary(this.currentTheme)])
+      }
+      .width(38)
+      .height(30)
+      .borderRadius(14)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+      .backgroundColor(this.currentTabIndex === index ? ThemeTokens.selectedSurface(this.currentTheme) : '#00000000')
+      .border({
+        width: this.currentTabIndex === index ? 1 : 0,
+        color: this.currentTabIndex === index ? ThemeTokens.cardBorder(this.currentTheme) : '#00000000'
+      })
+      .shadow({
+        radius: this.currentTabIndex === index ? 8 : 0,
+        color: this.currentTabIndex === index ? ThemeTokens.paperThinShadow(this.currentTheme) : '#00000000',
+        offsetX: 0,
+        offsetY: 3
+      })
 
       Text(name)
         .fontSize(9)
         .fontWeight(this.currentTabIndex === index ? FontWeight.Bold : FontWeight.Regular)
-        .fontColor(this.currentTabIndex === index ? this.currentTheme.primaryColor : '#8A969B')
+        .fontColor(this.currentTabIndex === index ? this.currentTheme.primaryColor : ThemeTokens.secondary(this.currentTheme))
         .margin({ top: 3 })
     }
-    .width('100%')
+    .width(64)
     .height('100%')
     .justifyContent(FlexAlign.Center)
+    .alignItems(HorizontalAlign.Center)
   }
 
   @Builder
@@ -55,9 +75,9 @@ struct Index {
         .fontWeight(FontWeight.Bold)
         .fontColor(this.currentTheme.textColor)
 
-      Text('正在准备本地数据')
+      Text('万事入序，稍候即启。')
         .fontSize(13)
-        .fontColor('#62727A')
+        .fontColor(ThemeTokens.muted(this.currentTheme))
         .margin({ top: 8 })
     }
     .width('100%')

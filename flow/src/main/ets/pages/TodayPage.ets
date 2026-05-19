@@ -290,8 +290,8 @@ export struct TodayPage {
   getNextActionSubtitle(): string {
     if (this.nextSchedule) return `${this.getScheduleStartText(this.nextSchedule)}-${this.getScheduleEndText(this.nextSchedule)} · ${this.nextSchedule.estimatedTime} 分钟`;
     if (this.schedules.length > 0) return '今天结束了，复盘一下节奏。';
-    if (this.inboxTasks.length > 0) return '把待办放进时间线，今天就能开始。';
-    return '先写下一件事，再安排时间。';
+    if (this.inboxTasks.length > 0) return '事入其时，今日即启。';
+    return '先写一事，再安其时。';
   }
 
   getNextActionButtonLabel(): string {
@@ -816,20 +816,34 @@ export struct TodayPage {
   @Builder
   Header() {
     Row() {
+      Blank()
+        .width(44)
+        .height(44)
+
       Column() {
         Text('今天')
           .fontSize(30)
           .fontWeight(FontWeight.Bold)
           .fontColor(this.currentTheme.textColor)
+          .textAlign(TextAlign.Center)
 
-        Text(`${TimeFormatter.formatDate(Date.now())} · ${TimeFormatter.getWeekdayName(Date.now())} · 把任务排进时间线，一段一段执行`)
+        Text(`${TimeFormatter.formatDate(Date.now())} · ${TimeFormatter.getWeekdayName(Date.now())} · 今日事，今日毕。`)
           .fontSize(11)
           .fontColor(ThemeTokens.muted(this.currentTheme))
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .textAlign(TextAlign.Center)
           .margin({ top: 4 })
+
+        Text()
+          .width(42)
+          .height(3)
+          .borderRadius(2)
+          .backgroundColor(this.currentTheme.primaryColor)
+          .opacity(0.72)
+          .margin({ top: 10 })
       }
-      .alignItems(HorizontalAlign.Start)
+      .alignItems(HorizontalAlign.Center)
       .layoutWeight(1)
 
       Button() {
@@ -839,8 +853,10 @@ export struct TodayPage {
       }
       .width(44)
       .height(44)
-      .borderRadius(10)
-      .backgroundColor(this.currentTheme.cardColor)
+      .borderRadius(16)
+      .backgroundColor(ThemeTokens.paper(this.currentTheme))
+      .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+      .shadow({ radius: 16, color: ThemeTokens.paperThinShadow(this.currentTheme), offsetX: 0, offsetY: 6 })
       .onClick(() => {
         NavigationManager.push(this.getUIContext(), 'pages/SettingsPage');
       })
@@ -879,15 +895,16 @@ export struct TodayPage {
           .fontSize(12)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.isOverCapacity() ? '#6F7F88' : '#256D85')
-          .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .backgroundColor(this.isOverCapacity() ? '#EEF2F3' : ThemeTokens.selectedSurface(this.currentTheme))
-          .borderRadius(8)
+          .padding({ left: 12, right: 12, top: 7, bottom: 7 })
+          .backgroundColor(this.isOverCapacity() ? ThemeTokens.slateWash(this.currentTheme) : ThemeTokens.selectedSurface(this.currentTheme))
+          .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+          .borderRadius(14)
       }
       .width('100%')
 
       Progress({ value: this.getWorkloadPercent(), total: 100, type: ProgressType.Linear })
         .width('100%')
-        .height(6)
+        .height(8)
         .color(this.isOverCapacity() ? '#6F7F88' : '#46AFA5')
         .backgroundColor(ThemeTokens.hairline(this.currentTheme))
         .margin({ top: 14 })
@@ -903,11 +920,11 @@ export struct TodayPage {
     }
     .alignItems(HorizontalAlign.Start)
     .width('100%')
-    .padding({ left: 18, right: 18, top: 18, bottom: 18 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 20 })
     .backgroundColor(ThemeTokens.paper(this.currentTheme))
-    .borderRadius(18)
+    .borderRadius(24)
     .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
-    .shadow({ radius: 26, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 12 })
+    .shadow({ radius: 34, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 16 })
   }
 
   @Builder
@@ -971,7 +988,7 @@ export struct TodayPage {
           .fontWeight(FontWeight.Bold)
           .fontColor(ThemeTokens.text(this.currentTheme))
 
-        Text('这个应用的核心不是清单，而是把事情放进今天的时间线。')
+        Text('纸上有序，脚下有路。')
           .fontSize(12)
           .fontColor(ThemeTokens.muted(this.currentTheme))
           .lineHeight(18)
@@ -1167,11 +1184,11 @@ export struct TodayPage {
     }
     .alignItems(HorizontalAlign.Start)
     .layoutWeight(1)
-    .padding({ left: 10, right: 10, top: 9, bottom: 9 })
+    .padding({ left: 11, right: 10, top: 10, bottom: 10 })
     .backgroundColor(ThemeTokens.paperInset(this.currentTheme))
     .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
-    .borderRadius(12)
-    .shadow({ radius: 10, color: ThemeTokens.paperThinShadow(this.currentTheme), offsetX: 0, offsetY: 4 })
+    .borderRadius(16)
+    .shadow({ radius: 14, color: ThemeTokens.paperThinShadow(this.currentTheme), offsetX: 0, offsetY: 6 })
     .margin({ right: 7 })
   }
 
@@ -1210,23 +1227,23 @@ export struct TodayPage {
       Button(this.getNextActionButtonLabel())
         .fontSize(14)
         .fontWeight(FontWeight.Bold)
-        .fontColor(this.schedules.length > 0 && !this.nextSchedule ? '#315B66' : ThemeTokens.onPrimary(this.currentTheme))
-        .width(82)
-        .height(44)
-        .borderRadius(16)
-        .backgroundColor(this.schedules.length > 0 && !this.nextSchedule ? '#E5EEF1' : this.getNextActionAccentColor())
-        .border({ width: 1, color: this.schedules.length > 0 && !this.nextSchedule ? '#CCDBDF' : this.getNextActionAccentColor() })
-        .shadow({ radius: 12, color: ThemeTokens.paperThinShadow(this.currentTheme), offsetX: 0, offsetY: 5 })
+        .fontColor(this.schedules.length > 0 && !this.nextSchedule ? '#315B66' : ThemeTokens.actionText(this.currentTheme))
+        .width(88)
+        .height(46)
+        .borderRadius(18)
+        .backgroundColor(this.schedules.length > 0 && !this.nextSchedule ? ThemeTokens.quietAction(this.currentTheme) : ThemeTokens.actionSurface(this.currentTheme))
+        .border({ width: 1, color: this.schedules.length > 0 && !this.nextSchedule ? ThemeTokens.paperBorder(this.currentTheme) : ThemeTokens.actionSurface(this.currentTheme) })
+        .shadow({ radius: 16, color: ThemeTokens.paperThinShadow(this.currentTheme), offsetX: 0, offsetY: 7 })
         .onClick(() => {
           this.runNextAction();
         })
     }
     .width('100%')
-    .padding({ left: 18, right: 18, top: 18, bottom: 18 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 20 })
     .backgroundColor(ThemeTokens.paper(this.currentTheme))
-    .borderRadius(20)
+    .borderRadius(24)
     .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
-    .shadow({ radius: 28, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 12 })
+    .shadow({ radius: 34, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: 16 })
     .margin({ top: 12 })
   }
 
@@ -1247,7 +1264,7 @@ export struct TodayPage {
               .fontSize(16)
               .fontWeight(FontWeight.Bold)
               .fontColor(ThemeTokens.text(this.currentTheme))
-            Text('把它们结转到明天，今天的时间线会保留顺延记录。')
+        Text('今日未竟，明日再续。')
               .fontSize(12)
               .fontColor(ThemeTokens.muted(this.currentTheme))
               .margin({ top: 4 })
@@ -1568,7 +1585,7 @@ export struct TodayPage {
         .fontWeight(FontWeight.Bold)
         .fontColor(ThemeTokens.text(this.currentTheme))
 
-      Text('先把一个收集箱任务安排进时间线，今天就有了起点。')
+      Text('一事入时，今日有始。')
         .fontSize(12)
         .fontColor(ThemeTokens.muted(this.currentTheme))
         .margin({ top: 6 })
@@ -1610,7 +1627,7 @@ export struct TodayPage {
       .width('100%')
 
       if (this.inboxTasks.length === 0) {
-        Text('没有待整理的想法。')
+        Text('心中清明，收集箱为空。')
           .fontSize(12)
           .fontColor(ThemeTokens.muted(this.currentTheme))
           .margin({ top: 10 })
@@ -1665,7 +1682,7 @@ export struct TodayPage {
         }
         .width('100%')
 
-        Text('从收集箱点“明天”的任务会先放在这里，明天打开后进入今天时间线。')
+        Text('明日之事，今夜安放。')
           .fontSize(12)
           .fontColor(ThemeTokens.muted(this.currentTheme))
           .lineHeight(18)
@@ -2044,7 +2061,7 @@ export struct TodayPage {
           this.editTitle = value;
         })
 
-      this.TaskDepthEditorSection('可以把这一段拆成几个执行步骤，专注时更容易进入状态。')
+      this.TaskDepthEditorSection('拆得越小，开始越轻。')
 
       Row() {
         Text('时长')

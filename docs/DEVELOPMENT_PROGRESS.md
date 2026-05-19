@@ -1981,6 +1981,111 @@ Verification:
 - `git diff --check` passed on 2026-05-17 with line-ending warnings only.
 - `hvigor assembleApp --no-daemon` passed on 2026-05-17. Remaining warnings are obfuscation and signing configuration warnings.
 
+## Phase 62: Centered Page Headers And Motto Copy
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/ets/pages/TodayPage.ets`
+- `flow/src/main/ets/pages/InboxPage.ets`
+- `flow/src/main/ets/pages/PlanPage.ets`
+- `flow/src/main/ets/pages/UpcomingPage.ets`
+- `flow/src/main/ets/pages/ReviewPage.ets`
+- `docs/DEVELOPMENT_PROGRESS.md`
+
+Implemented:
+
+- Centered the main tab page headers for Today, Inbox, Plan, Future, and Review.
+- Added a left placeholder in Today header so the title stays visually centered while preserving the Settings gear on the right.
+- Replaced explanatory subtitles with shorter motto-style lines that match each page:
+  - Today: `今日事，今日毕。`
+  - Inbox: `念起即记，心才有余。`
+  - Plan: `先定其序，再行其事。`
+  - Future: `远事先安，近事从容。`
+  - Review: `温故知新。`
+
+Verification:
+
+- `git diff --check` passed on 2026-05-18 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-18. Remaining warnings are obfuscation and signing configuration warnings.
+
+## Phase 63: Product Voice Polish And Icon Boundary
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/ets/pages/FocusPage.ets`
+- `flow/src/main/ets/pages/InboxPage.ets`
+- `flow/src/main/ets/pages/PlanPage.ets`
+- `flow/src/main/ets/pages/ReviewPage.ets`
+- `flow/src/main/ets/pages/SettingsPage.ets`
+- `flow/src/main/ets/pages/TodayPage.ets`
+- `flow/src/main/ets/pages/UpcomingPage.ets`
+- `flow/src/main/ets/utils/ReviewAnalyzer.ets`
+- `docs/DEVELOPMENT_PROGRESS.md`
+
+Implemented:
+
+- Polished user-facing helper copy across empty states, planning hints, review insights, detail sheets, and Settings cards.
+- Replaced instructional or implementation-like wording with shorter product lines that feel calmer and more aphoristic.
+- Kept action labels practical where clarity matters, while making explanatory text more official and refined.
+- Replaced remaining user-visible raw priority text in Plan metadata with `优先 / 重要 / 常规` labels.
+- Reviewed icon usage. Current page icons rely on ArkUI/system symbol glyphs; Dribbble user work was not copied because there is no explicit license or source authorization in the repo.
+
+Verification:
+
+- `git diff --check` passed on 2026-05-18 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-18. Remaining warnings are obfuscation and signing configuration warnings.
+
+## Phase 64: Navigation And Header Polish
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/ets/pages/Index.ets`
+- `flow/src/main/ets/pages/TodayPage.ets`
+- `flow/src/main/ets/pages/InboxPage.ets`
+- `flow/src/main/ets/pages/PlanPage.ets`
+- `flow/src/main/ets/pages/UpcomingPage.ets`
+- `flow/src/main/ets/pages/ReviewPage.ets`
+- `docs/DEVELOPMENT_PROGRESS.md`
+
+Implemented:
+
+- Refined the bottom tab bar with selected icon capsules, theme-aware inactive colors, subtle borders, and lighter shadows.
+- Replaced the loading subtitle with a calmer product line: `万事入序，稍候即启。`
+- Added a small centered header mark to the five main tabs so centered titles feel more intentional and less plain.
+- Kept the navigation model unchanged; this phase is purely visual and interaction-affordance polish.
+
+Verification:
+
+- `git diff --check` passed on 2026-05-19 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-19. Remaining warnings are obfuscation and signing configuration warnings.
+
+## Phase 65: Card Material Refinement
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/ets/utils/ThemeTokens.ets`
+- `docs/DEVELOPMENT_PROGRESS.md`
+
+Implemented:
+
+- Tuned the shared card material tokens that drive Today, Plan, Review, Inbox, and Future cards.
+- Light mode cards now use cleaner white/paper surfaces, softer inset fills, lighter borders, and deeper but more diffused shadows.
+- Dark mode cards now use a softer blue-gray material stack rather than flat dark panels, with brighter hairlines and clearer selected surfaces.
+- Kept layout and flow unchanged; this phase only raises perceived card depth and polish across existing UI.
+
+Verification:
+
+- `git diff --check` passed on 2026-05-19 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-19. Remaining warnings are obfuscation and signing configuration warnings.
+
 ## Next Phase Candidates
 
 1. Run device/emulator runtime QA across collect -> schedule -> focus -> complete -> review.
@@ -1989,3 +2094,53 @@ Verification:
 4. Expand routines only after the default template strip feels useful in real use.
 5. Start Projects/Tags only after the core collect -> schedule -> focus loop remains easy.
 6. Add reminder/system capability only after official API review and device verification.
+
+## Phase 66: Figma Brand And Premium Card Sync
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/ets/utils/ThemeTokens.ets`
+- `flow/src/main/ets/components/common/GlassCard.ets`
+- `flow/src/main/ets/pages/TodayPage.ets`
+- `flow/src/main/ets/pages/InboxPage.ets`
+- `flow/src/main/ets/pages/PlanPage.ets`
+- `flow/src/main/ets/pages/ReviewPage.ets`
+- `flow/src/main/ets/pages/UpcomingPage.ets`
+- `docs/DEVELOPMENT_PROGRESS.md`
+
+Implemented:
+
+- Created a Figma page named `04 ArkTS Sync` in the user's design file, mapping the new `流序` logo direction and UI material system to implementation tokens.
+- Recommended the `Flow Orbit` logo direction: three ordered nodes for collect, plan, and focus, with an open flow ring representing an editable timeline.
+- Added richer ArkTS material tokens for action surfaces, brand line, blue/lavender accents, paper shadows, and glass veil surfaces.
+- Upgraded the shared `GlassCard` component so future cards inherit theme-aware paper material, accent marks, larger radius, and softer depth.
+- Refined high-traffic cards on Today, Inbox, Plan, Review, and Future with larger radii, stronger but softer shadows, bordered chips, and more tactile action buttons.
+- Kept the existing product flow intact; this phase is a visual-system upgrade rather than a logic rewrite.
+
+Verification:
+
+- `git diff --check` passed on 2026-05-19 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-19. Remaining warnings are obfuscation and signing configuration warnings.
+
+## Phase 67: Temporary Rounded App Icon
+
+Status: Done
+
+Files changed:
+
+- `flow/src/main/resources/base/media/startIcon.png`
+- `docs/DEVELOPMENT_PROGRESS.md`
+
+Implemented:
+
+- Replaced the app launcher/start window icon with the user's selected Flow Orbit icon.
+- Cropped the source image to a centered 1:1 icon and exported a 1024x1024 PNG.
+- Applied an app-style rounded rectangle alpha mask so the icon has transparent rounded corners without adding an extra border.
+
+Verification:
+
+- Generated icon check: `Size=1024x1024; cornerA=0; centerA=255`.
+- `git diff --check` passed on 2026-05-19 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-19. Remaining warnings are obfuscation and signing configuration warnings.

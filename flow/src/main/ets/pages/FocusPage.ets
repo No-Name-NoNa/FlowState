@@ -733,7 +733,7 @@ struct FocusPage {
       .borderRadius(12)
       .margin({ top: 14 })
     } else {
-      Text('今天暂时没有后续时间块，可以回到 Today 检查时间线或结束工作。')
+      Text('行至此处，今日可收束。')
         .fontSize(12)
         .fontColor(ThemeTokens.muted(this.currentTheme))
         .lineHeight(18)

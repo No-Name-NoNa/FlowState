@@ -392,13 +392,25 @@ export struct InboxPage {
         .fontSize(30)
         .fontWeight(FontWeight.Bold)
         .fontColor(ThemeTokens.text(this.currentTheme))
+        .textAlign(TextAlign.Center)
+        .width('100%')
 
-      Text('先捕捉，再整理。不要让想法打断当前的时间线。')
+      Text('念起即记，心才有余。')
         .fontSize(12)
         .fontColor(ThemeTokens.muted(this.currentTheme))
+        .textAlign(TextAlign.Center)
+        .width('100%')
         .margin({ top: 4 })
+
+      Text()
+        .width(42)
+        .height(3)
+        .borderRadius(2)
+        .backgroundColor(this.currentTheme.primaryColor)
+        .opacity(0.72)
+        .margin({ top: 10 })
     }
-    .alignItems(HorizontalAlign.Start)
+    .alignItems(HorizontalAlign.Center)
     .width('100%')
     .padding({ left: 20, right: 20, top: 18, bottom: 8 })
   }
@@ -408,11 +420,12 @@ export struct InboxPage {
     Column() {
       TextInput({ placeholder: '输入一个想法、任务或待办', text: this.quickTitle })
         .width('100%')
-        .height(48)
+        .height(52)
         .fontColor(ThemeTokens.text(this.currentTheme))
         .placeholderColor(ThemeTokens.secondary(this.currentTheme))
-        .backgroundColor(ThemeTokens.canvas(this.currentTheme))
-        .borderRadius(10)
+        .backgroundColor(ThemeTokens.mist(this.currentTheme))
+        .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
+        .borderRadius(18)
         .onChange((value: string) => {
           this.quickTitle = value;
         })
@@ -427,10 +440,11 @@ export struct InboxPage {
         Button('收集')
           .fontSize(14)
           .fontWeight(FontWeight.Bold)
-          .fontColor(this.quickTitle.trim().length > 0 ? '#FFFFFF' : ThemeTokens.muted(this.currentTheme))
-          .height(40)
-          .borderRadius(10)
-          .backgroundColor(this.quickTitle.trim().length > 0 ? '#256D85' : ThemeTokens.selectedSurface(this.currentTheme))
+          .fontColor(this.quickTitle.trim().length > 0 ? ThemeTokens.actionText(this.currentTheme) : ThemeTokens.muted(this.currentTheme))
+          .height(42)
+          .borderRadius(17)
+          .backgroundColor(this.quickTitle.trim().length > 0 ? ThemeTokens.actionSurface(this.currentTheme) : ThemeTokens.selectedSurface(this.currentTheme))
+          .shadow({ radius: this.quickTitle.trim().length > 0 ? 14 : 0, color: ThemeTokens.paperThinShadow(this.currentTheme), offsetX: 0, offsetY: 6 })
           .onClick(() => {
             this.captureTask();
           })
@@ -439,11 +453,11 @@ export struct InboxPage {
       .margin({ top: 12 })
     }
     .width('100%')
-    .padding({ left: 18, right: 18, top: 18, bottom: 18 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 20 })
     .backgroundColor(ThemeTokens.elevated(this.currentTheme))
-    .borderRadius(18)
+    .borderRadius(24)
     .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
-    .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 32, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 15 })
   }
 
   @Builder
@@ -524,7 +538,8 @@ export struct InboxPage {
       .fontColor(this.selectedPriority === priority ? '#FFFFFF' : this.getPriorityColor(priority))
       .padding({ left: 12, right: 12, top: 8, bottom: 8 })
       .backgroundColor(this.selectedPriority === priority ? this.getPriorityColor(priority) : ThemeTokens.subtle(this.currentTheme))
-      .borderRadius(8)
+      .border({ width: 1, color: this.selectedPriority === priority ? this.getPriorityColor(priority) : ThemeTokens.cardBorder(this.currentTheme) })
+      .borderRadius(14)
       .margin({ right: 8 })
       .onClick(() => {
         this.selectedPriority = priority;
@@ -572,7 +587,7 @@ export struct InboxPage {
             .fontSize(16)
             .fontWeight(FontWeight.Bold)
             .fontColor(ThemeTokens.text(this.currentTheme))
-          Text('这里仅显示未安排任务。点“今天/明天”后，它会进入时间线，不会继续留在收集箱。')
+          Text('未安之事，暂存于此。')
             .fontSize(12)
             .fontColor(ThemeTokens.muted(this.currentTheme))
             .lineHeight(18)
@@ -590,11 +605,11 @@ export struct InboxPage {
       }
     }
     .width('100%')
-    .padding({ left: 18, right: 18, top: 18, bottom: 18 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 20 })
     .backgroundColor(ThemeTokens.elevated(this.currentTheme))
-    .borderRadius(18)
+    .borderRadius(24)
     .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
-    .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 32, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 15 })
     .margin({ top: 12, bottom: 24 })
   }
 
@@ -715,7 +730,7 @@ export struct InboxPage {
             .fontSize(14)
             .fontWeight(FontWeight.Bold)
             .fontColor(ThemeTokens.text(this.currentTheme))
-          Text('选择日期和结束时间，系统会按时长推算开始点')
+          Text('定下终点，起点自明。')
             .fontSize(11)
             .fontColor(ThemeTokens.muted(this.currentTheme))
             .margin({ top: 3 })
@@ -780,7 +795,7 @@ export struct InboxPage {
             .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor(ThemeTokens.text(this.currentTheme))
-          Text(`编辑任务深度 · 子任务 ${this.getTriageStepSummary()}`)
+          Text(`深浅有度 · 子任务 ${this.getTriageStepSummary()}`)
             .fontSize(12)
             .fontColor(ThemeTokens.muted(this.currentTheme))
             .margin({ top: 4 })
@@ -862,7 +877,7 @@ export struct InboxPage {
       .margin({ top: 18 })
 
       if (this.triageSteps.length === 0) {
-        Text('还没有子任务。可以把一个大任务拆成 2-5 个可执行步骤。')
+        Text('大事拆小，步步可行。')
           .fontSize(12)
           .fontColor(ThemeTokens.secondary(this.currentTheme))
           .lineHeight(18)
@@ -995,10 +1010,11 @@ export struct InboxPage {
         })
     }
     .width('100%')
-    .padding({ left: 20, right: 20, top: 20, bottom: 22 })
-    .backgroundColor(ThemeTokens.surface(this.currentTheme))
-    .borderRadius(22)
-    .shadow({ radius: 24, color: '#22182126', offsetX: 0, offsetY: -8 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 26 })
+    .backgroundColor(ThemeTokens.paper(this.currentTheme))
+    .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+    .borderRadius(28)
+    .shadow({ radius: 34, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: -12 })
   }
 
   getTaskStepSummary(task: Task): string {

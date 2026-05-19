@@ -427,7 +427,7 @@ export struct UpcomingPage {
     return [
       {
         title: '明天',
-        subtitle: '从收集箱点“明天”的任务会先来到这里',
+        subtitle: '明日先安，醒来即行',
         color: '#8A7CC3',
         schedules: this.tomorrowSchedules
       },
@@ -439,7 +439,7 @@ export struct UpcomingPage {
       },
       {
         title: '以后',
-        subtitle: '更远日期的安排先放在这里，之后会进入周/月视图',
+        subtitle: '远期有位，心中不乱',
         color: '#607385',
         schedules: this.laterSchedules
       }
@@ -468,7 +468,7 @@ export struct UpcomingPage {
   }
 
   getEmptyHint(): string {
-    return '安排到明天、本周或以后时，这里会成为它们的固定位置。收集箱只保留还没安排时间的任务。';
+    return '远事有归处，近事更从容。';
   }
 
   navigateTo(url: string) {
@@ -484,14 +484,26 @@ export struct UpcomingPage {
         .fontSize(30)
         .fontWeight(FontWeight.Bold)
         .fontColor(ThemeTokens.text(this.currentTheme))
+        .textAlign(TextAlign.Center)
+        .width('100%')
 
-      Text('管理明天、本周和以后已经安排的时间块。')
+      Text('远事先安，近事从容。')
         .fontSize(12)
         .fontColor(ThemeTokens.muted(this.currentTheme))
         .lineHeight(18)
+        .textAlign(TextAlign.Center)
+        .width('100%')
         .margin({ top: 4 })
+
+      Text()
+        .width(42)
+        .height(3)
+        .borderRadius(2)
+        .backgroundColor(this.currentTheme.primaryColor)
+        .opacity(0.72)
+        .margin({ top: 10 })
     }
-    .alignItems(HorizontalAlign.Start)
+    .alignItems(HorizontalAlign.Center)
     .width('100%')
     .padding({ left: 20, right: 20, top: 18, bottom: 8 })
   }
@@ -532,7 +544,7 @@ export struct UpcomingPage {
           .lineHeight(18)
           .margin({ top: 12 })
       } else {
-        Text('如果任务已经有时间，就不应该继续藏在收集箱。这里负责给未来安排一个清楚的位置。')
+        Text('有时有位，未来自明。')
           .fontSize(12)
           .fontColor(ThemeTokens.muted(this.currentTheme))
           .lineHeight(18)
@@ -540,11 +552,11 @@ export struct UpcomingPage {
       }
     }
     .width('100%')
-    .padding({ left: 18, right: 18, top: 18, bottom: 18 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 20 })
     .backgroundColor(ThemeTokens.elevated(this.currentTheme))
-    .borderRadius(18)
+    .borderRadius(24)
     .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
-    .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 32, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 15 })
   }
 
   @Builder
@@ -590,11 +602,11 @@ export struct UpcomingPage {
     }
     .alignItems(HorizontalAlign.Start)
     .width('100%')
-    .padding({ left: 18, right: 18, top: 18, bottom: 18 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 20 })
     .backgroundColor(ThemeTokens.elevated(this.currentTheme))
-    .borderRadius(18)
+    .borderRadius(24)
     .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
-    .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 32, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 15 })
     .margin({ top: 12 })
   }
 
@@ -784,11 +796,11 @@ export struct UpcomingPage {
       }
       .alignItems(HorizontalAlign.Start)
       .width('100%')
-      .padding({ left: 18, right: 18, top: 18, bottom: 18 })
+      .padding({ left: 20, right: 20, top: 20, bottom: 20 })
       .backgroundColor(ThemeTokens.elevated(this.currentTheme))
-      .borderRadius(18)
+      .borderRadius(24)
       .border({ width: 1, color: ThemeTokens.cardBorder(this.currentTheme) })
-      .shadow({ radius: 22, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 10 })
+      .shadow({ radius: 32, color: ThemeTokens.cardShadow(this.currentTheme), offsetX: 0, offsetY: 15 })
       .margin({ top: 12 })
     }
   }
@@ -1014,7 +1026,7 @@ export struct UpcomingPage {
           this.editTitle = value;
         })
 
-      this.TaskDepthEditorSection('可以提前把未来任务拆成执行步骤，到了当天会自动带到今天。')
+      this.TaskDepthEditorSection('预先拆小，临近不慌。')
 
       Row() {
         Text('预计时长')
@@ -1131,10 +1143,11 @@ export struct UpcomingPage {
       .margin({ top: 12 })
     }
     .width('100%')
-    .padding({ left: 20, right: 20, top: 20, bottom: 22 })
-    .backgroundColor(ThemeTokens.surface(this.currentTheme))
-    .borderRadius(22)
-    .shadow({ radius: 24, color: '#22182126', offsetX: 0, offsetY: -8 })
+    .padding({ left: 20, right: 20, top: 20, bottom: 26 })
+    .backgroundColor(ThemeTokens.paper(this.currentTheme))
+    .border({ width: 1, color: ThemeTokens.paperBorder(this.currentTheme) })
+    .borderRadius(28)
+    .shadow({ radius: 34, color: ThemeTokens.paperShadow(this.currentTheme), offsetX: 0, offsetY: -12 })
   }
 
   build() {
