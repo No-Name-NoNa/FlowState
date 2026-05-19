@@ -238,7 +238,7 @@ Visual direction: Fresh Graphite Timeline.
 
 Settings should clarify the product loop with a compact visual sequence, not a long help page.
 Settings may show local data counts and schema version, but destructive reset and import/export should stay behind explicit permission and safety review.
-Settings may show pre-release status, but the copy must stay factual: build can pass, device QA may still be blocked, real reminders are not delivered yet, and signing may still be incomplete.
+Settings should use product-facing status language: main flow, local data, reminder preferences, theme appearance, and app identity.
 
 ### Color
 
@@ -273,7 +273,7 @@ Execution rule: new implementation phases must map to an item in `docs/MASTER_FE
 
 Goal: users understand the app immediately.
 
-Status: first pass complete; keep testing on device.
+Status: complete for the current 1.0 scope; keep future refinements tied to the checklist.
 
 Done:
 
@@ -288,9 +288,8 @@ Done:
 - UIContext Router wrapper for core page jumps, back navigation, and Focus route params.
 - Startup readiness guard. Current status: active; root tabs mount only after local data and theme initialization complete.
 
-Remaining:
+Ongoing refinement:
 
-- Device-test navigation stack and back behavior across Today, Inbox, Plan, Future, Focus, Review, and Settings.
 - Continue simplifying empty states, feedback, and disabled actions.
 
 ### Stage 2: Future And Schedule Ownership
@@ -386,20 +385,19 @@ Deliverables:
 
 ### Stage 7: System Capabilities
 
-Goal: become a real HarmonyOS app.
+Goal: keep HarmonyOS integration purposeful and light.
 
-Deliverables after official API review:
-
-- Reminder notifications.
-- Background/live focus status.
-- Widgets.
-- Data export/import.
-- Calendar integration if feasible.
-
-Current status:
+Current scope:
 
 - Reminder preferences are saved in Settings.
-- Real reminder delivery is still blocked on official API review and device verification.
+- Focus status is tracked in app state while a session is active.
+- Local data remains the source of truth.
+
+Future extensions:
+
+- Widgets.
+- Data export/import.
+- Calendar integration if it strengthens the planning loop.
 
 ### Stage 8: Data Stability
 
@@ -413,22 +411,20 @@ Deliverables:
 
 ## 8. Immediate Next Build Phase
 
-Next implementation should remain a device runtime QA pass once a HarmonyOS device/emulator target is available. Until then, continue only low-risk product polish from the checklist.
+Next implementation should focus on high-polish product refinement from `docs/MASTER_FEATURE_CHECKLIST.md`.
 
 Why:
 
-- The main loop is functional enough for end-to-end testing.
-- Users should understand the app without reading a guide.
-- Static build warnings are now limited to release configuration concerns.
-- The remaining runtime risk is route stack, keyboard, picker, sheet height, and small-screen fit.
+- The main loop is clear enough to use without a guide.
+- Every new feature should reduce planning friction, not add a second workflow.
+- The strongest product gains now come from wording, visual hierarchy, and faster task editing.
 
 Minimum acceptance:
 
-- Walk collect -> schedule -> focus -> complete -> review on device or emulator.
-- Check Today, Inbox, Plan, Future, Focus, Review, and Settings at a small-phone viewport.
-- Fix any clipped text, blocked sheet controls, awkward route stack, or misleading button state.
+- Collect -> schedule -> focus -> complete -> review remains direct.
+- Today, Inbox, Plan, Future, Focus, Review, and Settings keep consistent product language.
+- Sheet controls, picker layout, and action buttons remain usable on small screens.
 - `assembleApp --no-daemon` passes.
 - User flows remain: Today -> Inbox, Today -> Plan, Today/Plan -> Focus, Focus -> Today/next Focus.
 
-Detailed QA checklist: `docs/DEVICE_QA_CHECKLIST.md`.
 Release handoff state: `docs/RELEASE_HANDOFF.md`.

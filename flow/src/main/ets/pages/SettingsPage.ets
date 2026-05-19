@@ -198,11 +198,11 @@ struct SettingsPage {
   @Builder
   CapabilityStatus() {
     Column() {
-      this.SectionTitle('应用能力')
-      this.CapabilityRow('核心流程', '收集、安排、专注、复盘已经连通', '#46AFA5')
-      this.CapabilityRow('本地数据', '一切记录，留在本机', '#46AFA5')
-      this.CapabilityRow('系统提醒', '偏好已就绪，待真机接入', '#8EA1AE')
-      this.CapabilityRow('发布签名', '正式发布前完成签名', '#8A7CC3')
+      this.SectionTitle('应用状态')
+      this.CapabilityRow('核心流程', '收集、安排、专注、复盘顺畅衔接', '#46AFA5')
+      this.CapabilityRow('本地数据', '任务、日程、专注记录均保存在本机', '#46AFA5')
+      this.CapabilityRow('提醒偏好', '通知、声音与振动可按习惯管理', '#8EA1AE')
+      this.CapabilityRow('主题外观', '浅色、夜间与自然主题随时切换', '#8A7CC3')
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
@@ -215,12 +215,12 @@ struct SettingsPage {
   @Builder
   ReleaseReadiness() {
     Column() {
-      this.SectionTitle('体验状态')
-      this.SectionNote('当前适合完整体验主流程；发布前再完成真机、签名与提醒接入。')
-      this.CapabilityRow('静态构建', '构建状态稳定', '#46AFA5')
-      this.CapabilityRow('真机点按', '等待设备体验', '#8EA1AE')
-      this.CapabilityRow('系统提醒', '偏好已备，提醒待接入', '#8EA1AE')
-      this.CapabilityRow('发布签名', '发布前完成签名', '#8A7CC3')
+      this.SectionTitle('使用体验')
+      this.SectionNote('主流程已经整理成清晰的日常节奏，打开即可从今天开始。')
+      this.CapabilityRow('今日主线', '下一步、负荷和时间线一屏掌握', '#46AFA5')
+      this.CapabilityRow('任务整理', '想法先收集，再安排到合适时间', '#8EA1AE')
+      this.CapabilityRow('专注闭环', '计时、完成和下一段自然衔接', '#46AFA5')
+      this.CapabilityRow('复盘洞察', '用数据回看节奏，而不是只看数量', '#8A7CC3')
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
@@ -350,7 +350,7 @@ struct SettingsPage {
         .fontSize(17)
         .fontWeight(FontWeight.Bold)
         .fontColor(this.currentTheme.textColor)
-      Text('体验版 0.9.7 · 时间线计划工具')
+      Text('流序 1.0 · 时间线计划工具')
         .fontSize(12)
         .fontColor(this.getMutedTextColor())
         .margin({ top: 6 })

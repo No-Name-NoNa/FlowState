@@ -1,112 +1,72 @@
-# Flow State Device QA Checklist
+# 流序运行验收清单
 
-Updated: 2026-05-16
+Updated: 2026-05-19
 
-This checklist is the final runtime pass for the HarmonyOS app. Static builds can pass while tap behavior, keyboard placement, picker height, and route stack still fail on device, so this checklist must be completed before calling the app release-ready.
+本清单用于每次发布前走一遍核心流程，确保应用保持简单、清晰、可用。
 
-## Current Status
+## 启动
 
-- Build status: `hvigor assembleApp --no-daemon` passes.
-- HDC tool path: `C:\Program Files\Huawei\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe`.
-- Latest known HAP path: `flow/build/default/outputs/default/app/flow-default.hap`.
-- Current blocker: `hdc list targets -v` returns empty in this workspace, so no HarmonyOS phone or emulator target is currently available.
-- Signing status: release signing is still not configured in `build-profile.json5`; current build warnings are expected until signing is prepared.
-- Release handoff details: `docs/RELEASE_HANDOFF.md`.
+- 应用打开后进入 `今天`。
+- 标题、日期、设置入口显示正常。
+- 底部导航清晰可点。
+- 夜间主题下文字对比度充足。
 
-## Device Setup
+## 收集
 
-1. Start a HarmonyOS phone emulator in DevEco Studio, or connect a HarmonyOS phone with debugging enabled.
-2. Confirm the device is visible:
+- 可以输入一条新任务。
+- 优先、重要、常规三类状态清晰。
+- 点今天后任务进入今天时间线。
+- 点明天后任务进入未来页。
+- 整理面板可以保存标题、备注、子任务、日期、时间和时长。
 
-```powershell
-& 'C:\Program Files\Huawei\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe' list targets -v
-```
+## 今天
 
-3. Build the app:
+- 今日负荷和剩余容量准确。
+- 下一步行动符合当前状态。
+- 时间线按时间排序。
+- 时间块可进入专注。
+- 编辑面板打开时底部导航不遮挡内容。
 
-```powershell
-$env:DEVECO_SDK_HOME='C:\Program Files\Huawei\DevEco Studio\sdk'
-& 'C:\Program Files\Huawei\DevEco Studio\tools\node\node.exe' 'C:\Program Files\Huawei\DevEco Studio\tools\hvigor\hvigor\bin\hvigor.js' assembleApp --no-daemon
-```
+## 规划
 
-4. Install and launch the latest generated HAP from `flow/build/default/outputs/default/`.
+- 可以看到收集箱和未来事项来源。
+- 自动编排给出可理解的建议。
+- 建议可以调整顺序、时长和是否采用。
+- 应用建议后能回到今天或直接进入专注。
 
-## Core Runtime Walkthrough
+## 未来
 
-### 1. Today First Impression
+- 明天、本周稍后和更远日期分组清晰。
+- 未来事项可以移动到今天。
+- 未来事项可以退回收集箱。
+- 编辑后信息保持一致。
 
-- First launch may briefly show `正在准备本地数据`; it should disappear quickly.
-- App opens on `今天`.
-- Workload band is visible without awkward clipping.
-- Next action says one of: collect, arrange, start, or review.
-- Settings button opens Settings and returns without breaking the tab stack.
+## 专注
 
-### 2. Collect
+- 计时器显示清晰。
+- 开始、暂停、完成、放弃都可用。
+- 完成后显示计划、实际和偏差。
+- 有下一段时可以直接继续，不重复堆叠页面。
+- 返回后能顺畅回到今天。
 
-- Add a task in `收集`.
-- Empty-title button does not create a task.
-- `今天` creates a Today time block and removes the task from Inbox.
-- `明天` moves the task to `未来` and does not look like data loss.
-- `整理` opens the detail sheet, and keyboard does not cover primary actions.
+## 复盘
 
-### 3. Plan
+- 今日视角显示完成、专注和结转情况。
+- 本周视角展示轻量节奏。
+- 关键洞察文案简短、自然、可理解。
+- 没有数据时给出下一步建议。
 
-- `可安排来源` shows Inbox count, future schedule count, and today planned minutes.
-- A future item can be moved into Today from Plan.
-- With an empty Inbox and at least one future item, Plan's primary action offers to move future work into Today.
-- Auto-plan suggestions can be selected, excluded, restored, reordered, and resized.
-- Applying suggestions creates non-overlapping Today blocks.
-- Handoff panel can start the first block directly.
+## 设置
 
-### 4. Today Timeline
+- 专注时长、休息时长、每日容量可调整。
+- 提醒偏好、声音、振动开关显示正常。
+- 主题切换后主要页面同步变化。
+- 本地数据状态可读。
+- 关于卡片显示流序和版本信息。
 
-- Blocks appear in chronological order.
-- Free-space rows and now indicator do not overlap text.
-- Editing a block can change title, date, time, duration, priority, note, and subtasks.
-- Quick actions: advance, delay, move to tomorrow, complete, and delete.
-- Conflict banner appears for overlapping active blocks.
+## 文案与视觉
 
-### 5. Focus
-
-- Focus opened from Today or Plan receives schedule/task context.
-- Start, pause, resume, complete, and abandon work.
-- Completion freezes actual minutes before reflection text is entered.
-- If another block exists, `开始下一段` starts it with the correct context.
-
-### 6. Future
-
-- Tomorrow, this-week, and later groups show expected items.
-- A future item can move to Today.
-- A future item can return to Inbox without deleting the task.
-- Future editor preserves linked task notes and subtasks.
-
-### 7. Review
-
-- Empty Review shows the guide instead of zero-heavy analytics.
-- Today/Week switch changes the report without visual jumping.
-- Review reflects focus sessions, completions, schedule edits, deletions, carry-over, conflicts, and estimate drift.
-
-### 8. Settings
-
-- Default focus duration affects new schedules.
-- Daily capacity affects Today and Plan workload warnings.
-- `体验状态` clearly shows build, device QA, system reminder, and signing readiness.
-- Reminder preference copy remains honest: preferences are stored, real system delivery is not claimed.
-- Local data status shows schema version and data counts.
-- About card uses experience-version wording until release signing and device QA are complete.
-
-## Small-Screen Checks
-
-- No primary button is hidden by a sheet or keyboard.
-- Text inside buttons fits in Chinese.
-- Bottom tab labels remain readable.
-- DatePicker and TimePicker controls have enough vertical space.
-- Sheets can be closed without saving.
-
-## Pass Criteria
-
-- The full loop works: collect -> schedule -> focus -> complete -> review.
-- No visible button is dead or misleading.
-- No scheduled task appears to disappear without explanation.
-- No key sheet is unusable on a small-phone viewport.
-- `assembleApp --no-daemon` still passes after any runtime fixes.
+- 不出现开发态、测试态、内部代号或错误说明。
+- 任务优先级使用用户能理解的文字。
+- 卡片、按钮、输入框和面板保持统一质感。
+- 小屏下文字不换成难看的两行，不遮挡按钮和底部安全区。

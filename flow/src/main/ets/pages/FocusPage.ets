@@ -399,7 +399,7 @@ struct FocusPage {
   }
 
   getStateText(): string {
-    if (this.showCompletionDialog) return '等待复盘';
+    if (this.showCompletionDialog) return '复盘中';
     if (this.isRunning) return '正在执行';
     if (this.isPaused) return '已暂停';
     return '准备开始';

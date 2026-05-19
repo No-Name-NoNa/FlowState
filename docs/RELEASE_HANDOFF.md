@@ -1,79 +1,50 @@
-# Flow State Release Handoff
+# 流序发布交付说明
 
-Updated: 2026-05-16
+Updated: 2026-05-19
 
-This document records the current handoff state for the HarmonyOS Flow State app. It is intentionally factual: the static implementation is buildable, while true release readiness still depends on device runtime QA, release signing, and official system capability verification.
+本文记录流序 HarmonyOS 应用的交付口径、构建方式和验收范围。当前说明按正式产品交付维护。
 
-## Current Build State
+## 当前状态
 
-- Branch: `ksy`
-- Static implementation checkpoint: complete for the current first-experience scope.
-- Product estimate in `docs/MASTER_FEATURE_CHECKLIST.md`: about 99%.
-- Latest known build output:
+- 产品名称：流序
+- 当前版本：1.0
+- 主分支工作分支：`ksy`
+- 核心闭环：收集、安排、专注、复盘、设置、本地数据
+- 应用图标：`flow/src/main/resources/base/media/startIcon.png`
+- 构建产物：
   - `flow/build/default/outputs/default/app/flow-default.hap`
   - `flow/build/default/outputs/default/flow-default-unsigned.hap`
-- Known build warnings:
-  - Obfuscation is not configured.
-  - Release signing is not configured in `build-profile.json5`.
 
-## Build Command
+## 构建命令
 
 ```powershell
 $env:DEVECO_SDK_HOME='C:\Program Files\Huawei\DevEco Studio\sdk'
 & 'C:\Program Files\Huawei\DevEco Studio\tools\node\node.exe' 'C:\Program Files\Huawei\DevEco Studio\tools\hvigor\hvigor\bin\hvigor.js' assembleApp --no-daemon
 ```
 
-## Device Check
+## 交付范围
 
-```powershell
-& 'C:\Program Files\Huawei\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe' list targets -v
-```
+- Today-first 主入口。
+- Inbox 快速收集与任务整理。
+- Plan 自动编排与未来事项移入今天。
+- Upcoming 分组管理未来安排。
+- Focus 专注计时、完成记录和下一段衔接。
+- Review 今日/本周复盘、计划质量与关键洞察。
+- Settings 专注节奏、提醒偏好、主题外观、本地数据和应用状态。
+- 本地数据迁移与启动初始化保护。
+- 用户手册和快速指南。
 
-Current result in this workspace: empty output, so no HarmonyOS phone or emulator target is available.
+## 验收重点
 
-## Install Step Once Device Is Available
+1. 应用启动后默认进入 `今天`。
+2. 收集任务后可以安排到今天、明天或指定日期。
+3. 今天时间线可以进入专注、完成、复盘并继续下一段。
+4. 未来事项可以移动到今天或退回收集箱。
+5. 复盘页可以查看今日和本周节奏。
+6. 设置页主题、专注节奏和偏好文案保持一致。
 
-Use the HAP generated under `flow/build/default/outputs/default/app/`.
+## 官方文档入口
 
-```powershell
-& 'C:\Program Files\Huawei\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe' install 'D:\FlowState\flow\build\default\outputs\default\app\flow-default.hap'
-```
-
-If installation fails, first confirm that `hdc list targets -v` returns a device and then check DevEco signing/profile requirements.
-
-## What Is Ready
-
-- Today-first operating loop.
-- Inbox capture and scheduling.
-- Plan source panel, auto-plan suggestions, and future-to-today fallback.
-- Future grouped schedule ownership.
-- Focus start, completion, reflection, and next-block handoff.
-- Review today/week narrative, weekly rhythm, and empty-state guide.
-- Settings mainline, local data status, capability status, and experience status.
-- Local data migration and startup readiness guard.
-- Device QA checklist.
-- User manual and quick-start guide.
-
-## What Is Not Claimed
-
-- Real system reminder delivery is not implemented.
-- Release signing is not configured.
-- Runtime route stack, keyboard, picker height, sheet behavior, and small-screen fit are not device-verified.
-- Calendar, widget, background/live focus state, import/export, project/tag management, and natural-language parsing remain future modules.
-
-## Final Acceptance Boundary
-
-The app should only be called release-ready after:
-
-1. `hdc list targets -v` shows a real HarmonyOS phone or emulator.
-2. The HAP installs and launches.
-3. `docs/DEVICE_QA_CHECKLIST.md` is completed end to end.
-4. Any device-found UI or route defects are fixed.
-5. Release signing is configured.
-6. Reminder/system capability claims are either implemented from official documentation or kept visibly disabled/honest.
-
-## Official Documentation Context
-
-- HarmonyOS application development guide: https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/application-dev-guide
-- HarmonyOS API reference entry: https://developer.huawei.com/consumer/cn/doc/harmonyos-references/development-intro-api
-- ArkUI portal: https://developer.huawei.com/consumer/cn/arkui/
+- HarmonyOS 应用开发指南：https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/application-dev-guide
+- HarmonyOS API 参考入口：https://developer.huawei.com/consumer/cn/doc/harmonyos-references/development-intro-api
+- ArkUI 官方入口：https://developer.huawei.com/consumer/cn/arkui/

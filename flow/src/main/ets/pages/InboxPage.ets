@@ -632,7 +632,7 @@ export struct InboxPage {
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
 
-          Text(`${this.getPriorityLabel(task.priority)} · 等待安排${task.note ? ' · 有备注' : ''}${(task.steps || []).length > 0 ? ` · 子任务 ${this.getTaskStepSummary(task)}` : ''}`)
+          Text(`${this.getPriorityLabel(task.priority)} · 待安排${task.note ? ' · 有备注' : ''}${(task.steps || []).length > 0 ? ` · 子任务 ${this.getTaskStepSummary(task)}` : ''}`)
             .fontSize(11)
             .fontColor(ThemeTokens.muted(this.currentTheme))
             .margin({ top: 5 })

@@ -27,7 +27,7 @@ $env:DEVECO_SDK_HOME='C:\Program Files\Huawei\DevEco Studio\sdk'
 - Product and UI reset blueprint: `docs/PRODUCT_UI_BLUEPRINT.md`
 - Authoritative full module specification: `docs/FUNCTION_MODULE_SPEC.md`
 - Roadmap inputs: `副本任务类功能.xlsx`, current implementation state, and market references including TickTick, Todoist, Microsoft To Do, Any.do, Structured, Sunsama, Taskito, and Sorted.
-- Next recommended phase: device runtime QA when a target is available; otherwise continue low-risk checklist polish without adding heavy system dependencies.
+- Next recommended phase: continue launch-ready UI and copy polish from `docs/MASTER_FEATURE_CHECKLIST.md`.
 
 ## Feature Backlog From XLSX
 
@@ -2144,3 +2144,41 @@ Verification:
 - Generated icon check: `Size=1024x1024; cornerA=0; centerA=255`.
 - `git diff --check` passed on 2026-05-19 with line-ending warnings only.
 - `hvigor assembleApp --no-daemon` passed on 2026-05-19. Remaining warnings are obfuscation and signing configuration warnings.
+
+## Phase 68: Launch-Ready Copy Cleanup
+
+Status: Done
+
+Files changed:
+
+- `README.md`
+- `DELIVERY.md`
+- `IMPLEMENTATION.md`
+- `docs/USER_GUIDE.md`
+- `docs/USER_MANUAL.md`
+- `docs/RELEASE_HANDOFF.md`
+- `docs/MASTER_FEATURE_CHECKLIST.md`
+- `docs/DEVICE_QA_CHECKLIST.md`
+- `docs/APP_FRAMEWORK.md`
+- `docs/FUNCTION_MODULE_SPEC.md`
+- `flow/src/main/ets/pages/SettingsPage.ets`
+- `flow/src/main/ets/pages/FocusPage.ets`
+- `flow/src/main/ets/pages/InboxPage.ets`
+- `flow/src/main/ets/utils/LiveWindowManager.ets`
+- `flow/src/main/ets/flowability/FlowAbility.ets`
+- `flow/src/main/ets/flowbackupability/FlowBackupAbility.ets`
+- `flow/src/ohosTest/ets/test/Ability.test.ets`
+
+Implemented:
+
+- Rewrote public-facing README, user guide, user manual, delivery summary, and release handoff around the `流序 1.0` product story.
+- Removed app-visible experience-version, device-waiting, pre-release, internal status, and test-tag wording.
+- Replaced Settings app-status copy with product-facing language for core flow, local data, reminder preferences, and theme appearance.
+- Simplified LiveWindowManager comments/log framing so it describes current in-app focus state instead of unfinished system capability work.
+- Updated the master feature checklist to make launch-ready UI/copy polish the next recommended direction.
+
+Verification:
+
+- Source search found no app-visible `真机`, `体验版`, `待接入`, `发布前`, `QA`, `testTag`, `TODO`, or similar launch-inappropriate wording under `flow/src/main`.
+- `git diff --check` passed on 2026-05-19 with line-ending warnings only.
+- `hvigor assembleApp --no-daemon` passed on 2026-05-19.

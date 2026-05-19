@@ -1,125 +1,94 @@
-# Flow State Master Feature Checklist
+# 流序完整功能清单
 
-Updated: 2026-05-17
+Updated: 2026-05-19
 
-This is the execution checklist for Flow State. Future work should be chosen from this file, then reflected back into `DEVELOPMENT_PROGRESS.md` after implementation.
+本文件是流序后续开发的总表。每次继续推进项目时，先从这里选择任务，完成后同步更新 `docs/DEVELOPMENT_PROGRESS.md`。
 
-Status legend:
+状态说明：
 
-- ✅ Done: implemented and build-verified.
-- 🟡 Active: usable first version exists, but important completion work remains.
-- ⬜ Planned: product-approved direction, not implemented yet.
-- 🔒 Docs/API Review: should only ship after HarmonyOS official API review.
+- Done：当前版本已实现并完成构建验证。
+- Active：已有可用版本，后续继续打磨。
+- Planned：产品方向明确，暂不进入当前版本。
 
-## Product Completion Estimate
+## 当前定位
 
-Current estimated completion for a high-quality first usable app: **about 99%**.
+流序 1.0 是一款时间线优先的计划与专注应用。当前版本已经形成完整的日常闭环：
 
-This does not mean every ambitious feature is 99% done. It means the core collect -> schedule -> focus -> review loop is now usable, Focus completion is clearer, local data has a versioned migration path, repeated task-depth data logic has a shared contract, page navigation has been moved behind a UIContext Router boundary, modal detail sheets now hide the root bottom tab bar while they are open, app startup now waits for local data/theme initialization before mounting the main tabs, theme selection now changes the major page surfaces through shared tokens, dark mode now has softer blue-gray surfaces and readable near-white text, Focus has a more premium natural-atmosphere execution surface, the main loop now has clearer next-step actions and empty-input states, Today and Review now establish the Layered Paper card system for the rest of the app, bottom tabs are more distinguishable, Today has a state-aware next-action card, Plan can now see both Inbox and future schedule sources and can pull future work into today when Inbox is empty, Settings exposes the product mainline, local data status, and honest experience/release status without over-promising system reminders, routed pages no longer use exported `@Entry` components, obsolete Home/Task/Records migration pages are no longer shipped, Review now supports both today and this-week scopes with a lightweight weekly rhythm chart plus a cleaner empty-state guide, device QA now has a concrete checklist, and release handoff state is documented. Remaining work is mostly device testing, release signing, reminder/system capabilities, secondary organization, and final device-led visual tuning.
+收集想法 -> 安排时间 -> 专注执行 -> 复盘调整。
 
-Estimated remaining work to reach a polished first release:
+后续优化不再追求堆功能，而是围绕三个标准推进：
 
-| Area | Remaining Weight | Why It Matters |
-| --- | ---: | --- |
-| Review follow-up polish | 0% | Daily and lightweight weekly insights are active; empty Review now leads users back into collect or plan. |
-| Shared component cleanup | 2% | Task-depth data logic is shared; some ArkUI builder layout is still repeated. |
-| Reminder/system capability review | 4% | Reminder preferences are honest in Settings; real reminders still need official HarmonyOS API work. |
-| Projects/tags or light organization | 3% | Useful later, but should not complicate the daily loop now. |
-| Device/runtime QA and signing | 3% | Static build is cleaner and the device QA checklist exists; device route stack, keyboard, picker, sheet height, and signing still need final verification. |
-| Final visual/interaction polish | 1% | Theme-visible surfaces, dark-mode contrast, Focus atmosphere, ArkUI alpha-color handling, Layered Paper card hierarchy for Today/Review, Focus safe-area controls, key metric-card typography, editing-sheet form controls, and modal/tab-bar hierarchy have been upgraded; remaining polish should come from real device screenshots and tap testing. |
+- 更少步骤：用户一眼知道下一步做什么。
+- 更高质感：卡片、按钮、排版、主题都保持克制、清爽、精致。
+- 更稳节奏：规划、专注、复盘自然衔接，不制造额外负担。
 
-## P0: Core Daily Loop
+## P0：核心日常闭环
 
-| Module | Feature | Status | Evidence / Notes | Next Action |
+| 模块 | 功能 | 状态 | 说明 | 下一步 |
 | --- | --- | --- | --- | --- |
-| Today | Main tab is the default command center | ✅ | `Index.ets` routes to the Today-first IA. | Keep Today as first mental entry. |
-| Today | Workload band with planned minutes and daily capacity | ✅ | Uses Settings capacity and overload text. | Minor visual polish only. |
-| Today | Next action block with Start / Collect / Arrange / Review route | ✅ | State-aware copy and actions handle next focus block, no-more-blocks review, unscheduled Inbox work, and first capture. | Device-test route stack behavior. |
-| Today | Chronological timeline blocks | ✅ | `TodayPage.ets` groups today's schedules by time. | Add drag/reorder later. |
-| Today | Now indicator and free-space rows | ✅ | Timeline shows current point and gaps. | Tune spacing after device testing. |
-| Today | Inbox strip and tomorrow preview | ✅ | Helps explain why Inbox tasks disappear after scheduling. | Keep compact. |
-| Today | Conflict banner for overlapping active blocks | ✅ | `ScheduleAnalyzer.getConflicts`. | Add richer explanation in Review. |
-| Today | Missed block detection and carry-over | ✅ | Missed blocks can move to tomorrow while preserving history. | Review should explain carry-over. |
-| Today | Schedule edit sheet with date/time/duration | ✅ | Uses DatePicker/TimePicker-style controls. | Keep common fields visible by default. |
-| Today | Linked notes/subtasks on schedule blocks | ✅ | Scheduled task depth appears after Inbox scheduling. | Extract shared UI later. |
-| Today | Lightweight routine templates | ✅ | `常用模板` strip adds today templates once. | Expand only if real use proves useful. |
-| Inbox | One-line capture with priority | ✅ | `InboxPage.ets` saves unscheduled tasks. | Keep capture fast. |
-| Inbox | Schedule to Today / Tomorrow | ✅ | Creates schedules and removes task from Inbox. | Keep feedback visible. |
-| Inbox | Triage sheet with title/note/priority/subtasks/date/time/duration | ✅ | First active task-detail flow. | Simplify if user testing says it feels heavy. |
-| Inbox | Delete Inbox task | ✅ | Existing task deletion path. | Add archive later if needed. |
-| Plan | Guided five-step planning ritual | ✅ | Review / choose / estimate / order / start flow exists, with source awareness for Inbox and scheduled-later work. | Tighten copy only after device testing. |
-| Plan | Planning source panel | ✅ | Plan shows Inbox count, future schedule count, today's planned minutes, can move a future schedule into today while preserving history, and now treats future work as the next step when Inbox is empty. | Device-test source actions. |
-| Plan | Capacity-aware auto-plan suggestions | ✅ | `AutoPlanner` respects existing blocks and capacity, and Plan now explains the priority/order/gap logic in the UI. | Add routines as an auto-source later if it stays simple. |
-| Plan | Select, exclude, reorder, and resize suggestions | ✅ | Suggestions are editable before applying. | Keep controls compact. |
-| Plan | Handoff to Focus after planning | ✅ | First created block can auto-start Focus. | Keep the handoff obvious. |
-| Future | Tomorrow / this week / later groups | ✅ | `UpcomingPage.ets` owns scheduled-later work. | Add calendar views later. |
-| Future | Move future item to Today or back to Inbox | ✅ | Schedule update/delete flows active. | Preserve clear feedback. |
-| Future | Edit future item and linked task depth | ✅ | Future editor mirrors Today simple disclosure. | Extract shared editor later. |
-| Focus | Linked timer from schedule/task | ✅ | Focus accepts schedule/task params, can auto-start from Plan/Today, previews the next block after completion, and now uses a local natural landscape plus glass-like execution surface. | Device-test auto-start, readability, and next-block handoff. |
-| Focus | Save session and update schedule completion | ✅ | Completion freezes actual minutes, updates the linked schedule, and can return to Today or start the next block. | Device-test completion edge cases later. |
-| Review | Basic narrative and real data metrics | ✅ | Review uses focus/change/archive data, explains plan quality, can switch between today and this week, shows a weekly rhythm chart, and presents a task-oriented guide when there is no reviewable data yet. | Device-test range switching and empty-state actions. |
-| Navigation | UIContext Router boundary | ✅ | `NavigationManager` wraps `UIContext.getRouter()`, typed route params, tab switching, and replace navigation for Focus handoff so main pages no longer stack repeatedly. | Device-test stack/back behavior. |
-| Navigation | Startup readiness guard | ✅ | Root `Index` shows a local-data loading state until Preferences and theme initialization complete, then mounts the main tabs. | Device-test first launch timing. |
-| Navigation | Distinguishable bottom tabs | ✅ | Review no longer shares the same clock glyph as Future; Today settings now uses a gear entry icon. | Device-test symbol rendering. |
-| Navigation | Modal sheets cover bottom navigation | ✅ | Today schedule editing, Inbox triage, and Future schedule editing set a shared tab-bar-covered state so the root `Tabs` shell collapses the bottom bar while detail sheets are open. | Device-test sheet open/close and hardware back behavior. |
-| Flow Polish | Main-loop next-step actions and disabled-looking empty states | ✅ | Today/Review have state-aware next actions; Review no longer shows a dense zero-state analytics stack; Future empty state routes to Collect/Plan; empty title buttons no longer look fully active. | Device-test with real thumb flow. |
-| Release Readiness | Route entry/component split | ✅ | Exported page components are no longer decorated with `@Entry`; each routed page has a non-exported entry wrapper. | Device-test routed pages. |
-| Release Readiness | Remove obsolete legacy pages | ✅ | `HomePage`, `TaskPage`, and `RecordsPage` are removed from active page profile/source; shipped surface is Today/Inbox/Plan/Future/Review plus Focus/Settings. | Device-test route profile. |
-| Release Readiness | Honest system-capability status | ✅ | Settings explains reminder preferences, core flow, local data, system reminder verification, and signing status. | Replace status copy after real reminders/signing ship. |
-| Release Readiness | Static handoff package | ✅ | `docs/RELEASE_HANDOFF.md` records build command, HAP path, device check, install command, and final acceptance boundary. | Use it once a device/emulator target is available. |
-| Release Readiness | User manual and quick-start guide | ✅ | `docs/USER_MANUAL.md` explains the product mental model, pages, workflows, task states, current limits, and official HarmonyOS documentation context. | Use it for first experience testing and future onboarding copy. |
-| Settings | Product mainline summary | ✅ | Settings shows the compact 收集 -> 安排 -> 专注 -> 复盘 loop without turning into a guide page, and theme changes now visibly affect root/Today/Inbox/Plan/Future/Review/Settings surfaces. | Keep concise and verify contrast by theme. |
-| Settings | Local data status | ✅ | Settings shows schema version and local counts for tasks, schedules, focus sessions, and archives. | Add export/import only after permission review. |
-| Settings | Experience/release status | ✅ | Settings shows build, device QA, system reminder, and signing readiness honestly, and the About card uses experience-version wording. | Replace copy after device QA/signing pass. |
-| Brand | App name, icon, and user-facing language | ✅ | Product name is now `流序`; the provided icon is wired to the app module; user-visible copy avoids `P0/P1/P2` and implementation wording. | Keep copy short during future feature work. |
+| Today | 默认主页面 | Done | 应用启动后以今天为日常入口。 | 保持主入口不变。 |
+| Today | 今日负荷 | Done | 展示已规划分钟数、剩余容量和关键统计。 | 继续细化视觉层级。 |
+| Today | 下一步行动 | Done | 根据当前状态引导开始、收集、规划或复盘。 | 文案继续保持短句。 |
+| Today | 时间线 | Done | 按时间展示今天所有时间块。 | 后续可加入拖动排序。 |
+| Today | 空档和冲突提示 | Done | 让用户看到可安排空间和重叠风险。 | 复盘中继续解释原因。 |
+| Today | 明日预备 | Done | 展示已经留给明天的事项。 | 保持轻量。 |
+| Today | 常用模板 | Done | 快速加入晨间规划、深度工作、收尾复盘。 | 只保留真正高频模板。 |
+| Inbox | 快速收集 | Done | 一行输入即可保存想法或待办。 | 保持低摩擦。 |
+| Inbox | 优先级选择 | Done | 使用优先、重要、常规三类用户语言。 | 避免 P0/P1/P2 这类开发语言。 |
+| Inbox | 安排到今天/明天 | Done | 收集任务安排后进入时间线或未来页。 | 保持反馈明确。 |
+| Inbox | 整理任务 | Done | 支持备注、优先级、子任务、日期、结束时间和时长。 | 继续打磨面板排版。 |
+| Plan | 可安排来源 | Done | 同时看到收集箱、未来事项和今日容量。 | 保持决策信息清晰。 |
+| Plan | 自动编排 | Done | 根据优先级、创建时间、容量和空档生成建议。 | 不让自动建议替代用户判断。 |
+| Plan | 建议调整 | Done | 可选择、排除、调时长、调顺序。 | 控件保持简洁。 |
+| Plan | 专注交接 | Done | 规划后可以直接开始第一段。 | 保持路径短。 |
+| Future | 明天/本周/稍后 | Done | 未来事项按时间分组。 | 后续再考虑周/月视图。 |
+| Future | 移到今天 | Done | 未来事项可以提前进入今天。 | 保持状态反馈。 |
+| Future | 退回收集 | Done | 不确定的事项可以回到收集箱。 | 避免误删。 |
+| Focus | 关联时间块 | Done | 从今天或规划进入专注。 | 保持返回层级浅。 |
+| Focus | 计时控制 | Done | 支持开始、暂停、完成、放弃。 | 继续提升视觉质感。 |
+| Focus | 完成复盘 | Done | 完成后冻结实际用时并记录偏差。 | 复盘输入保持轻量。 |
+| Focus | 下一段衔接 | Done | 有下一段时可以直接继续。 | 避免重复堆叠页面。 |
+| Review | 今日复盘 | Done | 展示完成、专注、结转和计划质量。 | 继续提高图表质感。 |
+| Review | 本周视角 | Done | 提供轻量周节奏概览。 | 不做过重仪表盘。 |
+| Review | 关键洞察 | Done | 用短句解释过载、结转和节奏问题。 | 文案继续产品化。 |
+| Settings | 专注节奏 | Done | 管理默认专注、休息和每日容量。 | 数字控件保持清晰。 |
+| Settings | 提醒偏好 | Done | 管理通知、声音、振动偏好。 | 文案只描述用户可理解的设置。 |
+| Settings | 主题外观 | Done | 支持浅色、夜间、自然等主题。 | 持续统一各页面色彩。 |
+| Settings | 本地数据 | Done | 展示任务、日程、专注和归档数据。 | 危险操作保持明确确认。 |
+| Settings | 应用状态 | Done | 展示核心流程、本地数据、偏好和主题状态。 | 不出现开发态或测试态文字。 |
+| Brand | 名称和图标 | Done | 产品名为流序，图标已接入。 | 后续可继续优化品牌识别。 |
+| Copy | 用户文案 | Active | 主要页面已改成用户语言。 | 持续清理生硬解释和开发措辞。 |
 
-## P1: Mature Planning
+## P1：成熟计划能力
 
-| Module | Feature | Status | Evidence / Notes | Next Action |
+| 模块 | 功能 | 状态 | 说明 | 下一步 |
 | --- | --- | --- | --- | --- |
-| Task Detail | Shared task-depth UI component/surface | 🟡 | `TaskDepthUtils` now owns drafts, hints, summaries, toggles, and updated task payloads for Today/Future. | Extract shared ArkUI builder only if it stays simple. |
-| Review | Explain conflicts, carry-over, routines, and estimate drift | ✅ | `ReviewAnalyzer` turns execution data into short readable insights and day-by-day week stats. | Keep charts minimal. |
-| Data | Versioned data model and migrations | ✅ | `DataMigration` normalizes Preferences data and Settings exposes the current schema/count status. | Add future migrations before Projects/Tags/Reminders. |
-| Routines | Default routine template strip | ✅ | Today can add three default templates. | Do not expand until tested. |
-| Routines | Repeat rules / generated future blocks | ⬜ | Not implemented. | Keep out of P0. |
-| Projects/Tags | Project and tag models | ⬜ | Spec exists only. | Add after core loop testing. |
-| Projects/Tags | Filters and workload by project/tag | ⬜ | Spec exists only. | Depends on models. |
-| Natural Input | Natural-language quick add | ⬜ | Planned. | Needs parsing boundary review. |
-| Schedule | Drag/reorder timeline blocks | ⬜ | Planned. | Add only after current tap/edit UX is stable. |
-| Future | Week/month calendar views | ⬜ | Planned. | Secondary to daily loop. |
+| Task Detail | 共享任务详情组件 | Active | Today、Inbox、Future 已共享数据逻辑。 | 只在能减少重复时抽取 UI。 |
+| Task Detail | 子任务交互 | Done | 可添加、展示、切换子任务。 | 优化字体和间距。 |
+| Review | 计划质量解释 | Done | 能解释容量、结转、冲突和节奏。 | 图表保持少而准。 |
+| Data | 版本化本地数据 | Done | 具备本地数据迁移路径。 | 新字段先补迁移。 |
+| Routine | 默认模板 | Done | 今天页可快速加入常用时间块。 | 不扩展成复杂习惯系统。 |
+| Routine | 重复规则 | Planned | 用于固定周期任务。 | 确认足够简单后再做。 |
+| Organization | 项目/标签 | Planned | 用于更多任务时的轻组织。 | 不影响日常主线。 |
+| Natural Input | 自然语言快速输入 | Planned | 例如“明天 9 点写周报”。 | 先确保基础输入足够好用。 |
+| Schedule | 拖动排序 | Planned | 在时间线中直接调整顺序。 | 当前点击编辑稳定后再做。 |
+| Future | 周/月视图 | Planned | 给未来安排更多空间感。 | 作为增强，不替代今天页。 |
 
-## P2: System Capabilities
+## P2：增强能力
 
-| Module | Feature | Status | Evidence / Notes | Next Action |
+| 模块 | 功能 | 状态 | 说明 | 下一步 |
 | --- | --- | --- | --- | --- |
-| Reminder Engine | Store reminder preferences | ✅ | Settings stores notification/sound/vibration preferences without claiming real delivery. | Add full rule model only with real notification work. |
-| Reminder Engine | Real HarmonyOS notification/alarm delivery | 🔒 | Requires official API review and device verification. | Do not fake. |
-| Calendar | System calendar integration | 🔒 | Requires official API and permission review. | Later. |
-| Background / Live status | Background focus/live state | 🔒 | Requires official API review. | Later. |
-| Widget | Home screen widget | 🔒 | Requires official API review. | Later. |
-| Export/Import | Data export/import | 🔒 | Requires storage/permission review. | Later. |
+| Reminder | 提醒规则 | Planned | 更细的提醒时间和重复策略。 | 先保持当前偏好简单。 |
+| Calendar | 日历整合 | Planned | 与外部日历形成统一时间视图。 | 确认权限和产品必要性。 |
+| Widget | 桌面组件 | Planned | 显示下一段任务和今日进度。 | 适合后续版本。 |
+| Export | 数据导出/导入 | Planned | 用户迁移或备份数据。 | 需要明确格式和安全提示。 |
+| Analytics | 更丰富统计 | Planned | 月度、项目、标签维度。 | 只在不干扰复盘时加入。 |
 
-## XLSX Requirement Coverage
+## 当前推荐推进
 
-Source: `副本任务类功能.xlsx`
+下一阶段继续做 UI 与文案精修：
 
-| XLSX Module | XLSX Feature | Current Coverage | Status | Notes |
-| --- | --- | --- | --- | --- |
-| 时间设置 | 精确时间 | Schedule date/time/dueAt and overdue/missed detection | ✅ | Today editor supports precise date/time. |
-| 时间设置 | 区间时间 | Schedule duration creates start/end window | 🟡 | Time blocks have start/end; broader week/month range planning is later. |
-| 提醒机制 | 闹钟提醒 | Not implemented | 🔒 | Needs real HarmonyOS notification/alarm API review. |
-| 提醒机制 | 自定义提醒 | Not implemented | 🔒 | Needs reminder model plus official API review. |
-| 任务操作 | 延后/提前 | Today schedule edit quick actions | ✅ | Change history records adjustments. |
-| 任务操作 | 变更备注 | Schedule change note | ✅ | Delay/advance/edit can store notes. |
-| 状态展示 | 进行中标识 | Today timeline status chips and ongoing state | ✅ | Active block status is visible. |
-| 状态展示 | 优先级排序 | Inbox/Plan priority-aware sorting | 🟡 | Implemented in key lists; future global sorting can improve. |
-
-## Current Recommendation
-
-Next implementation should be **Device Runtime QA Pass** using `docs/DEVICE_QA_CHECKLIST.md` and `docs/RELEASE_HANDOFF.md`:
-
-1. Run the app on device/emulator and walk the full loop: collect -> schedule -> focus -> complete -> review.
-2. Fix any route-stack, keyboard, picker, sheet height, or small-screen spacing issues found in real interaction.
-3. Prepare signing/release configuration only after the runtime loop is stable.
-
-Reason: static build noise is now low enough to focus on actual runtime behavior. The next highest-value work is confirming the app on HarmonyOS device/emulator before adding larger organization or system-capability modules.
+1. 统一所有卡片的层次、阴影、边框和按钮质感。
+2. 清理剩余生硬解释文案，让每个页面像正式产品。
+3. 保持流程简单，任何新增能力都必须减少用户思考成本。
+4. 每次修改后运行 `assembleApp --no-daemon`。

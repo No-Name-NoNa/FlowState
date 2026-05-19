@@ -707,8 +707,8 @@ Control defaults without cluttering planning.
 - Default daily capacity.
 - Compact product mainline summary.
 - Reminder toggles.
-- Capability status card for core flow, local data, system reminders, and release signing.
-- Experience status card for static build, device QA, system reminder, and signing readiness.
+- App status card for core flow, local data, reminder preferences, and theme appearance.
+- About card for product identity and version.
 - Local data status counts.
 - Theme preference.
 - Data reset/export later.
@@ -718,12 +718,12 @@ Control defaults without cluttering planning.
 - Quiet list groups.
 - Mainline card shows `收集 / 安排 / 专注 / 复盘` as a short visual sequence.
 - Local data card shows schema version and counts for task, schedule, focus, and archive records.
-- Experience status card uses honest pre-release wording and does not imply full release readiness.
+- App status card uses product-facing language and avoids development or testing wording.
 - Focus group includes default focus, default rest, and daily capacity.
 - Daily capacity clamps to a practical range before saving.
 - No promotional content.
 - Settings stays secondary.
-- System-capability copy must be honest about features that are preferences only.
+- Reminder copy describes the user preference, not implementation details.
 
 ### Acceptance Criteria
 
@@ -731,8 +731,8 @@ Control defaults without cluttering planning.
 - Daily capacity affects Today and Plan workload warnings.
 - Mainline summary stays concise and does not become a tutorial page.
 - Local data status is read-only until export/import permissions are reviewed.
-- Reminder preference toggles do not imply real system reminder delivery.
-- About uses experience-version wording until device QA and signing are complete.
+- Reminder preferences use clear, user-facing labels.
+- About uses the public product name and version.
 
 ## Module 13: Data And Migration
 
