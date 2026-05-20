@@ -3,6 +3,66 @@
     {
       "name": "page_text_font_size",
       "value": "50fp"
+    },
+    {
+      "name": "font_size_header_title",
+      "value": "22fp"
+    },
+    {
+      "name": "font_size_body",
+      "value": "16fp"
+    },
+    {
+      "name": "font_size_caption",
+      "value": "13fp"
+    },
+    {
+      "name": "font_size_tab_label",
+      "value": "12fp"
+    },
+    {
+      "name": "spacing_xs",
+      "value": "4vp"
+    },
+    {
+      "name": "spacing_sm",
+      "value": "8vp"
+    },
+    {
+      "name": "spacing_md",
+      "value": "16vp"
+    },
+    {
+      "name": "spacing_lg",
+      "value": "24vp"
+    },
+    {
+      "name": "spacing_xl",
+      "value": "32vp"
+    },
+    {
+      "name": "tab_bar_height",
+      "value": "56vp"
+    },
+    {
+      "name": "header_height",
+      "value": "56vp"
+    },
+    {
+      "name": "icon_size_sm",
+      "value": "20vp"
+    },
+    {
+      "name": "icon_size_md",
+      "value": "24vp"
+    },
+    {
+      "name": "settings_item_height",
+      "value": "52vp"
+    },
+    {
+      "name": "divider_stroke_width",
+      "value": "0.5vp"
     }
   ]
 }

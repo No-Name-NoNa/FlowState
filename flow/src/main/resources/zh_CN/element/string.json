@@ -1,36 +1,24 @@
 {
   "string": [
     {
-      "name": "module_desc",
-      "value": "module description"
-    },
-    {
-      "name": "FlowAbility_desc",
-      "value": "description"
-    },
-    {
-      "name": "FlowAbility_label",
-      "value": "label"
-    },
-    {
       "name": "tab_home",
-      "value": "Home"
+      "value": "首页"
     },
     {
       "name": "tab_history",
-      "value": "History"
+      "value": "历史"
     },
     {
       "name": "home_greeting",
-      "value": "What's on your mind today?"
+      "value": "今天想做什么？"
     },
     {
       "name": "settings_title",
-      "value": "Settings"
+      "value": "设置"
     },
     {
       "name": "settings_language_label",
-      "value": "Language"
+      "value": "语言"
     },
     {
       "name": "settings_language_zh",
@@ -42,11 +30,11 @@
     },
     {
       "name": "history_empty_hint",
-      "value": "No completed tasks yet."
+      "value": "暂无完成记录"
     },
     {
       "name": "home_empty_hint",
-      "value": "Tap below to start capturing"
+      "value": "轻触下方，开始记录"
     }
   ]
 }
