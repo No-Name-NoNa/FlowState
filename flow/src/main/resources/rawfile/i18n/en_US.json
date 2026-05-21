@@ -1,5 +1,6 @@
 {
   "tab_home": "Home",
+  "tab_tasks": "Tasks",
   "tab_history": "History",
   "home_greeting": "What's on your mind today?",
   "settings_title": "Settings",
@@ -8,6 +9,7 @@
   "settings_language_en": "English",
   "history_empty_hint": "No completed tasks yet.",
   "home_empty_hint": "Tap below to start capturing",
+  "task_empty_hint": "No tasks yet. Add one from your Inbox.",
   "settings_theme_label": "Theme",
   "settings_theme_light": "Dawn",
   "settings_theme_dark": "Dusk",

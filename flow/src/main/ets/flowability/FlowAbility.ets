@@ -4,6 +4,7 @@ import { window } from '@kit.ArkUI';
 import { KEY_APP_LANGUAGE, LOG_DOMAIN } from '../constants/AppConstants';
 import { I18nHelper } from '../util/I18nHelper';
 import { InboxDatabase } from '../util/InboxDatabase';
+import { TaskDatabase } from '../util/TaskDatabase';
 import { PreferencesHelper } from '../util/PreferencesHelper';
 import { ThemeHelper } from '../util/ThemeHelper';
 
@@ -31,6 +32,9 @@ export default class FlowAbility extends UIAbility {
 
     // 初始化收集箱 RDB 数据库（异步，不阻塞页面加载）
     InboxDatabase.init(this.context);
+
+    // 初始化任务 RDB 数据库（异步，不阻塞页面加载）
+    TaskDatabase.init(this.context);
 
     hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onCreate');
   }

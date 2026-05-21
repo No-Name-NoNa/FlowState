@@ -1,14 +1,16 @@
 /**
  * Index.ets
  * 应用主框架入口页。
- * 基于原生 Tabs 组件构建双 Tab 底部导航结构：
- *   - Tab 0：首页（Home），主工作区，含快速捕获与动态任务列表
- *   - Tab 1：历史（History），已完成任务的轻量历史数据库
+ * 基于原生 Tabs 组件构建三 Tab 底部导航结构：
+ *   - Tab 0：首页（Home），快速捕获收集箱
+ *   - Tab 1：任务（Tasks），动态优先级任务工作区
+ *   - Tab 2：历史（History），已完成任务的轻量历史数据库
  * 遵循 PRD "去卡片化" 与 "Smooth & Snappy" 动画要求。
  */
 import { I18nHelper } from '../util/I18nHelper';
 import { I18nKeys } from '../constants/I18nKeys';
 import { HomePage } from '../views/HomePage';
+import { TaskPage } from '../views/TaskPage';
 import { HistoryPage } from '../views/HistoryPage';
 import { KEY_APP_LANGUAGE, KEY_THEME_TOKENS, LANG_ZH_CN } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
@@ -130,12 +132,22 @@ struct MainPage {
         I18nKeys.TAB_HOME
       ))
 
-      // ── Tab 1：历史 ──────────────────────────────────────────────────────
+      // ── Tab 1：任务 ──────────────────────────────────────────────────────
+      TabContent() {
+        TaskPage()
+      }
+      .tabBar(this.tabBarItem(
+        1,
+        $r('app.media.ic_tab_tasks'),
+        I18nKeys.TAB_TASKS
+      ))
+
+      // ── Tab 2：历史 ──────────────────────────────────────────────────────
       TabContent() {
         HistoryPage()
       }
       .tabBar(this.tabBarItem(
-        1,
+        2,
         $r('sys.media.ohos_ic_public_clock'),
         I18nKeys.TAB_HISTORY
       ))

@@ -37,6 +37,12 @@ export const INBOX_DB_STORE_NAME: string = 'inbox.db';
 /** AppStorage：收集箱跨页刷新信号键名（编辑/新建页保存后置 true，首页检测到后刷新并置回 false） */
 export const KEY_INBOX_NEEDS_REFRESH: string = 'inboxNeedsRefresh';
 
+/** 任务 RDB 数据库文件名 */
+export const TASK_DB_STORE_NAME: string = 'tasks.db';
+
+/** AppStorage：任务列表跨页刷新信号键名（任务编辑/新建页保存后置 true，TaskPage 检测到后刷新并置回 false） */
+export const KEY_TASK_NEEDS_REFRESH: string = 'taskNeedsRefresh';
+
 /**
  * 分隔线宽度。
  * Divider.strokeWidth() 的 SDK 声明为 strokeWidth(value: number | string)，

@@ -240,7 +240,9 @@ export class InboxViewModel {
       sortOrder: targetSortOrder,
       isPinned: newPinned,
       createdAt: entry.createdAt,
-      updatedAt: entry.updatedAt,
+      // 更新 updatedAt，使 ForEach key（id + '_' + updatedAt）改变，
+      // 强制 ArkUI 销毁并重建 InboxItemComponent，确保 @Prop entryIsPinned 立即刷新
+      updatedAt: Date.now(),
     };
     await InboxDatabase.update(updated);
     await InboxViewModel.load();
@@ -316,7 +318,8 @@ export class InboxViewModel {
       sortOrder: groupMin - 1,
       isPinned: entry.isPinned,
       createdAt: entry.createdAt,
-      updatedAt: entry.updatedAt,
+      // 更新 updatedAt，确保 ForEach key 改变，触发组件重建以刷新序号显示
+      updatedAt: Date.now(),
     };
     await InboxDatabase.update(updated);
     await InboxViewModel.load();

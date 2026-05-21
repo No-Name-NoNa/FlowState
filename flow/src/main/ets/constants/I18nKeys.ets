@@ -8,6 +8,7 @@
 /** 所有界面字符串的 key 常量 */
 export enum I18nKeys {
   TAB_HOME = 'tab_home',
+  TAB_TASKS = 'tab_tasks',
   TAB_HISTORY = 'tab_history',
   HOME_GREETING = 'home_greeting',
   SETTINGS_TITLE = 'settings_title',
@@ -16,6 +17,8 @@ export enum I18nKeys {
   SETTINGS_LANGUAGE_EN = 'settings_language_en',
   HISTORY_EMPTY_HINT = 'history_empty_hint',
   HOME_EMPTY_HINT = 'home_empty_hint',
+  // 任务模块相关 key
+  TASK_EMPTY_HINT = 'task_empty_hint',
   // 主题设置相关 key
   SETTINGS_THEME_LABEL = 'settings_theme_label',
   SETTINGS_THEME_LIGHT = 'settings_theme_light',

@@ -1,5 +1,6 @@
 {
   "tab_home": "首页",
+  "tab_tasks": "任务",
   "tab_history": "历史",
   "home_greeting": "今天想做什么？",
   "settings_title": "设置",
@@ -8,6 +9,7 @@
   "settings_language_en": "English",
   "history_empty_hint": "暂无完成记录",
   "home_empty_hint": "轻触下方，开始记录",
+  "task_empty_hint": "暂无任务，去收集箱添加吧",
   "settings_theme_label": "主题",
   "settings_theme_light": "清晨",
   "settings_theme_dark": "暗夜",
