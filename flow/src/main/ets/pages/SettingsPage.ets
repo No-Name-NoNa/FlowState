@@ -7,6 +7,7 @@
  */
 import { router } from '@kit.ArkUI';
 import { I18nHelper } from '../util/I18nHelper';
+import { I18nKeys } from '../constants/I18nKeys';
 import { SettingsViewModel } from '../viewmodel/SettingsViewModel';
 import { KEY_APP_LANGUAGE, LANG_ZH_CN, LANG_EN_US, DIVIDER_STROKE_WIDTH } from '../constants/AppConstants';
 
@@ -14,14 +15,14 @@ import { KEY_APP_LANGUAGE, LANG_ZH_CN, LANG_EN_US, DIVIDER_STROKE_WIDTH } from '
 @Entry
 @Component
 struct SettingsPage {
-  /** 当前语言，绑定全局 AppStorage，切换后整个应用实时响应 */
+  /** 订阅语言变化，切换后整个应用实时响应 */
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
 
   /**
    * 构建单个语言选项行。
    * 选中项以主色文字 + 右侧勾选图标标识，未选中项以次要色显示。
    * @param langCode    语言标识代码
-   * @param displayName 展示给用户的语言名称
+   * @param displayName 展示给用户的语言名称（固定为该语言自身文字，不随界面语言变化）
    */
   @Builder
   languageOptionItem(langCode: string, displayName: string): void {
@@ -68,7 +69,7 @@ struct SettingsPage {
           })
 
         // 页面标题
-        Text(I18nHelper.getSettingsTitle(this.currentLanguage))
+        Text(I18nHelper.t(I18nKeys.SETTINGS_TITLE, this.currentLanguage))
           .fontSize($r('app.float.font_size_header_title'))
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.color_text_primary'))
@@ -93,7 +94,7 @@ struct SettingsPage {
       // ── 设置内容区 ────────────────────────────────────────────────────────
       Column() {
         // 语言分区标题
-        Text(I18nHelper.getLanguageLabel(this.currentLanguage))
+        Text(I18nHelper.t(I18nKeys.SETTINGS_LANGUAGE_LABEL, this.currentLanguage))
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.color_text_secondary'))
           .width('100%')
@@ -105,7 +106,7 @@ struct SettingsPage {
           })
 
         // 语言选项：简体中文
-        this.languageOptionItem(LANG_ZH_CN, '简体中文')
+        this.languageOptionItem(LANG_ZH_CN, I18nHelper.t(I18nKeys.SETTINGS_LANGUAGE_ZH, this.currentLanguage))
 
         // 选项间分隔线
         Divider()
@@ -114,7 +115,7 @@ struct SettingsPage {
           .margin({ left: $r('app.float.spacing_lg'), right: $r('app.float.spacing_lg') })
 
         // 语言选项：English
-        this.languageOptionItem(LANG_EN_US, 'English')
+        this.languageOptionItem(LANG_EN_US, I18nHelper.t(I18nKeys.SETTINGS_LANGUAGE_EN, this.currentLanguage))
       }
       .width('100%')
       .alignItems(HorizontalAlign.Start)

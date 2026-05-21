@@ -1,0 +1,11 @@
+{
+  "tab_home": "Home",
+  "tab_history": "History",
+  "home_greeting": "What's on your mind today?",
+  "settings_title": "Settings",
+  "settings_language_label": "Language",
+  "settings_language_zh": "简体中文",
+  "settings_language_en": "English",
+  "history_empty_hint": "No completed tasks yet.",
+  "home_empty_hint": "Tap below to start capturing"
+}

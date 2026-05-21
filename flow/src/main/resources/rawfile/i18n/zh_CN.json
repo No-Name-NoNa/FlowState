@@ -1,0 +1,11 @@
+{
+  "tab_home": "首页",
+  "tab_history": "历史",
+  "home_greeting": "今天想做什么？",
+  "settings_title": "设置",
+  "settings_language_label": "语言",
+  "settings_language_zh": "简体中文",
+  "settings_language_en": "English",
+  "history_empty_hint": "暂无完成记录",
+  "home_empty_hint": "轻触下方，开始记录"
+}

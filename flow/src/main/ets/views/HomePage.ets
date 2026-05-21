@@ -6,12 +6,13 @@
  */
 import { router } from '@kit.ArkUI';
 import { I18nHelper } from '../util/I18nHelper';
+import { I18nKeys } from '../constants/I18nKeys';
 import { KEY_APP_LANGUAGE, LANG_ZH_CN, DIVIDER_STROKE_WIDTH } from '../constants/AppConstants';
 
 /** 首页视图组件 */
 @Component
 export struct HomePage {
-  /** 当前语言，绑定全局 AppStorage，语言切换时自动触发重渲染 */
+  /** 订阅语言变化，语言切换时触发组件重渲染 */
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
 
   /** 点击设置图标，路由跳转至设置页 */
@@ -23,7 +24,7 @@ export struct HomePage {
     Column() {
       // 顶部 Header：问候语（左）+ 设置图标（右）
       Row() {
-        Text(I18nHelper.getHomeGreeting(this.currentLanguage))
+        Text(I18nHelper.t(I18nKeys.HOME_GREETING, this.currentLanguage))
           .fontSize($r('app.float.font_size_header_title'))
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.color_text_primary'))
@@ -51,7 +52,7 @@ export struct HomePage {
 
       // 主内容区占位（后续开发任务列表与快速捕获输入框）
       Column() {
-        Text(I18nHelper.getHomeEmptyHint(this.currentLanguage))
+        Text(I18nHelper.t(I18nKeys.HOME_EMPTY_HINT, this.currentLanguage))
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.color_text_secondary'))
       }

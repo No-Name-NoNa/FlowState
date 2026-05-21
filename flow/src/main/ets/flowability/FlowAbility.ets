@@ -1,7 +1,9 @@
 import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
-import { KEY_APP_LANGUAGE, LANG_ZH_CN, LOG_DOMAIN } from '../constants/AppConstants';
+import { KEY_APP_LANGUAGE, LOG_DOMAIN } from '../constants/AppConstants';
+import { I18nHelper } from '../util/I18nHelper';
+import { PreferencesHelper } from '../util/PreferencesHelper';
 
 export default class FlowAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
@@ -11,8 +13,15 @@ export default class FlowAbility extends UIAbility {
       hilog.error(LOG_DOMAIN, 'FlowAbility', '设置颜色模式失败：%{public}s', JSON.stringify(err));
     }
 
-    // 持久化语言偏好设置，确保应用重启后仍保留用户选择的语言
-    PersistentStorage.persistProp<string>(KEY_APP_LANGUAGE, LANG_ZH_CN);
+    // 初始化偏好设置，同步读取上次保存的语言值
+    PreferencesHelper.init(this.context);
+
+    // 将已保存的语言写入 AppStorage，供全局 @StorageLink 组件使用
+    // 必须在任何页面加载（onWindowStageCreate）之前完成，确保组件初始化时即读到正确语言
+    AppStorage.setOrCreate<string>(KEY_APP_LANGUAGE, PreferencesHelper.getLanguage());
+
+    // 预加载所有语言翻译文件，为 I18nHelper.t() 提供数据
+    I18nHelper.init(this.context);
 
     hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onCreate');
   }

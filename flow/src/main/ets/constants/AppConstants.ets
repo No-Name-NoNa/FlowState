@@ -16,6 +16,9 @@ export const LANG_EN_US: string = 'en_US';
 /** 日志域标识 */
 export const LOG_DOMAIN: number = 0x0001;
 
+/** 用户偏好设置文件名（对应 app 沙箱目录下的 preferences 文件） */
+export const PREFS_STORE_NAME: string = 'app_preferences';
+
 /**
  * 分隔线宽度。
  * Divider.strokeWidth() 的 SDK 声明为 strokeWidth(value: number | string)，

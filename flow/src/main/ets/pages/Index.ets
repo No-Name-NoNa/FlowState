@@ -7,6 +7,7 @@
  * 遵循 PRD "去卡片化" 与 "Smooth & Snappy" 动画要求。
  */
 import { I18nHelper } from '../util/I18nHelper';
+import { I18nKeys } from '../constants/I18nKeys';
 import { HomePage } from '../views/HomePage';
 import { HistoryPage } from '../views/HistoryPage';
 import { KEY_APP_LANGUAGE, LANG_ZH_CN } from '../constants/AppConstants';
@@ -18,18 +19,20 @@ struct MainPage {
   /** 当前选中的 Tab 索引，初始为首页（0） */
   @State currentTabIndex: number = 0;
 
-  /** 当前语言，绑定全局 AppStorage，Tab 标签随语言设置实时更新 */
+  /** 订阅语言变化，语言切换时触发组件重渲染以刷新 Tab 标签文字 */
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
 
   /**
    * 自定义 Tab 标签构建函数。
    * 图标与文字颜色根据选中状态切换，无阴影、无色块，符合去卡片化原则。
-   * @param tabIndex 目标 Tab 的索引
-   * @param icon     系统图标资源引用
-   * @param label    Tab 标签文字
+   * labelKey 须传入 I18nKeys 常量；翻译在 @Builder 内部完成，以确保 ArkUI 依赖追踪
+   * 感知到该节点依赖 currentLanguage，语言切换时自动触发重渲染。
+   * @param tabIndex  目标 Tab 的索引
+   * @param icon      图标资源引用
+   * @param labelKey  i18n 字符串 key（I18nKeys 常量）
    */
   @Builder
-  tabBarItem(tabIndex: number, icon: Resource, label: string): void {
+  tabBarItem(tabIndex: number, icon: Resource, labelKey: string): void {
     Column({ space: 3 }) {
       Image(icon)
         .width($r('app.float.icon_size_md'))
@@ -38,7 +41,8 @@ struct MainPage {
           ? $r('app.color.color_tab_selected')
           : $r('app.color.color_tab_normal'))
 
-      Text(label)
+      // 在 @Builder 内部读取 this.currentLanguage，建立 ArkUI 响应式依赖
+      Text(I18nHelper.t(labelKey, this.currentLanguage))
         .fontSize($r('app.float.font_size_tab_label'))
         .fontColor(this.currentTabIndex === tabIndex
           ? $r('app.color.color_tab_selected')
@@ -59,7 +63,7 @@ struct MainPage {
       .tabBar(this.tabBarItem(
         0,
         $r('app.media.ic_tab_home'),
-        I18nHelper.getTabHome(this.currentLanguage)
+        I18nKeys.TAB_HOME
       ))
 
       // ── Tab 1：历史 ──────────────────────────────────────────────────────
@@ -69,7 +73,7 @@ struct MainPage {
       .tabBar(this.tabBarItem(
         1,
         $r('sys.media.ohos_ic_public_clock'),
-        I18nHelper.getTabHistory(this.currentLanguage)
+        I18nKeys.TAB_HISTORY
       ))
     }
     // Tab 切换监听，同步更新 currentTabIndex 以刷新自定义 TabBar 选中样式

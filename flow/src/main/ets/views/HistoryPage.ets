@@ -5,19 +5,20 @@
  * 后续将挂载完成记录列表与数据统计面板。
  */
 import { I18nHelper } from '../util/I18nHelper';
+import { I18nKeys } from '../constants/I18nKeys';
 import { KEY_APP_LANGUAGE, LANG_ZH_CN, DIVIDER_STROKE_WIDTH } from '../constants/AppConstants';
 
 /** 历史记录视图组件 */
 @Component
 export struct HistoryPage {
-  /** 当前语言，绑定全局 AppStorage，语言切换时自动触发重渲染 */
+  /** 订阅语言变化，语言切换时触发组件重渲染 */
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
 
   build() {
     Column() {
       // 顶部 Header：页面标题
       Row() {
-        Text(I18nHelper.getTabHistory(this.currentLanguage))
+        Text(I18nHelper.t(I18nKeys.TAB_HISTORY, this.currentLanguage))
           .fontSize($r('app.float.font_size_header_title'))
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.color_text_primary'))
@@ -35,7 +36,7 @@ export struct HistoryPage {
 
       // 主内容区占位（后续开发历史记录列表与数据统计面板）
       Column() {
-        Text(I18nHelper.getHistoryEmptyHint(this.currentLanguage))
+        Text(I18nHelper.t(I18nKeys.HISTORY_EMPTY_HINT, this.currentLanguage))
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.color_text_secondary'))
       }
