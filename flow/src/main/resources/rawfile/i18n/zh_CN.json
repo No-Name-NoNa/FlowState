@@ -7,5 +7,15 @@
   "settings_language_zh": "简体中文",
   "settings_language_en": "English",
   "history_empty_hint": "暂无完成记录",
-  "home_empty_hint": "轻触下方，开始记录"
+  "home_empty_hint": "轻触下方，开始记录",
+  "settings_theme_label": "主题",
+  "settings_theme_light": "清晨",
+  "settings_theme_dark": "暗夜",
+  "settings_theme_warm": "暖阳",
+  "settings_theme_ocean": "海洋",
+  "settings_theme_forest": "森林",
+  "settings_theme_custom": "自定义",
+  "settings_theme_custom_bg": "背景色",
+  "settings_theme_custom_text": "文本色",
+  "settings_theme_custom_accent": "强调色"
 }

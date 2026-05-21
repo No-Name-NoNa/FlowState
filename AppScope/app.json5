@@ -1,6 +1,6 @@
 {
   "app": {
-    "bundleName": "moe.gensoukyo.flowstate",
+    "bundleName": "moe.gensoukyo.flowmark",
     "vendor": "example",
     "versionCode": 1000000,
     "versionName": "1.0.0",

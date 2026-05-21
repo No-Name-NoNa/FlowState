@@ -7,5 +7,15 @@
   "settings_language_zh": "简体中文",
   "settings_language_en": "English",
   "history_empty_hint": "No completed tasks yet.",
-  "home_empty_hint": "Tap below to start capturing"
+  "home_empty_hint": "Tap below to start capturing",
+  "settings_theme_label": "Theme",
+  "settings_theme_light": "Dawn",
+  "settings_theme_dark": "Dusk",
+  "settings_theme_warm": "Warm",
+  "settings_theme_ocean": "Ocean",
+  "settings_theme_forest": "Forest",
+  "settings_theme_custom": "Custom",
+  "settings_theme_custom_bg": "Background",
+  "settings_theme_custom_text": "Text",
+  "settings_theme_custom_accent": "Accent"
 }

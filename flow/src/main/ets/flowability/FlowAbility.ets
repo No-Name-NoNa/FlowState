@@ -4,6 +4,7 @@ import { window } from '@kit.ArkUI';
 import { KEY_APP_LANGUAGE, LOG_DOMAIN } from '../constants/AppConstants';
 import { I18nHelper } from '../util/I18nHelper';
 import { PreferencesHelper } from '../util/PreferencesHelper';
+import { ThemeHelper } from '../util/ThemeHelper';
 
 export default class FlowAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
@@ -19,6 +20,10 @@ export default class FlowAbility extends UIAbility {
     // 将已保存的语言写入 AppStorage，供全局 @StorageLink 组件使用
     // 必须在任何页面加载（onWindowStageCreate）之前完成，确保组件初始化时即读到正确语言
     AppStorage.setOrCreate<string>(KEY_APP_LANGUAGE, PreferencesHelper.getLanguage());
+
+    // 从持久化存储恢复主题 ID 和颜色 tokens，写入 AppStorage
+    // 必须在页面加载前完成，确保组件初始化时即读到正确的主题配色
+    ThemeHelper.initFromStorage();
 
     // 预加载所有语言翻译文件，为 I18nHelper.t() 提供数据
     I18nHelper.init(this.context);

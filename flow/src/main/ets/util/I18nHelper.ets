@@ -14,7 +14,7 @@
 import { util } from '@kit.ArkTS';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Context } from '@kit.AbilityKit';
-import { LANG_ZH_CN, LANG_EN_US, LOG_DOMAIN } from '../constants/AppConstants';
+import { LANG_EN_US, LANG_ZH_CN, LOG_DOMAIN } from '../constants/AppConstants';
 
 /** 国际化字符串工具类 */
 export class I18nHelper {
@@ -34,7 +34,8 @@ export class I18nHelper {
         const text: string = decoder.decodeToString(raw);
         I18nHelper.maps.set(lang, JSON.parse(text) as Record<string, string>);
       } catch (err) {
-        hilog.error(LOG_DOMAIN, 'I18nHelper', '加载翻译文件失败 i18n/%{public}s.json：%{public}s', lang, JSON.stringify(err));
+        hilog.error(LOG_DOMAIN, 'I18nHelper', '加载翻译文件失败 i18n/%{public}s.json：%{public}s', lang,
+          JSON.stringify(err));
       }
     }
   }

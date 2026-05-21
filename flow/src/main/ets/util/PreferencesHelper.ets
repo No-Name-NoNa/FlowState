@@ -8,7 +8,15 @@
 import { preferences } from '@kit.ArkData';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Context } from '@kit.AbilityKit';
-import { KEY_APP_LANGUAGE, LANG_ZH_CN, LOG_DOMAIN, PREFS_STORE_NAME } from '../constants/AppConstants';
+import {
+  KEY_APP_LANGUAGE,
+  KEY_CUSTOM_THEME_TOKENS,
+  KEY_THEME_ID,
+  LANG_ZH_CN,
+  LOG_DOMAIN,
+  PREFS_STORE_NAME
+} from '../constants/AppConstants';
+import { DEFAULT_THEME_ID } from '../constants/ThemeConstants';
 
 /** 用户偏好持久化工具类 */
 export class PreferencesHelper {
@@ -61,6 +69,72 @@ export class PreferencesHelper {
       });
     } catch (err) {
       hilog.error(LOG_DOMAIN, 'PreferencesHelper', '保存语言偏好失败：%{public}s', JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 同步读取已保存的主题 ID。
+   * 若未初始化或读取失败，则返回默认主题（清晨）。
+   * @returns 已保存的主题 ID 字符串
+   */
+  static getThemeId(): string {
+    try {
+      return PreferencesHelper.store?.getSync(KEY_THEME_ID, DEFAULT_THEME_ID) as string ?? DEFAULT_THEME_ID;
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'PreferencesHelper', '读取主题 ID 失败：%{public}s', JSON.stringify(err));
+      return DEFAULT_THEME_ID;
+    }
+  }
+
+  /**
+   * 持久化保存主题 ID。
+   * @param themeId 目标主题 ID（如 'light'、'dark'、'custom'）
+   */
+  static saveThemeId(themeId: string): void {
+    if (!PreferencesHelper.store) {
+      hilog.warn(LOG_DOMAIN, 'PreferencesHelper', '偏好设置未初始化，跳过主题 ID 保存');
+      return;
+    }
+    try {
+      PreferencesHelper.store.putSync(KEY_THEME_ID, themeId);
+      PreferencesHelper.store.flush().catch((err: Error) => {
+        hilog.error(LOG_DOMAIN, 'PreferencesHelper', '主题 ID 写盘失败：%{public}s', JSON.stringify(err));
+      });
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'PreferencesHelper', '保存主题 ID 失败：%{public}s', JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 同步读取已保存的自定义主题 tokens（JSON 字符串格式）。
+   * 返回空字符串表示尚无自定义主题记录。
+   * @returns 自定义主题 JSON 字符串，未保存时返回空字符串
+   */
+  static getCustomThemeTokens(): string {
+    try {
+      return PreferencesHelper.store?.getSync(KEY_CUSTOM_THEME_TOKENS, '') as string ?? '';
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'PreferencesHelper', '读取自定义主题失败：%{public}s', JSON.stringify(err));
+      return '';
+    }
+  }
+
+  /**
+   * 持久化保存自定义主题 tokens（JSON 字符串格式）。
+   * @param json 自定义主题的 ThemeTokens 序列化 JSON
+   */
+  static saveCustomThemeTokens(json: string): void {
+    if (!PreferencesHelper.store) {
+      hilog.warn(LOG_DOMAIN, 'PreferencesHelper', '偏好设置未初始化，跳过自定义主题保存');
+      return;
+    }
+    try {
+      PreferencesHelper.store.putSync(KEY_CUSTOM_THEME_TOKENS, json);
+      PreferencesHelper.store.flush().catch((err: Error) => {
+        hilog.error(LOG_DOMAIN, 'PreferencesHelper', '自定义主题写盘失败：%{public}s', JSON.stringify(err));
+      });
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'PreferencesHelper', '保存自定义主题失败：%{public}s', JSON.stringify(err));
     }
   }
 }

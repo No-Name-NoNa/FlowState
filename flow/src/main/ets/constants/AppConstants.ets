@@ -7,6 +7,18 @@
 /** AppStorage：当前语言标识键名 */
 export const KEY_APP_LANGUAGE: string = 'appLanguage';
 
+/** AppStorage：当前主题 ID 键名 */
+export const KEY_THEME_ID: string = 'appThemeId';
+
+/** AppStorage：当前主题颜色 token 键名（值为 ThemeTokens 对象） */
+export const KEY_THEME_TOKENS: string = 'appThemeTokens';
+
+/** Preferences：自定义主题颜色 token 存储键名（以 JSON 字符串序列化保存） */
+export const KEY_CUSTOM_THEME_TOKENS: string = 'customThemeTokens';
+
+/** 输入校验：HEX 颜色值非法时的提示边框色（通用错误红） */
+export const COLOR_INPUT_ERROR: string = '#FF4444';
+
 /** 支持的语言标识：简体中文 */
 export const LANG_ZH_CN: string = 'zh_CN';
 
