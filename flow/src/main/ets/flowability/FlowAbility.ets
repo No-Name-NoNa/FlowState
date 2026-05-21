@@ -3,6 +3,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { KEY_APP_LANGUAGE, LOG_DOMAIN } from '../constants/AppConstants';
 import { I18nHelper } from '../util/I18nHelper';
+import { InboxDatabase } from '../util/InboxDatabase';
 import { PreferencesHelper } from '../util/PreferencesHelper';
 import { ThemeHelper } from '../util/ThemeHelper';
 
@@ -27,6 +28,9 @@ export default class FlowAbility extends UIAbility {
 
     // 预加载所有语言翻译文件，为 I18nHelper.t() 提供数据
     I18nHelper.init(this.context);
+
+    // 初始化收集箱 RDB 数据库（异步，不阻塞页面加载）
+    InboxDatabase.init(this.context);
 
     hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onCreate');
   }

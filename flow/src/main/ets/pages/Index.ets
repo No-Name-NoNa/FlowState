@@ -80,6 +80,14 @@ struct MainPage {
           .hitTestBehavior(HitTestMode.None)
       }
 
+      // Tab Bar 顶部分割线（与页面内容区视觉分隔）
+      Row()
+        .width('100%')
+        .height(0.5)
+        .backgroundColor(this.themeTokens.colorDivider)
+        .hitTestBehavior(HitTestMode.None)
+        .position({ x: 0, y: 0 })
+
       Column({ space: 3 }) {
         Image(icon)
           .width($r('app.float.icon_size_md'))

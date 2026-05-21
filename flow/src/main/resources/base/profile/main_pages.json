@@ -3,6 +3,7 @@
     "pages/Index",
     "pages/SettingsPage",
     "pages/LanguagePage",
-    "pages/ThemePage"
+    "pages/ThemePage",
+    "pages/InboxEditorPage"
   ]
 }

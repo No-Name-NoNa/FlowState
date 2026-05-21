@@ -63,6 +63,30 @@
     {
       "name": "divider_stroke_width",
       "value": "0.5vp"
+    },
+    {
+      "name": "font_size_label",
+      "value": "11fp"
+    },
+    {
+      "name": "tag_chip_height",
+      "value": "22vp"
+    },
+    {
+      "name": "tag_chip_padding_h",
+      "value": "8vp"
+    },
+    {
+      "name": "inbox_item_min_height",
+      "value": "64vp"
+    },
+    {
+      "name": "inbox_input_bar_height",
+      "value": "48vp"
+    },
+    {
+      "name": "drag_handle_width",
+      "value": "20vp"
     }
   ]
 }
