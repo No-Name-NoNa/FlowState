@@ -90,17 +90,20 @@ export const enum RecurringType {
 export interface RecurringRule {
   /** 循环类型，取值 RecurringType */
   type: number;
+
   /**
    * RELATIVE 模式专用：上次完成后间隔天数（>0）。
    * 其他模式此字段填 0。
    */
   intervalDays: number;
+
   /**
    * WEEKLY 模式专用：需执行的星期几列表。
    * 0=周日, 1=周一, ..., 6=周六；可多选，如 [1,3,5] 表示每周一三五。
    * 非 WEEKLY 模式此字段填空数组。
    */
   daysOfWeek: number[];
+
   /**
    * MONTHLY 模式专用：每月执行的日期（1-31）。
    * 非 MONTHLY 模式此字段填 0。
@@ -276,6 +279,69 @@ export function getNextDeadline(entry: TaskEntry): number {
   }
   const idx: number = entry.currentNodeIndex < nodes.length ? entry.currentNodeIndex : 0;
   return nodes[idx];
+}
+
+/**
+ * 将数字补零为两位字符串。
+ * @param n 非负整数
+ * @returns 两位字符串（不足补前导零）
+ */
+function padTwo(n: number): string {
+  return n < 10 ? '0' + n.toString() : n.toString();
+}
+
+/**
+ * 将截止时间戳格式化为列表行中的简洁显示文本。
+ * - 逾期超 1 天：zh="逾期Nd" / en="Nd overdue"
+ * - 逾期当天：zh="今日逾期" / en="Overdue"
+ * - 今天内：zh="今天 HH:mm" / en="Today HH:mm"
+ * - 明天：zh="明天 HH:mm" / en="Tomorrow HH:mm"
+ * - 其他：zh/en="M/D HH:mm"
+ * @param deadline 截止时间戳（ms），0 表示无截止时间
+ * @param lang 当前语言标识
+ * @returns 格式化字符串，deadline=0 时返回空字符串
+ */
+export function formatTaskDeadline(deadline: number, lang: string): string {
+  if (deadline === 0) {
+    return '';
+  }
+  const isZh: boolean = lang.startsWith('zh');
+  const now: number = Date.now();
+  const ONE_DAY_MS: number = 86400000;
+
+  // 计算当天 0 点（本地时区）
+  const todayDate: Date = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+  const todayStart: number = todayDate.getTime();
+
+  const d: Date = new Date(deadline);
+  const timeStr: string = padTwo(d.getHours()) + ':' + padTwo(d.getMinutes());
+
+  if (deadline < now) {
+    // 逾期
+    const diffMs: number = now - deadline;
+    const days: number = Math.floor(diffMs / ONE_DAY_MS);
+    if (days < 1) {
+      return isZh ? '今日逾期' : 'Overdue';
+    }
+    return isZh ? ('逾期' + days.toString() + 'd') : (days.toString() + 'd overdue');
+  }
+
+  // 计算截止时间所在日 0 点
+  const deadlineDayDate: Date = new Date(deadline);
+  deadlineDayDate.setHours(0, 0, 0, 0);
+  const calDayDiff: number = Math.round((deadlineDayDate.getTime() - todayStart) / ONE_DAY_MS);
+
+  if (calDayDiff === 0) {
+    return isZh ? ('今天 ' + timeStr) : ('Today ' + timeStr);
+  }
+  if (calDayDiff === 1) {
+    return isZh ? ('明天 ' + timeStr) : ('Tomorrow ' + timeStr);
+  }
+  const month: string = (d.getMonth() + 1).toString();
+  const day: string = d.getDate().toString();
+  // 2 天以上：显示剩余天数（与"逾期Nd"风格对称）
+  return isZh ? ('还有' + calDayDiff.toString() + 'd') : (calDayDiff.toString() + 'd left');
 }
 
 /**

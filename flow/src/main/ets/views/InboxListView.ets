@@ -44,15 +44,31 @@ export struct InboxListView {
       Image($r('sys.media.ohos_ic_public_cancel'))
         .width($r('app.float.icon_size_md'))
         .height($r('app.float.icon_size_md'))
-        .fillColor(Color.White)
+        .fillColor(this.themeTokens.colorBackground)
     }
     .width(72)
     .height('100%')
-    .backgroundColor('#E84040')
+    .backgroundColor(this.themeTokens.colorTextPrimary)
     .justifyContent(FlexAlign.Center)
     .onClick(() => {
-      InboxViewModel.delete(entryId).then(() => {
-        this.onDataChanged();
+      AlertDialog.show({
+        title: I18nHelper.t(I18nKeys.INBOX_MENU_DELETE, this.currentLanguage),
+        message: I18nHelper.t(I18nKeys.DIALOG_DELETE_MSG, this.currentLanguage),
+        primaryButton: {
+          value: I18nHelper.t(I18nKeys.DIALOG_CONFIRM, this.currentLanguage),
+          fontColor: this.themeTokens.colorTextPrimary,
+          action: () => {
+            InboxViewModel.delete(entryId).then(() => {
+              this.onDataChanged();
+            });
+          },
+        },
+        secondaryButton: {
+          value: I18nHelper.t(I18nKeys.DIALOG_CANCEL, this.currentLanguage),
+          action: () => {
+          },
+        },
+        autoCancel: true,
       });
     })
   }

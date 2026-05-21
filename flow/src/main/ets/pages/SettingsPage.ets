@@ -144,8 +144,14 @@ struct SettingsPage {
             : this.currentThemeId === ThemeId.WARM ? I18nKeys.SETTINGS_THEME_WARM
             : this.currentThemeId === ThemeId.OCEAN ? I18nKeys.SETTINGS_THEME_OCEAN
               : this.currentThemeId === ThemeId.FOREST ? I18nKeys.SETTINGS_THEME_FOREST
-                : this.currentThemeId === ThemeId.CUSTOM ? I18nKeys.SETTINGS_THEME_CUSTOM
-                  : I18nKeys.SETTINGS_THEME_LIGHT,
+                : this.currentThemeId === ThemeId.DARCULA ? I18nKeys.SETTINGS_THEME_DARCULA
+                  : this.currentThemeId === ThemeId.INTELLIJ ? I18nKeys.SETTINGS_THEME_INTELLIJ
+                    : this.currentThemeId === ThemeId.REIMU ? I18nKeys.SETTINGS_THEME_REIMU
+                      : this.currentThemeId === ThemeId.MARISA ? I18nKeys.SETTINGS_THEME_MARISA
+                        : this.currentThemeId === ThemeId.SAKUYA ? I18nKeys.SETTINGS_THEME_SAKUYA
+                          : this.currentThemeId === ThemeId.REMILIA ? I18nKeys.SETTINGS_THEME_REMILIA
+                            : this.currentThemeId === ThemeId.CUSTOM ? I18nKeys.SETTINGS_THEME_CUSTOM
+                              : I18nKeys.SETTINGS_THEME_LIGHT,
           this.currentLanguage,
         ))
           .fontSize($r('app.float.font_size_body'))

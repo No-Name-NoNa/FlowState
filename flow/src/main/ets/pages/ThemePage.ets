@@ -357,7 +357,49 @@ struct ThemePage {
             .color(this.themeTokens.colorDivider)
             .margin({ left: $r('app.float.spacing_lg') })
 
-          this.themeOptionItem(ThemeId.CUSTOM, I18nKeys.SETTINGS_THEME_CUSTOM, 5)
+          this.themeOptionItem(ThemeId.DARCULA, I18nKeys.SETTINGS_THEME_DARCULA, 5)
+
+          Divider()
+            .strokeWidth(DIVIDER_STROKE_WIDTH)
+            .color(this.themeTokens.colorDivider)
+            .margin({ left: $r('app.float.spacing_lg') })
+
+          this.themeOptionItem(ThemeId.INTELLIJ, I18nKeys.SETTINGS_THEME_INTELLIJ, 6)
+
+          Divider()
+            .strokeWidth(DIVIDER_STROKE_WIDTH)
+            .color(this.themeTokens.colorDivider)
+            .margin({ left: $r('app.float.spacing_lg') })
+
+          this.themeOptionItem(ThemeId.REIMU, I18nKeys.SETTINGS_THEME_REIMU, 7)
+
+          Divider()
+            .strokeWidth(DIVIDER_STROKE_WIDTH)
+            .color(this.themeTokens.colorDivider)
+            .margin({ left: $r('app.float.spacing_lg') })
+
+          this.themeOptionItem(ThemeId.MARISA, I18nKeys.SETTINGS_THEME_MARISA, 8)
+
+          Divider()
+            .strokeWidth(DIVIDER_STROKE_WIDTH)
+            .color(this.themeTokens.colorDivider)
+            .margin({ left: $r('app.float.spacing_lg') })
+
+          this.themeOptionItem(ThemeId.SAKUYA, I18nKeys.SETTINGS_THEME_SAKUYA, 9)
+
+          Divider()
+            .strokeWidth(DIVIDER_STROKE_WIDTH)
+            .color(this.themeTokens.colorDivider)
+            .margin({ left: $r('app.float.spacing_lg') })
+
+          this.themeOptionItem(ThemeId.REMILIA, I18nKeys.SETTINGS_THEME_REMILIA, 10)
+
+          Divider()
+            .strokeWidth(DIVIDER_STROKE_WIDTH)
+            .color(this.themeTokens.colorDivider)
+            .margin({ left: $r('app.float.spacing_lg') })
+
+          this.themeOptionItem(ThemeId.CUSTOM, I18nKeys.SETTINGS_THEME_CUSTOM, 11)
 
           // 自定义主题颜色编辑面板（仅选中 CUSTOM 时展示）
           if (this.currentThemeId === ThemeId.CUSTOM) {

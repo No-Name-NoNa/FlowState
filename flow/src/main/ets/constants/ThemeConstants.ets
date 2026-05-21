@@ -12,6 +12,12 @@ export enum ThemeId {
   WARM = 'warm',
   OCEAN = 'ocean',
   FOREST = 'forest',
+  DARCULA = 'darcula',
+  INTELLIJ = 'intellij',
+  REIMU = 'reimu',
+  MARISA = 'marisa',
+  SAKUYA = 'sakuya',
+  REMILIA = 'remilia',
   CUSTOM = 'custom',
 }
 
@@ -127,6 +133,84 @@ export const THEME_FOREST: ThemeTokens = {
   colorSettingsSelected: '#2A7A30',
 };
 
+/** ── 主题：余烬（Darcula）—— 深灰底 + 暖橙强调，类 Darcula 风格 */
+export const THEME_DARCULA: ThemeTokens = {
+  colorBackground: '#2B2B2B',
+  colorTextPrimary: '#A9B7C6',
+  colorTextSecondary: '#6A6A6A',
+  colorAccent: '#CC7832',
+  colorDivider: '#3C3F41',
+  colorTabSelected: '#CC7832',
+  colorTabNormal: '#6A6A6A',
+  colorTabBarBg: '#313335',
+  colorSettingsSelected: '#CC7832',
+};
+
+/** ── 主题：深空（Cosmos）—— 深蓝灰底 + 天空蓝强调 */
+export const THEME_INTELLIJ: ThemeTokens = {
+  colorBackground: '#282C34',
+  colorTextPrimary: '#ABB2BF',
+  colorTextSecondary: '#5C6370',
+  colorAccent: '#61AFEF',
+  colorDivider: '#3A3F4B',
+  colorTabSelected: '#61AFEF',
+  colorTabNormal: '#5C6370',
+  colorTabBarBg: '#21252B',
+  colorSettingsSelected: '#61AFEF',
+};
+
+/** ── 主题：朱砂（Cinnabar）—— 暖白奶油底 + 朱红强调 */
+export const THEME_REIMU: ThemeTokens = {
+  colorBackground: '#FDF8F5',
+  colorTextPrimary: '#2A0808',
+  colorTextSecondary: '#9A6060',
+  colorAccent: '#CC2222',
+  colorDivider: '#EDD0C0',
+  colorTabSelected: '#CC2222',
+  colorTabNormal: '#9A6060',
+  colorTabBarBg: '#FDF8F5',
+  colorSettingsSelected: '#CC2222',
+};
+
+/** ── 主题：星辰（Starlight）—— 纯黑底 + 星尘金强调 */
+export const THEME_MARISA: ThemeTokens = {
+  colorBackground: '#1A1A18',
+  colorTextPrimary: '#F0E870',
+  colorTextSecondary: '#806840',
+  colorAccent: '#F0C020',
+  colorDivider: '#2C2C22',
+  colorTabSelected: '#F0C020',
+  colorTabNormal: '#806840',
+  colorTabBarBg: '#1A1A18',
+  colorSettingsSelected: '#F0C020',
+};
+
+/** ── 主题：霜蓝（Frost）—— 冰蓝白底 + 钢铁蓝强调 */
+export const THEME_SAKUYA: ThemeTokens = {
+  colorBackground: '#F0F4F8',
+  colorTextPrimary: '#1A2840',
+  colorTextSecondary: '#7090A0',
+  colorAccent: '#4888B8',
+  colorDivider: '#C8D8E4',
+  colorTabSelected: '#4888B8',
+  colorTabNormal: '#7090A0',
+  colorTabBarBg: '#F0F4F8',
+  colorSettingsSelected: '#4888B8',
+};
+
+/** ── 主题：绯夜（Velvet）—— 深紫黑底 + 绯红强调 */
+export const THEME_REMILIA: ThemeTokens = {
+  colorBackground: '#1A0A1E',
+  colorTextPrimary: '#E8C0D0',
+  colorTextSecondary: '#806070',
+  colorAccent: '#CC2060',
+  colorDivider: '#2A1830',
+  colorTabSelected: '#CC2060',
+  colorTabNormal: '#806070',
+  colorTabBarBg: '#1A0A1E',
+  colorSettingsSelected: '#CC2060',
+};
+
 /** 默认启动主题 ID（首次安装时使用） */
 export const DEFAULT_THEME_ID: string = ThemeId.LIGHT;
 
@@ -149,6 +233,18 @@ export function getPresetTokens(themeId: string): ThemeTokens {
       return THEME_OCEAN;
     case ThemeId.FOREST:
       return THEME_FOREST;
+    case ThemeId.DARCULA:
+      return THEME_DARCULA;
+    case ThemeId.INTELLIJ:
+      return THEME_INTELLIJ;
+    case ThemeId.REIMU:
+      return THEME_REIMU;
+    case ThemeId.MARISA:
+      return THEME_MARISA;
+    case ThemeId.SAKUYA:
+      return THEME_SAKUYA;
+    case ThemeId.REMILIA:
+      return THEME_REMILIA;
     default:
       return THEME_LIGHT;
   }
@@ -188,6 +284,42 @@ export const PRESET_THEME_PREVIEWS: ThemePreview[] = [
     nameKey: 'settings_theme_forest',
     previewBg: '#F2F8F0',
     previewAccent: '#2A7A30'
+  },
+  {
+    id: ThemeId.DARCULA,
+    nameKey: 'settings_theme_darcula',
+    previewBg: '#2B2B2B',
+    previewAccent: '#CC7832'
+  },
+  {
+    id: ThemeId.INTELLIJ,
+    nameKey: 'settings_theme_intellij',
+    previewBg: '#282C34',
+    previewAccent: '#61AFEF'
+  },
+  {
+    id: ThemeId.REIMU,
+    nameKey: 'settings_theme_reimu',
+    previewBg: '#FDF8F5',
+    previewAccent: '#CC2222'
+  },
+  {
+    id: ThemeId.MARISA,
+    nameKey: 'settings_theme_marisa',
+    previewBg: '#1A1A18',
+    previewAccent: '#F0C020'
+  },
+  {
+    id: ThemeId.SAKUYA,
+    nameKey: 'settings_theme_sakuya',
+    previewBg: '#F0F4F8',
+    previewAccent: '#4888B8'
+  },
+  {
+    id: ThemeId.REMILIA,
+    nameKey: 'settings_theme_remilia',
+    previewBg: '#1A0A1E',
+    previewAccent: '#CC2060'
   },
 ];
 

@@ -20,8 +20,8 @@ import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
 @Entry
 @Component
 struct MainPage {
-  /** 当前选中的 Tab 索引，初始为首页（0） */
-  @State currentTabIndex: number = 0;
+  /** 当前选中的 Tab 索引，初始为任务页（1） */
+  @State currentTabIndex: number = 1;
   /** 订阅语言变化，语言切换时触发组件重渲染以刷新 Tab 标签文字 */
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   /** 订阅主题变化，主题切换时触发组件立即重渲染 */
@@ -122,13 +122,13 @@ struct MainPage {
 
   build() {
     Tabs({ barPosition: BarPosition.End, index: this.currentTabIndex }) {
-      // ── Tab 0：首页 ──────────────────────────────────────────────────────
+      // ── Tab 0：收集箱 ─────────────────────────────────────────────────────
       TabContent() {
         HomePage()
       }
       .tabBar(this.tabBarItem(
         0,
-        $r('app.media.ic_tab_home'),
+        $r('app.media.ic_tab_inbox'),
         I18nKeys.TAB_HOME
       ))
 

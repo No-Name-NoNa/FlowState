@@ -5,23 +5,30 @@
  * 以及从收集箱条目快速转入任务的工厂方法。
  */
 import { TaskDatabase } from '../util/TaskDatabase';
-import { TaskEntry, TaskPriority, TaskScheduleType, TaskCompletionType,
-  TaskReminderType, TaskStatus, computeTaskWeight } from '../model/TaskEntry';
+import {
+  computeTaskWeight,
+  TaskCompletionType,
+  TaskEntry,
+  TaskPriority,
+  TaskReminderType,
+  TaskScheduleType,
+  TaskStatus
+} from '../model/TaskEntry';
 import { InboxEntry, parseTags } from '../model/InboxEntry';
+nboxEntry';
 
 /** 任务 ViewModel，所有方法均为静态 */
 export class TaskViewModel {
   /** 内存中全量任务缓存（已按动态权重降序排列） */
   static allTasks: TaskEntry[] = [];
-
   /** 当前过滤后可见的任务列表（供视图直接绑定） */
   static filteredTasks: TaskEntry[] = [];
-
   /** 当前搜索关键词（空字符串 = 无过滤） */
   private static currentKeyword: string = '';
-
   /** 当前状态过滤（-1 = 显示全部非归档任务） */
   private static currentStatus: number = -1;
+  /** 当前标签过滤（空字符串 = 不按标签过滤） */
+  private static currentTag: string = '';
 
   /**
    * 从 DB 重新加载全部任务并按动态权重排序。
@@ -42,14 +49,16 @@ export class TaskViewModel {
   }
 
   /**
-   * 设置关键词与状态过滤条件，刷新 filteredTasks。
+   * 设置关键词、状态、标签过滤条件，刷新 filteredTasks。
    * 不触发 DB 查询，仅在内存中过滤 allTasks。
    * @param keyword  搜索关键词（匹配 title / content / tags），空字符串表示不过滤
    * @param status   状态枚举值，-1 表示显示全部非归档任务
+   * @param tag      标签过滤，空字符串表示不按标签过滤
    */
-  static filter(keyword: string, status: number): void {
+  static filter(keyword: string, status: number, tag: string = ''): void {
     TaskViewModel.currentKeyword = keyword;
     TaskViewModel.currentStatus = status;
+    TaskViewModel.currentTag = tag;
     TaskViewModel.applyFilter();
   }
 
@@ -57,9 +66,12 @@ export class TaskViewModel {
   private static applyFilter(): void {
     let result: TaskEntry[] = TaskViewModel.allTasks;
 
-    // 状态过滤（-1 = 所有非归档）
+    // 状态过滤（-1 = 所有非归档；>= 0 = 精确匹配指定状态）
     if (TaskViewModel.currentStatus >= 0) {
       result = result.filter((t: TaskEntry) => t.status === TaskViewModel.currentStatus);
+    } else {
+      // 默认排除已归档任务
+      result = result.filter((t: TaskEntry) => t.status !== TaskStatus.ARCHIVED);
     }
 
     // 关键词过滤（标题/正文/标签任意命中即可）
@@ -80,7 +92,25 @@ export class TaskViewModel {
       });
     }
 
-    TaskViewModel.filteredTasks = result;
+    // 标签精确过滤
+    if (TaskViewModel.currentTag !== '') {
+      result = result.filter((t: TaskEntry) => {
+        if (t.tags === '') {
+          return false;
+        }
+        try {
+          const tags: string[] = parseTags(t.tags);
+          return tags.indexOf(TaskViewModel.currentTag) >= 0;
+        } catch {
+          return false;
+        }
+      });
+    }
+
+    // 已完成任务始终沉底：将 COMPLETED 条目分离至末尾
+    const active: TaskEntry[] = result.filter((t: TaskEntry) => t.status !== TaskStatus.COMPLETED);
+    const completed: TaskEntry[] = result.filter((t: TaskEntry) => t.status === TaskStatus.COMPLETED);
+    TaskViewModel.filteredTasks = active.concat(completed);
   }
 
   /**
@@ -169,5 +199,161 @@ export class TaskViewModel {
       }
     }
     return tagSet;
+  }
+
+  /**
+   * 根据 ID 获取单条任务（透传 DB 查询，供编辑页加载原始数据使用）。
+   * @param id 任务主键
+   * @returns 任务条目，不存在时返回 null
+   */
+  static async getById(id: number): Promise<TaskEntry | null> {
+    return await TaskDatabase.getById(id);
+  }
+
+  /**
+   * 将指定任务标记为已完成，并刷新内存缓存。
+   * @param id 任务主键
+   */
+  static async complete(id: number): Promise<void> {
+    const entry: TaskEntry | null = await TaskDatabase.getById(id);
+    if (entry === null) {
+      return;
+    }
+    const now: number = Date.now();
+    const updated: TaskEntry = {
+      id: entry.id,
+      title: entry.title,
+      content: entry.content,
+      tags: entry.tags,
+      priority: entry.priority,
+      status: TaskStatus.COMPLETED,
+      scheduleType: entry.scheduleType,
+      timeNodes: entry.timeNodes,
+      currentNodeIndex: entry.currentNodeIndex,
+      recurringRule: entry.recurringRule,
+      targetDuration: entry.targetDuration,
+      accumulatedDuration: entry.accumulatedDuration,
+      reminderType: entry.reminderType,
+      reminderOffset: entry.reminderOffset,
+      completionType: entry.completionType,
+      completedAt: now,
+      sourceInboxId: entry.sourceInboxId,
+      sortOrder: entry.sortOrder,
+      createdAt: entry.createdAt,
+      updatedAt: now,
+    };
+    await TaskDatabase.update(updated);
+    await TaskViewModel.load();
+  }
+
+  /**
+   * 取消指定任务的完成状态，恢复为待办，并刷新内存缓存。
+   * @param id 任务主键
+   */
+  static async uncomplete(id: number): Promise<void> {
+    const entry: TaskEntry | null = await TaskDatabase.getById(id);
+    if (entry === null) {
+      return;
+    }
+    const now: number = Date.now();
+    const updated: TaskEntry = {
+      id: entry.id,
+      title: entry.title,
+      content: entry.content,
+      tags: entry.tags,
+      priority: entry.priority,
+      status: TaskStatus.PENDING,
+      scheduleType: entry.scheduleType,
+      timeNodes: entry.timeNodes,
+      currentNodeIndex: entry.currentNodeIndex,
+      recurringRule: entry.recurringRule,
+      targetDuration: entry.targetDuration,
+      accumulatedDuration: entry.accumulatedDuration,
+      reminderType: entry.reminderType,
+      reminderOffset: entry.reminderOffset,
+      completionType: entry.completionType,
+      completedAt: 0,
+      sourceInboxId: entry.sourceInboxId,
+      sortOrder: entry.sortOrder,
+      createdAt: entry.createdAt,
+      updatedAt: now,
+    };
+    await TaskDatabase.update(updated);
+    await TaskViewModel.load();
+  }
+
+  /**
+   * 将指定任务标记为归档，不再在任务列表显示，可在历史页查看。
+   * @param id 任务主键
+   */
+  static async archive(id: number): Promise<void> {
+    const entry: TaskEntry | null = await TaskDatabase.getById(id);
+    if (entry === null) {
+      return;
+    }
+    const now: number = Date.now();
+    const updated: TaskEntry = {
+      id: entry.id,
+      title: entry.title,
+      content: entry.content,
+      tags: entry.tags,
+      priority: entry.priority,
+      status: TaskStatus.ARCHIVED,
+      scheduleType: entry.scheduleType,
+      timeNodes: entry.timeNodes,
+      currentNodeIndex: entry.currentNodeIndex,
+      recurringRule: entry.recurringRule,
+      targetDuration: entry.targetDuration,
+      accumulatedDuration: entry.accumulatedDuration,
+      reminderType: entry.reminderType,
+      reminderOffset: entry.reminderOffset,
+      completionType: entry.completionType,
+      completedAt: 0,
+      sourceInboxId: entry.sourceInboxId,
+      sortOrder: entry.sortOrder,
+      createdAt: entry.createdAt,
+      updatedAt: now,
+    };
+    await TaskDatabase.update(updated);
+    await TaskViewModel.load();
+  }
+
+  /**
+   * 保存任务的计时进度和状态变更（供详情页计时器使用）。
+   * 不触发 filteredTasks 刷新，由调用方通过 KEY_TASK_NEEDS_REFRESH 信号通知列表页更新。
+   * @param id          任务主键
+   * @param accMs       最新累计专注时长（ms）
+   * @param status      最新任务状态（TaskStatus 枚举值）
+   * @param completedAt 完成时间戳（ms），非完成状态传 0
+   */
+  static async updateProgress(id: number, accMs: number, status: number, completedAt: number): Promise<void> {
+    const entry: TaskEntry | null = await TaskDatabase.getById(id);
+    if (entry === null) {
+      return;
+    }
+    const now: number = Date.now();
+    const updated: TaskEntry = {
+      id: entry.id,
+      title: entry.title,
+      content: entry.content,
+      tags: entry.tags,
+      priority: entry.priority,
+      status: status,
+      scheduleType: entry.scheduleType,
+      timeNodes: entry.timeNodes,
+      currentNodeIndex: entry.currentNodeIndex,
+      recurringRule: entry.recurringRule,
+      targetDuration: entry.targetDuration,
+      accumulatedDuration: accMs,
+      reminderType: entry.reminderType,
+      reminderOffset: entry.reminderOffset,
+      completionType: entry.completionType,
+      completedAt: completedAt,
+      sourceInboxId: entry.sourceInboxId,
+      sortOrder: entry.sortOrder,
+      createdAt: entry.createdAt,
+      updatedAt: now,
+    };
+    await TaskDatabase.update(updated);
   }
 }

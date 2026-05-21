@@ -4,6 +4,8 @@
     "pages/SettingsPage",
     "pages/LanguagePage",
     "pages/ThemePage",
-    "pages/InboxEditorPage"
+    "pages/InboxEditorPage",
+    "pages/TaskEditorPage",
+    "pages/TaskDetailPage"
   ]
 }

@@ -111,8 +111,33 @@ export struct InboxItemComponent {
       // 删除
       MenuItem({ content: I18nHelper.t(I18nKeys.INBOX_MENU_DELETE, this.lang) })
         .onClick(() => {
-          InboxViewModel.delete(this.entryId).then(() => {
-            this.onDataChanged();
+          AlertDialog.show({
+            title: I18nHelper.t(I18nKeys.INBOX_MENU_DELETE, this.lang),
+            message: I18nHelper.t(I18nKeys.DIALOG_DELETE_MSG, this.lang),
+            primaryButton: {
+              value: I18nHelper.t(I18nKeys.DIALOG_CONFIRM, this.lang),
+              fontColor: this.themeTokens.colorTextPrimary,
+              action: () => {
+                InboxViewModel.delete(this.entryId).then(() => {
+                  this.onDataChanged();
+                });
+              },
+            },
+            secondaryButton: {
+              value: I18nHelper.t(I18nKeys.DIALOG_CANCEL, this.lang),
+              action: () => {
+              },
+            },
+            autoCancel: true,
+          });
+        })
+
+      // 添加到任务（跳转任务编辑页，预填数据；保存后由编辑页负责删除本条目）
+      MenuItem({ content: I18nHelper.t(I18nKeys.INBOX_MENU_ADD_TO_TASK, this.lang) })
+        .onClick(() => {
+          router.pushUrl({
+            url: 'pages/TaskEditorPage',
+            params: { taskId: 0, fromInboxId: this.entryId },
           });
         })
     }
