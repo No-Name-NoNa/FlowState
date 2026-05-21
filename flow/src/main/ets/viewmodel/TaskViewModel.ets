@@ -15,7 +15,6 @@ import {
   TaskStatus
 } from '../model/TaskEntry';
 import { InboxEntry, parseTags } from '../model/InboxEntry';
-nboxEntry';
 
 /** 任务 ViewModel，所有方法均为静态 */
 export class TaskViewModel {
