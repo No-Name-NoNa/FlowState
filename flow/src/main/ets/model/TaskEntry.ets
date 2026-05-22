@@ -57,16 +57,16 @@ export const enum TaskCompletionType {
   NODE = 2,
 }
 
-/** 提醒强度 */
+/** 提醒类型 */
 export const enum TaskReminderType {
   /** 无提醒 */
   NONE = 0,
-  /** 静默提醒：仅 UI 状态高亮 */
-  SILENT = 1,
-  /** 弱提醒：系统通知 + 自定义音效/震动 */
-  WEAK = 2,
-  /** 强提醒：需手动干预才能关闭（类闹钟） */
-  STRONG = 3,
+  /** 只弹消息提醒：静默通知，无声音/震动 */
+  POPUP = 1,
+  /** 带音效的提醒：通知 + 自定义或系统音效 */
+  SOUND = 2,
+  /** 闹钟提醒：强提醒，需手动关闭 */
+  ALARM = 3,
 }
 
 /** 循环规则类型 */
@@ -169,11 +169,23 @@ export interface TaskEntry {
 
   // ── 提醒 ───────────────────────────────────────────────────────────────────
 
-  /** 提醒强度，取值 TaskReminderType */
+  /** 提醒类型，取值 TaskReminderType */
   reminderType: number;
 
   /** 提前提醒时间（分钟），0 表示在节点时刻精确提醒 */
   reminderOffset: number;
+
+  /**
+   * 该任务专属的提醒音效标识符。
+   * '' = 跟随全局默认；'default' = 系统默认；其他值为预设音效 ID（chime/bell/ping）。
+   */
+  reminderSound: string;
+
+  /**
+   * 该任务专属的通知消息文本。
+   * '' = 使用全局默认消息；非空值为本任务自定义内容。
+   */
+  reminderMessage: string;
 
   // ── 完成 ───────────────────────────────────────────────────────────────────
 
@@ -194,6 +206,9 @@ export interface TaskEntry {
 
   // ── 排序 & 元数据 ──────────────────────────────────────────────────────────
 
+  /** 是否置顶：0 = 普通，1 = 置顶 */
+  isPinned: number;
+
   /** 用户自定义排序值，越小越靠前（同权重时生效） */
   sortOrder: number;
 
@@ -202,6 +217,12 @@ export interface TaskEntry {
 
   /** 最后修改时间戳（ms） */
   updatedAt: number;
+
+  /**
+   * 系统提醒代理 ID（由 reminderAgentManager.publishReminder 返回）。
+   * 0 = 未注册提醒；> 0 = 已注册，可用于取消。
+   */
+  reminderId: number;
 }
 
 // ── 序列化工具函数 ─────────────────────────────────────────────────────────────

@@ -32,9 +32,13 @@ const COL_REMINDER_OFFSET: string = 'reminder_offset';
 const COL_COMPLETION_TYPE: string = 'completion_type';
 const COL_COMPLETED_AT: string = 'completed_at';
 const COL_SOURCE_INBOX_ID: string = 'source_inbox_id';
+const COL_IS_PINNED: string = 'is_pinned';
 const COL_SORT_ORDER: string = 'sort_order';
+const COL_REMINDER_SOUND: string = 'reminder_sound';
+const COL_REMINDER_MESSAGE: string = 'reminder_message';
 const COL_CREATED_AT: string = 'created_at';
 const COL_UPDATED_AT: string = 'updated_at';
+const COL_REMINDER_ID: string = 'reminder_id';
 
 /** 查询时返回的列名列表 */
 const ALL_COLUMNS: string[] = [
@@ -43,9 +47,10 @@ const ALL_COLUMNS: string[] = [
   COL_SCHEDULE_TYPE, COL_TIME_NODES, COL_CURRENT_NODE_INDEX, COL_RECURRING_RULE,
   COL_TARGET_DURATION, COL_ACCUMULATED_DURATION,
   COL_REMINDER_TYPE, COL_REMINDER_OFFSET,
+  COL_REMINDER_SOUND, COL_REMINDER_MESSAGE,
   COL_COMPLETION_TYPE, COL_COMPLETED_AT,
-  COL_SOURCE_INBOX_ID, COL_SORT_ORDER,
-  COL_CREATED_AT, COL_UPDATED_AT,
+  COL_SOURCE_INBOX_ID, COL_IS_PINNED, COL_SORT_ORDER,
+  COL_CREATED_AT, COL_UPDATED_AT, COL_REMINDER_ID,
 ];
 
 /** 建表 SQL（IF NOT EXISTS 保证幂等） */
@@ -65,13 +70,25 @@ const CREATE_TABLE_SQL: string =
     `${COL_ACCUMULATED_DURATION} INTEGER NOT NULL DEFAULT 0,` +
     `${COL_REMINDER_TYPE} INTEGER NOT NULL DEFAULT 0,` +
     `${COL_REMINDER_OFFSET} INTEGER NOT NULL DEFAULT 0,` +
+    `${COL_REMINDER_SOUND} TEXT NOT NULL DEFAULT '',` +
+    `${COL_REMINDER_MESSAGE} TEXT NOT NULL DEFAULT '',` +
     `${COL_COMPLETION_TYPE} INTEGER NOT NULL DEFAULT 0,` +
     `${COL_COMPLETED_AT} INTEGER NOT NULL DEFAULT 0,` +
     `${COL_SOURCE_INBOX_ID} INTEGER NOT NULL DEFAULT 0,` +
+    `${COL_IS_PINNED} INTEGER NOT NULL DEFAULT 0,` +
     `${COL_SORT_ORDER} INTEGER NOT NULL DEFAULT 0,` +
     `${COL_CREATED_AT} INTEGER NOT NULL,` +
-    `${COL_UPDATED_AT} INTEGER NOT NULL` +
+    `${COL_UPDATED_AT} INTEGER NOT NULL,` +
+    `${COL_REMINDER_ID} INTEGER NOT NULL DEFAULT 0` +
     `)`;
+
+/** 旧库迁移 SQL：为已有数据库添加 is_pinned 列（若已存在则报错被忽略） */
+const ALTER_ADD_IS_PINNED_SQL: string =
+  `ALTER TABLE ${TABLE_NAME} ADD COLUMN ${COL_IS_PINNED} INTEGER NOT NULL DEFAULT 0`;
+
+/** 旧库迁移 SQL：为已有数据库添加 reminder_id 列 */
+const ALTER_ADD_REMINDER_ID_SQL: string =
+  `ALTER TABLE ${TABLE_NAME} ADD COLUMN ${COL_REMINDER_ID} INTEGER NOT NULL DEFAULT 0`;
 
 /** 任务 RDB 数据库封装，所有方法均为静态 */
 export class TaskDatabase {
@@ -89,7 +106,7 @@ export class TaskDatabase {
     TaskDatabase.initPromise = TaskDatabase.doInit(context);
   }
 
-  /** 执行实际初始化：创建/打开 RDB 并建表 */
+  /** 执行实际初始化：创建/打开 RDB 并建表，同时执行旧库列迁移 */
   private static async doInit(context: Context): Promise<void> {
     try {
       const config: relationalStore.StoreConfig = {
@@ -98,6 +115,18 @@ export class TaskDatabase {
       };
       TaskDatabase.store = await relationalStore.getRdbStore(context, config);
       await TaskDatabase.store.executeSql(CREATE_TABLE_SQL);
+      // 旧库迁移：添加 is_pinned 列；若列已存在则 SQLite 会报错，用 try/catch 静默忽略
+      try {
+        await TaskDatabase.store.executeSql(ALTER_ADD_IS_PINNED_SQL);
+      } catch {
+        // 列已存在时忽略错误
+      }
+      // 旧库迁移：添加 reminder_id 列
+      try {
+        await TaskDatabase.store.executeSql(ALTER_ADD_REMINDER_ID_SQL);
+      } catch {
+        // 列已存在时忽略错误
+      }
       hilog.info(LOG_DOMAIN, 'TaskDatabase', '数据库初始化成功');
     } catch (err) {
       hilog.error(LOG_DOMAIN, 'TaskDatabase', '初始化失败：%{public}s', JSON.stringify(err));
@@ -128,12 +157,16 @@ export class TaskDatabase {
       accumulatedDuration: rs.getLong(rs.getColumnIndex(COL_ACCUMULATED_DURATION)),
       reminderType: rs.getLong(rs.getColumnIndex(COL_REMINDER_TYPE)),
       reminderOffset: rs.getLong(rs.getColumnIndex(COL_REMINDER_OFFSET)),
+      reminderSound: rs.getString(rs.getColumnIndex(COL_REMINDER_SOUND)),
+      reminderMessage: rs.getString(rs.getColumnIndex(COL_REMINDER_MESSAGE)),
       completionType: rs.getLong(rs.getColumnIndex(COL_COMPLETION_TYPE)),
       completedAt: rs.getLong(rs.getColumnIndex(COL_COMPLETED_AT)),
       sourceInboxId: rs.getLong(rs.getColumnIndex(COL_SOURCE_INBOX_ID)),
+      isPinned: rs.getLong(rs.getColumnIndex(COL_IS_PINNED)),
       sortOrder: rs.getLong(rs.getColumnIndex(COL_SORT_ORDER)),
       createdAt: rs.getLong(rs.getColumnIndex(COL_CREATED_AT)),
       updatedAt: rs.getLong(rs.getColumnIndex(COL_UPDATED_AT)),
+      reminderId: rs.getLong(rs.getColumnIndex(COL_REMINDER_ID)),
     };
   }
 
@@ -240,12 +273,16 @@ export class TaskDatabase {
       bucket[COL_ACCUMULATED_DURATION] = entry.accumulatedDuration;
       bucket[COL_REMINDER_TYPE] = entry.reminderType;
       bucket[COL_REMINDER_OFFSET] = entry.reminderOffset;
+      bucket[COL_REMINDER_SOUND] = entry.reminderSound;
+      bucket[COL_REMINDER_MESSAGE] = entry.reminderMessage;
       bucket[COL_COMPLETION_TYPE] = entry.completionType;
       bucket[COL_COMPLETED_AT] = entry.completedAt;
       bucket[COL_SOURCE_INBOX_ID] = entry.sourceInboxId;
+      bucket[COL_IS_PINNED] = entry.isPinned;
       bucket[COL_SORT_ORDER] = entry.sortOrder;
       bucket[COL_CREATED_AT] = entry.createdAt;
       bucket[COL_UPDATED_AT] = entry.updatedAt;
+      bucket[COL_REMINDER_ID] = entry.reminderId;
       return await TaskDatabase.store.insert(TABLE_NAME, bucket);
     } catch (err) {
       hilog.error(LOG_DOMAIN, 'TaskDatabase', 'insert 失败：%{public}s', JSON.stringify(err));
@@ -277,12 +314,16 @@ export class TaskDatabase {
       bucket[COL_ACCUMULATED_DURATION] = entry.accumulatedDuration;
       bucket[COL_REMINDER_TYPE] = entry.reminderType;
       bucket[COL_REMINDER_OFFSET] = entry.reminderOffset;
+      bucket[COL_REMINDER_SOUND] = entry.reminderSound;
+      bucket[COL_REMINDER_MESSAGE] = entry.reminderMessage;
       bucket[COL_COMPLETION_TYPE] = entry.completionType;
       bucket[COL_COMPLETED_AT] = entry.completedAt;
       bucket[COL_SOURCE_INBOX_ID] = entry.sourceInboxId;
+      bucket[COL_IS_PINNED] = entry.isPinned;
       bucket[COL_SORT_ORDER] = entry.sortOrder;
       bucket[COL_CREATED_AT] = entry.createdAt;
       bucket[COL_UPDATED_AT] = entry.updatedAt;
+      bucket[COL_REMINDER_ID] = entry.reminderId;
       const predicates: relationalStore.RdbPredicates = new relationalStore.RdbPredicates(TABLE_NAME);
       predicates.equalTo(COL_ID, entry.id);
       await TaskDatabase.store.update(bucket, predicates);

@@ -9,10 +9,12 @@
  *    基本类型 @Prop 保证父 @State 变化时强制刷新，彻底消除「文本静态」Bug。
  *  - 扩散 Rect 始终挂载，用 opacity 控制可见性；避免条件挂载时
  *    Stack 测量不稳定导致 height('100%') 解析为父容器全高而溢出到下方条目。
+ *  - 布局与任务列表条目保持一致：双行（标题行 + 元信息行）。
  *
  * 功能：
- *  - 标题行：标题（省略）→ 第一个标签 → 时间戳（均在一行，宽度统一）
- *  - 置顶时左侧 3vp 彩色竖条边框（始终占位，仅颜色变化）
+ *  - 标题行：标题（省略）→「置顶」chip（仅置顶时，accent 色圆角边框）
+ *  - 元信息行：最多 2 个标签（左侧）+ 修改时间戳（右侧）
+ *  - 左侧 3vp 竖条边框：置顶时 accent 色，未置顶透明（无优先级冲突）
  *  - 右侧三点按钮（bindMenu，不占用长按手势）
  *  - 单击主内容区跳转编辑页
  */
@@ -154,44 +156,72 @@ export struct InboxItemComponent {
         .scale({ x: this.spreadScale, y: 1.0, centerX: this.spreadCenterX })
         .hitTestBehavior(HitTestMode.None)
 
-      Row({ space: 10 }) { // 【修改点】略微拉开序号和标题的间距
-        // ── 序号（1-based，固定宽，次要色，随拖拽排序自动更新） ────────────────
+      Row({ space: 10 }) {
+        // ── 序号（1-based，固定宽，次要色） ────────────────────────────────
         Text(this.entryIndex.toString())
-          .fontSize(16) // 【修改点1】将极小的 label 变量替换为确定的 16，放大字号
+          .fontSize(16)
           .fontColor(this.themeTokens.colorTextSecondary)
-          .width(26)    // 【修改点2】配合大字体，略微加宽防止两位数时被截断
-          .textAlign(TextAlign.Start) // 【修改点3】由 End 改为 Start，让序号更贴近屏幕最左侧边缘
+          .width(26)
+          .textAlign(TextAlign.Start)
           .flexShrink(0)
 
-        // ── 左侧主内容区（单击跳转编辑页） ────────────────────────────────────
-        Row({ space: 6 }) {
-          Text(this.entryText)
-            .fontSize(16) // 【修改点4】同步将标题放大到 16，使得数字和标题协调
-            .fontColor(this.themeTokens.colorTextPrimary)
-            .fontWeight(FontWeight.Medium)
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .layoutWeight(1)
-
-          // 第一个标签（若有），紧邻日期
-          if (this.entryTags !== '') {
-            Text('#' + parseTags(this.entryTags)[0])
-              .fontSize($r('app.float.font_size_label'))
-              .fontColor(this.themeTokens.colorAccent)
+        // ── 主内容区（双行：标题行 + 元信息行，单击跳转编辑页） ──────────────
+        Column({ space: 4 }) {
+          // 标题行：标题文本 + 置顶 chip（仅置顶时显示）
+          Row({ space: 6 }) {
+            Text(this.entryText)
+              .fontSize(16)
+              .fontColor(this.themeTokens.colorTextPrimary)
+              .fontWeight(FontWeight.Medium)
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
-              .constraintSize({ maxWidth: 80 })
+              .layoutWeight(1)
+
+            // 置顶标识 chip（与任务列表保持一致）
+            if (this.entryIsPinned === 1) {
+              Text(I18nHelper.t(I18nKeys.INBOX_MENU_PIN, this.lang))
+                .fontSize($r('app.float.font_size_label'))
+                .fontColor(this.themeTokens.colorAccent)
+                .border({ width: 0.5, color: this.themeTokens.colorAccent, radius: 4 })
+                .padding({
+                  left: 4,
+                  right: 4,
+                  top: 1,
+                  bottom: 1
+                })
+                .flexShrink(0)
+            }
+          }
+          .width('100%')
+          .alignItems(VerticalAlign.Center)
+
+          // 元信息行：标签列表（左）+ 修改时间戳（右）
+          Row({ space: 6 }) {
+            if (this.entryTags !== '') {
+              ForEach(parseTags(this.entryTags).slice(0, 2), (tag: string) => {
+                Text('#' + tag)
+                  .fontSize($r('app.float.font_size_label'))
+                  .fontColor(this.themeTokens.colorAccent)
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                  .constraintSize({ maxWidth: 72 })
+                  .flexShrink(0)
+              }, (tag: string) => tag)
+            }
+
+            Blank()
+
+            Text(formatTimestamp(this.entryUpdatedAt, this.lang))
+              .fontSize($r('app.float.font_size_label'))
+              .fontColor(this.themeTokens.colorTextSecondary)
+              .maxLines(1)
               .flexShrink(0)
           }
-
-          Text(formatTimestamp(this.entryUpdatedAt, this.lang))
-            .fontSize($r('app.float.font_size_label'))
-            .fontColor(this.themeTokens.colorTextSecondary)
-            .maxLines(1)
-            .flexShrink(0)
+          .width('100%')
+          .alignItems(VerticalAlign.Center)
         }
         .layoutWeight(1)
-        .alignItems(VerticalAlign.Center)
+        .alignItems(HorizontalAlign.Start)
         .onClick(() => {
           router.pushUrl({
             url: 'pages/InboxEditorPage',
@@ -210,9 +240,8 @@ export struct InboxItemComponent {
       }
       .width('100%')
       .constraintSize({ minHeight: $r('app.float.inbox_item_min_height') })
-      // 【修改点5】重构 padding：废弃过大的左侧 spacing_lg 变量，直接使用紧凑的硬编码数值
       .padding({
-        left: 12, // 强制变小，紧贴左边界
+        left: 12,
         right: 16,
         top: 14,
         bottom: 14,
@@ -226,6 +255,7 @@ export struct InboxItemComponent {
         this.triggerSpread(e.touches[0].x);
       }
     })
+    // 左侧 3vp 竖条：置顶时 accent 色，未置顶时透明（无优先级概念，竖条仅用于置顶提示）
     .borderWidth({ left: 3 })
     .borderColor({
       left: this.entryIsPinned === 1 ? this.themeTokens.colorAccent : Color.Transparent,

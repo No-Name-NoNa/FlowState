@@ -1,12 +1,14 @@
 import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
+import { notificationManager } from '@kit.NotificationKit';
 import { KEY_APP_LANGUAGE, LOG_DOMAIN } from '../constants/AppConstants';
 import { I18nHelper } from '../util/I18nHelper';
 import { InboxDatabase } from '../util/InboxDatabase';
 import { TaskDatabase } from '../util/TaskDatabase';
 import { PreferencesHelper } from '../util/PreferencesHelper';
 import { ThemeHelper } from '../util/ThemeHelper';
+import { NotificationSettingsViewModel } from '../viewmodel/NotificationSettingsViewModel';
 
 export default class FlowAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
@@ -27,6 +29,9 @@ export default class FlowAbility extends UIAbility {
     // 必须在页面加载前完成，确保组件初始化时即读到正确的主题配色
     ThemeHelper.initFromStorage();
 
+    // 从持久化存储恢复全局通知设置，写入 AppStorage
+    NotificationSettingsViewModel.initFromStorage();
+
     // 预加载所有语言翻译文件，为 I18nHelper.t() 提供数据
     I18nHelper.init(this.context);
 
@@ -45,6 +50,11 @@ export default class FlowAbility extends UIAbility {
 
   onWindowStageCreate(windowStage: window.WindowStage): void {
     hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onWindowStageCreate');
+
+    // 请求通知权限（弹出系统授权对话框，用户首次使用时确认）
+    notificationManager.requestEnableNotification(this.context).catch((err: Error) => {
+      hilog.warn(LOG_DOMAIN, 'FlowAbility', '通知权限请求未通过：%{public}s', JSON.stringify(err));
+    });
 
     windowStage.loadContent('pages/Index', (err) => {
       if (err.code) {

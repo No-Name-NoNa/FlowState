@@ -16,6 +16,14 @@ export const KEY_THEME_TOKENS: string = 'appThemeTokens';
 /** Preferences：自定义主题颜色 token 存储键名（以 JSON 字符串序列化保存） */
 export const KEY_CUSTOM_THEME_TOKENS: string = 'customThemeTokens';
 
+/** AppStorage：全局默认提醒类型键名（值为 TaskReminderType number）已废弃，保留用于向后兼容 */
+
+/** Preferences：全局默认通知消息文本存储键（空字符串 = 使用 App 生成） */
+export const PREFS_KEY_NOTIF_MESSAGE: string = 'notif_default_message';
+
+/** 系统默认音效标识（SOUND/ALARM 类型下的默认选项） */
+export const NOTIF_SOUND_DEFAULT: string = 'default';
+
 /** 输入校验：HEX 颜色值非法时的提示边框色（通用错误红） */
 export const COLOR_INPUT_ERROR: string = '#FF4444';
 

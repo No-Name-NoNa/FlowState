@@ -180,6 +180,55 @@ struct SettingsPage {
     .height($r('app.float.settings_item_height'))
   }
 
+  /**
+   * 通知设置导航行。
+   * 右侧副文字实时显示当前全局默认提醒类型名称。
+   */
+  @Builder
+  notifNavRow(): void {
+    Stack({ alignContent: Alignment.Center }) {
+      if (this.pressedRowIndex === 2) {
+        Rect()
+          .width('100%')
+          .height($r('app.float.settings_item_height'))
+          .fill(this.themeTokens.colorTextPrimary)
+          .opacity(this.rowSpreadOpacity)
+          .scale({ x: this.rowSpreadScale, y: 1, centerX: this.spreadCenterX })
+          .hitTestBehavior(HitTestMode.None)
+      }
+      Row() {
+        Text(I18nHelper.t(I18nKeys.SETTINGS_NOTIF_LABEL, this.currentLanguage))
+          .fontSize($r('app.float.font_size_body'))
+          .fontColor(this.themeTokens.colorTextPrimary)
+          .layoutWeight(1)
+
+        Text(I18nHelper.t(I18nKeys.NOTIF_DEFAULT_MESSAGE_LABEL, this.currentLanguage))
+          .fontSize($r('app.float.font_size_body'))
+          .fontColor(this.themeTokens.colorTextSecondary)
+          .margin({ right: $r('app.float.spacing_sm') })
+
+        Image($r('sys.media.ohos_ic_public_arrow_right'))
+          .width($r('app.float.icon_size_sm'))
+          .height($r('app.float.icon_size_sm'))
+          .fillColor(this.themeTokens.colorTextSecondary)
+      }
+      .width('100%')
+      .height($r('app.float.settings_item_height'))
+      .padding({ left: $r('app.float.spacing_lg'), right: $r('app.float.spacing_lg') })
+      .alignItems(VerticalAlign.Center)
+      .onTouch((e: TouchEvent) => {
+        if (e.type === TouchType.Down) {
+          this.triggerRowSpread(2, e.touches[0].x);
+        }
+      })
+      .onClick(() => {
+        router.pushUrl({ url: 'pages/NotificationSettingsPage' });
+      })
+    }
+    .width('100%')
+    .height($r('app.float.settings_item_height'))
+  }
+
   build() {
     Column() {
       // ── 顶部导航栏：返回按钮 + 页面标题 ──────────────────────────────────
@@ -226,6 +275,14 @@ struct SettingsPage {
 
         // ── 第二项：主题 ──────────────────────────────────────────────────
         this.themeNavRow()
+
+        Divider()
+          .strokeWidth(DIVIDER_STROKE_WIDTH)
+          .color(this.themeTokens.colorDivider)
+          .margin({ left: $r('app.float.spacing_lg') })
+
+        // ── 第三项：通知设置 ──────────────────────────────────────────────
+        this.notifNavRow()
       }
       .width('100%')
       .alignItems(HorizontalAlign.Start)

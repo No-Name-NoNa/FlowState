@@ -15,6 +15,7 @@ import {
   TaskStatus
 } from '../model/TaskEntry';
 import { InboxEntry, parseTags } from '../model/InboxEntry';
+import { NotificationHelper } from '../util/NotificationHelper';
 
 /** 任务 ViewModel，所有方法均为静态 */
 export class TaskViewModel {
@@ -31,12 +32,26 @@ export class TaskViewModel {
 
   /**
    * 从 DB 重新加载全部任务并按动态权重排序。
+   * 排序规则：置顶激活任务浮顶 → 普通激活任务（按权重降序）→ 已完成任务沉底。
    * 调用方在 Promise 完成后需同步读取 filteredTasks 刷新视图。
    */
   static async load(): Promise<void> {
     const tasks: TaskEntry[] = await TaskDatabase.queryAll();
-    // 按动态权重降序排序，同权重按创建时间升序（稳定排序）
+    // 置顶激活 > 普通激活（按权重降序，同权重按创建时间升序）> 已完成
     tasks.sort((a: TaskEntry, b: TaskEntry) => {
+      const aCompleted: boolean = a.status === TaskStatus.COMPLETED;
+      const bCompleted: boolean = b.status === TaskStatus.COMPLETED;
+      // 已完成任务始终沉底
+      if (aCompleted !== bCompleted) {
+        return aCompleted ? 1 : -1;
+      }
+      if (!aCompleted) {
+        // 置顶任务优先浮顶
+        if (a.isPinned !== b.isPinned) {
+          return b.isPinned - a.isPinned;
+        }
+      }
+      // 同组内按动态权重降序，权重相同时按创建时间升序
       const diff: number = computeTaskWeight(b) - computeTaskWeight(a);
       if (diff !== 0) {
         return diff;
@@ -136,42 +151,137 @@ export class TaskViewModel {
       accumulatedDuration: 0,
       reminderType: TaskReminderType.NONE,
       reminderOffset: 0,
+      reminderSound: '',
+      reminderMessage: '',
       completionType: TaskCompletionType.MANUAL,
       completedAt: 0,
       sourceInboxId: inbox.id,
+      isPinned: 0,
       sortOrder: 0,
       createdAt: now,
       updatedAt: now,
+      reminderId: 0,
     };
   }
 
   /**
-   * 将新任务写入 DB 并刷新内存缓存。
+   * 将新任务写入 DB、调度截止提醒（如有），并刷新内存缓存。
    * @param entry id=0 的任务草稿
    * @returns 新行 ID，失败返回 -1
    */
   static async create(entry: TaskEntry): Promise<number> {
     const newId: number = await TaskDatabase.insert(entry);
     if (newId > 0) {
+      // 注册截止提醒（若有），将 reminderId 写回 DB
+      const entryWithId: TaskEntry = {
+        id: newId,
+        title: entry.title,
+        content: entry.content,
+        tags: entry.tags,
+        priority: entry.priority,
+        status: entry.status,
+        scheduleType: entry.scheduleType,
+        timeNodes: entry.timeNodes,
+        currentNodeIndex: entry.currentNodeIndex,
+        recurringRule: entry.recurringRule,
+        targetDuration: entry.targetDuration,
+        accumulatedDuration: entry.accumulatedDuration,
+        reminderType: entry.reminderType,
+        reminderOffset: entry.reminderOffset,
+        reminderSound: entry.reminderSound,
+        reminderMessage: entry.reminderMessage,
+        completionType: entry.completionType,
+        completedAt: entry.completedAt,
+        sourceInboxId: entry.sourceInboxId,
+        isPinned: entry.isPinned,
+        sortOrder: entry.sortOrder,
+        createdAt: entry.createdAt,
+        updatedAt: entry.updatedAt,
+        reminderId: 0,
+      };
+      const reminderId: number = await NotificationHelper.scheduleDeadlineReminder(entryWithId);
+      if (reminderId > 0) {
+        const withReminder: TaskEntry = {
+          id: entryWithId.id,
+          title: entryWithId.title,
+          content: entryWithId.content,
+          tags: entryWithId.tags,
+          priority: entryWithId.priority,
+          status: entryWithId.status,
+          scheduleType: entryWithId.scheduleType,
+          timeNodes: entryWithId.timeNodes,
+          currentNodeIndex: entryWithId.currentNodeIndex,
+          recurringRule: entryWithId.recurringRule,
+          targetDuration: entryWithId.targetDuration,
+          accumulatedDuration: entryWithId.accumulatedDuration,
+          reminderType: entryWithId.reminderType,
+          reminderOffset: entryWithId.reminderOffset,
+          reminderSound: entryWithId.reminderSound,
+          reminderMessage: entryWithId.reminderMessage,
+          completionType: entryWithId.completionType,
+          completedAt: entryWithId.completedAt,
+          sourceInboxId: entryWithId.sourceInboxId,
+          isPinned: entryWithId.isPinned,
+          sortOrder: entryWithId.sortOrder,
+          createdAt: entryWithId.createdAt,
+          updatedAt: entryWithId.updatedAt,
+          reminderId: reminderId,
+        };
+        await TaskDatabase.update(withReminder);
+      }
       await TaskViewModel.load();
     }
     return newId;
   }
 
   /**
-   * 更新任务并刷新内存缓存。
+   * 更新任务：先取消旧提醒，重新调度新提醒，再写 DB 并刷新内存缓存。
    * @param entry 含有效 id 的完整任务条目
    */
   static async update(entry: TaskEntry): Promise<void> {
-    await TaskDatabase.update(entry);
+    // 取消旧的截止提醒
+    await NotificationHelper.cancelReminder(entry.reminderId);
+    // 注册新提醒并写入 reminderId
+    const reminderId: number = await NotificationHelper.scheduleDeadlineReminder(entry);
+    const updated: TaskEntry = {
+      id: entry.id,
+      title: entry.title,
+      content: entry.content,
+      tags: entry.tags,
+      priority: entry.priority,
+      status: entry.status,
+      scheduleType: entry.scheduleType,
+      timeNodes: entry.timeNodes,
+      currentNodeIndex: entry.currentNodeIndex,
+      recurringRule: entry.recurringRule,
+      targetDuration: entry.targetDuration,
+      accumulatedDuration: entry.accumulatedDuration,
+      reminderType: entry.reminderType,
+      reminderOffset: entry.reminderOffset,
+      reminderSound: entry.reminderSound,
+      reminderMessage: entry.reminderMessage,
+      completionType: entry.completionType,
+      completedAt: entry.completedAt,
+      sourceInboxId: entry.sourceInboxId,
+      isPinned: entry.isPinned,
+      sortOrder: entry.sortOrder,
+      createdAt: entry.createdAt,
+      updatedAt: entry.updatedAt,
+      reminderId: reminderId,
+    };
+    await TaskDatabase.update(updated);
     await TaskViewModel.load();
   }
 
   /**
-   * 删除任务并刷新内存缓存。
+   * 删除任务：先取消提醒，再删 DB 并刷新内存缓存。
    * @param id 任务主键
    */
   static async remove(id: number): Promise<void> {
+    const entry: TaskEntry | null = await TaskDatabase.getById(id);
+    if (entry !== null) {
+      await NotificationHelper.cancelReminder(entry.reminderId);
+    }
     await TaskDatabase.delete(id);
     await TaskViewModel.load();
   }
@@ -210,7 +320,7 @@ export class TaskViewModel {
   }
 
   /**
-   * 将指定任务标记为已完成，并刷新内存缓存。
+   * 将指定任务标记为已完成，取消截止提醒，并刷新内存缓存。
    * @param id 任务主键
    */
   static async complete(id: number): Promise<void> {
@@ -218,6 +328,8 @@ export class TaskViewModel {
     if (entry === null) {
       return;
     }
+    // 任务完成，取消截止提醒
+    await NotificationHelper.cancelReminder(entry.reminderId);
     const now: number = Date.now();
     const updated: TaskEntry = {
       id: entry.id,
@@ -234,12 +346,16 @@ export class TaskViewModel {
       accumulatedDuration: entry.accumulatedDuration,
       reminderType: entry.reminderType,
       reminderOffset: entry.reminderOffset,
+      reminderSound: entry.reminderSound,
+      reminderMessage: entry.reminderMessage,
       completionType: entry.completionType,
       completedAt: now,
       sourceInboxId: entry.sourceInboxId,
+      isPinned: entry.isPinned,
       sortOrder: entry.sortOrder,
       createdAt: entry.createdAt,
       updatedAt: now,
+      reminderId: 0,
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
@@ -270,19 +386,23 @@ export class TaskViewModel {
       accumulatedDuration: entry.accumulatedDuration,
       reminderType: entry.reminderType,
       reminderOffset: entry.reminderOffset,
+      reminderSound: entry.reminderSound,
+      reminderMessage: entry.reminderMessage,
       completionType: entry.completionType,
       completedAt: 0,
       sourceInboxId: entry.sourceInboxId,
+      isPinned: entry.isPinned,
       sortOrder: entry.sortOrder,
       createdAt: entry.createdAt,
       updatedAt: now,
+      reminderId: entry.reminderId,
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
   }
 
   /**
-   * 将指定任务标记为归档，不再在任务列表显示，可在历史页查看。
+   * 将指定任务标记为归档，取消截止提醒，不再在任务列表显示，可在历史页查看。
    * @param id 任务主键
    */
   static async archive(id: number): Promise<void> {
@@ -290,6 +410,8 @@ export class TaskViewModel {
     if (entry === null) {
       return;
     }
+    // 归档时取消截止提醒
+    await NotificationHelper.cancelReminder(entry.reminderId);
     const now: number = Date.now();
     const updated: TaskEntry = {
       id: entry.id,
@@ -306,12 +428,16 @@ export class TaskViewModel {
       accumulatedDuration: entry.accumulatedDuration,
       reminderType: entry.reminderType,
       reminderOffset: entry.reminderOffset,
+      reminderSound: entry.reminderSound,
+      reminderMessage: entry.reminderMessage,
       completionType: entry.completionType,
       completedAt: 0,
       sourceInboxId: entry.sourceInboxId,
+      isPinned: entry.isPinned,
       sortOrder: entry.sortOrder,
       createdAt: entry.createdAt,
       updatedAt: now,
+      reminderId: 0,
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
@@ -346,13 +472,57 @@ export class TaskViewModel {
       accumulatedDuration: accMs,
       reminderType: entry.reminderType,
       reminderOffset: entry.reminderOffset,
+      reminderSound: entry.reminderSound,
+      reminderMessage: entry.reminderMessage,
       completionType: entry.completionType,
       completedAt: completedAt,
       sourceInboxId: entry.sourceInboxId,
+      isPinned: entry.isPinned,
       sortOrder: entry.sortOrder,
       createdAt: entry.createdAt,
       updatedAt: now,
+      reminderId: entry.reminderId,
     };
     await TaskDatabase.update(updated);
+  }
+
+  /**
+   * 切换指定任务的置顶状态，并刷新内存缓存。
+   * @param id 任务主键
+   */
+  static async togglePin(id: number): Promise<void> {
+    const entry: TaskEntry | null = await TaskDatabase.getById(id);
+    if (entry === null) {
+      return;
+    }
+    const now: number = Date.now();
+    const updated: TaskEntry = {
+      id: entry.id,
+      title: entry.title,
+      content: entry.content,
+      tags: entry.tags,
+      priority: entry.priority,
+      status: entry.status,
+      scheduleType: entry.scheduleType,
+      timeNodes: entry.timeNodes,
+      currentNodeIndex: entry.currentNodeIndex,
+      recurringRule: entry.recurringRule,
+      targetDuration: entry.targetDuration,
+      accumulatedDuration: entry.accumulatedDuration,
+      reminderType: entry.reminderType,
+      reminderOffset: entry.reminderOffset,
+      reminderSound: entry.reminderSound,
+      reminderMessage: entry.reminderMessage,
+      completionType: entry.completionType,
+      completedAt: entry.completedAt,
+      sourceInboxId: entry.sourceInboxId,
+      isPinned: entry.isPinned === 1 ? 0 : 1,
+      sortOrder: entry.sortOrder,
+      createdAt: entry.createdAt,
+      updatedAt: now,
+      reminderId: entry.reminderId,
+    };
+    await TaskDatabase.update(updated);
+    await TaskViewModel.load();
   }
 }

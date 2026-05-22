@@ -285,7 +285,7 @@ struct ThemePage {
   }
 
   build() {
-    Column() {
+    Column({ space: 0 }) {
       // ── 顶部导航栏：返回按钮 + 页面标题 ──────────────────────────────────
       Row() {
         Image($r('sys.media.ohos_ic_back'))
@@ -312,15 +312,16 @@ struct ThemePage {
       .padding({ left: $r('app.float.spacing_md'), right: $r('app.float.spacing_md') })
       .alignItems(VerticalAlign.Center)
 
-      // 顶部分隔线
+      // 顶部分隔线 (限制固定高度，防止 Divider 自动占用额外垂直空间)
       Divider()
         .strokeWidth(DIVIDER_STROKE_WIDTH)
         .color(this.themeTokens.colorDivider)
         .width('100%')
+        .height(DIVIDER_STROKE_WIDTH)
+        .margin(0)
 
-      // ── 可滚动主题内容区 ──────────────────────────────────────────────────
       Scroll() {
-        Column() {
+        Column({ space: 0 }) {
           // 预设主题选项列表
           this.themeOptionItem(ThemeId.LIGHT, I18nKeys.SETTINGS_THEME_LIGHT, 0)
 
@@ -328,6 +329,7 @@ struct ThemePage {
             .strokeWidth(DIVIDER_STROKE_WIDTH)
             .color(this.themeTokens.colorDivider)
             .margin({ left: $r('app.float.spacing_lg') })
+            .height(DIVIDER_STROKE_WIDTH)
 
           this.themeOptionItem(ThemeId.DARK, I18nKeys.SETTINGS_THEME_DARK, 1)
 
@@ -335,6 +337,7 @@ struct ThemePage {
             .strokeWidth(DIVIDER_STROKE_WIDTH)
             .color(this.themeTokens.colorDivider)
             .margin({ left: $r('app.float.spacing_lg') })
+            .height(DIVIDER_STROKE_WIDTH)
 
           this.themeOptionItem(ThemeId.WARM, I18nKeys.SETTINGS_THEME_WARM, 2)
 
@@ -342,6 +345,7 @@ struct ThemePage {
             .strokeWidth(DIVIDER_STROKE_WIDTH)
             .color(this.themeTokens.colorDivider)
             .margin({ left: $r('app.float.spacing_lg') })
+            .height(DIVIDER_STROKE_WIDTH)
 
           this.themeOptionItem(ThemeId.OCEAN, I18nKeys.SETTINGS_THEME_OCEAN, 3)
 
@@ -349,6 +353,7 @@ struct ThemePage {
             .strokeWidth(DIVIDER_STROKE_WIDTH)
             .color(this.themeTokens.colorDivider)
             .margin({ left: $r('app.float.spacing_lg') })
+            .height(DIVIDER_STROKE_WIDTH)
 
           this.themeOptionItem(ThemeId.FOREST, I18nKeys.SETTINGS_THEME_FOREST, 4)
 
@@ -356,6 +361,7 @@ struct ThemePage {
             .strokeWidth(DIVIDER_STROKE_WIDTH)
             .color(this.themeTokens.colorDivider)
             .margin({ left: $r('app.float.spacing_lg') })
+            .height(DIVIDER_STROKE_WIDTH)
 
           this.themeOptionItem(ThemeId.DARCULA, I18nKeys.SETTINGS_THEME_DARCULA, 5)
 
@@ -363,6 +369,7 @@ struct ThemePage {
             .strokeWidth(DIVIDER_STROKE_WIDTH)
             .color(this.themeTokens.colorDivider)
             .margin({ left: $r('app.float.spacing_lg') })
+            .height(DIVIDER_STROKE_WIDTH)
 
           this.themeOptionItem(ThemeId.INTELLIJ, I18nKeys.SETTINGS_THEME_INTELLIJ, 6)
 
@@ -370,6 +377,7 @@ struct ThemePage {
             .strokeWidth(DIVIDER_STROKE_WIDTH)
             .color(this.themeTokens.colorDivider)
             .margin({ left: $r('app.float.spacing_lg') })
+            .height(DIVIDER_STROKE_WIDTH)
 
           this.themeOptionItem(ThemeId.REIMU, I18nKeys.SETTINGS_THEME_REIMU, 7)
 
@@ -377,6 +385,7 @@ struct ThemePage {
             .strokeWidth(DIVIDER_STROKE_WIDTH)
             .color(this.themeTokens.colorDivider)
             .margin({ left: $r('app.float.spacing_lg') })
+            .height(DIVIDER_STROKE_WIDTH)
 
           this.themeOptionItem(ThemeId.MARISA, I18nKeys.SETTINGS_THEME_MARISA, 8)
 
@@ -384,6 +393,7 @@ struct ThemePage {
             .strokeWidth(DIVIDER_STROKE_WIDTH)
             .color(this.themeTokens.colorDivider)
             .margin({ left: $r('app.float.spacing_lg') })
+            .height(DIVIDER_STROKE_WIDTH)
 
           this.themeOptionItem(ThemeId.SAKUYA, I18nKeys.SETTINGS_THEME_SAKUYA, 9)
 
@@ -391,6 +401,7 @@ struct ThemePage {
             .strokeWidth(DIVIDER_STROKE_WIDTH)
             .color(this.themeTokens.colorDivider)
             .margin({ left: $r('app.float.spacing_lg') })
+            .height(DIVIDER_STROKE_WIDTH)
 
           this.themeOptionItem(ThemeId.REMILIA, I18nKeys.SETTINGS_THEME_REMILIA, 10)
 
@@ -398,6 +409,7 @@ struct ThemePage {
             .strokeWidth(DIVIDER_STROKE_WIDTH)
             .color(this.themeTokens.colorDivider)
             .margin({ left: $r('app.float.spacing_lg') })
+            .height(DIVIDER_STROKE_WIDTH)
 
           this.themeOptionItem(ThemeId.CUSTOM, I18nKeys.SETTINGS_THEME_CUSTOM, 11)
 
@@ -408,6 +420,7 @@ struct ThemePage {
                 .strokeWidth(DIVIDER_STROKE_WIDTH)
                 .color(this.themeTokens.colorDivider)
                 .margin({ left: $r('app.float.spacing_lg') })
+                .height(DIVIDER_STROKE_WIDTH)
 
               Column() {
                 this.colorEditorRow(0)
@@ -423,6 +436,7 @@ struct ThemePage {
                 .strokeWidth(DIVIDER_STROKE_WIDTH)
                 .color(this.themeTokens.colorDivider)
                 .margin({ left: $r('app.float.spacing_lg') })
+                .height(DIVIDER_STROKE_WIDTH)
 
               Column() {
                 this.colorEditorRow(1)
@@ -438,6 +452,7 @@ struct ThemePage {
                 .strokeWidth(DIVIDER_STROKE_WIDTH)
                 .color(this.themeTokens.colorDivider)
                 .margin({ left: $r('app.float.spacing_lg') })
+                .height(DIVIDER_STROKE_WIDTH)
 
               Column() {
                 this.colorEditorRow(2)
@@ -454,13 +469,16 @@ struct ThemePage {
         }
         .width('100%')
         .alignItems(HorizontalAlign.Start)
+        .justifyContent(FlexAlign.Start)
       }
       .layoutWeight(1)
       .scrollBar(BarState.Off)
+      .align(Alignment.TopStart)
       .edgeEffect(EdgeEffect.Spring)
     }
     .width('100%')
     .height('100%')
+    .justifyContent(FlexAlign.Start)
     .backgroundColor(this.themeTokens.colorBackground)
   }
 }

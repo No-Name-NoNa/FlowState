@@ -4,6 +4,7 @@
     "pages/SettingsPage",
     "pages/LanguagePage",
     "pages/ThemePage",
+    "pages/NotificationSettingsPage",
     "pages/InboxEditorPage",
     "pages/TaskEditorPage",
     "pages/TaskDetailPage"

@@ -67,6 +67,8 @@ export enum I18nKeys {
   TASK_MENU_COMPLETE = 'task_menu_complete',
   TASK_MENU_UNCOMPLETE = 'task_menu_uncomplete',
   TASK_MENU_MOVE_TO_TOP = 'task_menu_move_to_top',
+  TASK_MENU_PIN = 'task_menu_pin',
+  TASK_MENU_UNPIN = 'task_menu_unpin',
   // 任务编辑页相关 key
   TASK_EDITOR_SAVE = 'task_editor_save',
   TASK_EDITOR_TITLE_PLACEHOLDER = 'task_editor_title_placeholder',
@@ -107,5 +109,25 @@ export enum I18nKeys {
   DIALOG_COMPLETE_MSG = 'dialog_complete_msg',
   DIALOG_ARCHIVE_MSG = 'dialog_archive_msg',
   DIALOG_DELETE_MSG = 'dialog_delete_msg',
-  DIALOG_RESET_MSG = 'dialog_reset_msg'
+  DIALOG_RESET_MSG = 'dialog_reset_msg',
+  // 设置页通知入口
+  SETTINGS_NOTIF_LABEL = 'settings_notif_label',
+  // 通知设置页
+  NOTIF_PAGE_TITLE = 'notif_page_title',
+  NOTIF_PAGE_DESC = 'notif_page_desc',
+  NOTIF_DEFAULT_MESSAGE_LABEL = 'notif_default_message_label',
+  NOTIF_DEFAULT_MESSAGE_PLACEHOLDER = 'notif_default_message_placeholder',
+  // 音效预设（任务编辑页和通知设置页共用）
+  NOTIF_SOUND_DEFAULT = 'notif_sound_default',
+  NOTIF_SOUND_CHIME = 'notif_sound_chime',
+  NOTIF_SOUND_BELL = 'notif_sound_bell',
+  NOTIF_SOUND_PING = 'notif_sound_ping',
+  // 任务编辑页提醒区（新增项）
+  TASK_REMINDER_POPUP = 'task_reminder_popup',
+  TASK_REMINDER_SOUND = 'task_reminder_sound',
+  TASK_REMINDER_ALARM = 'task_reminder_alarm',
+  TASK_REMINDER_SOUND_LABEL = 'task_reminder_sound_label',
+  TASK_REMINDER_MESSAGE_LABEL = 'task_reminder_message_label',
+  TASK_REMINDER_MESSAGE_PLACEHOLDER = 'task_reminder_message_placeholder',
+  TASK_REMINDER_USE_GLOBAL = 'task_reminder_use_global'
 }
