@@ -110,5 +110,11 @@
   "notif_sound_chime": "清脆",
   "notif_sound_bell": "沉稳",
   "notif_sound_ping": "提示音",
-  "notif_action_archive": "归档"
+  "notif_action_archive": "归档",
+  "settings_fontsize_label": "字体大小",
+  "settings_fontsize_preview": "预览",
+  "font_scale_small": "小",
+  "font_scale_normal": "标准",
+  "font_scale_large": "大",
+  "font_scale_xlarge": "特大"
 }

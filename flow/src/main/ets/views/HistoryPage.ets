@@ -6,8 +6,9 @@
  */
 import { I18nHelper } from '../util/I18nHelper';
 import { I18nKeys } from '../constants/I18nKeys';
-import { DIVIDER_STROKE_WIDTH, KEY_APP_LANGUAGE, KEY_THEME_TOKENS, LANG_ZH_CN } from '../constants/AppConstants';
+import { DIVIDER_STROKE_WIDTH, KEY_APP_LANGUAGE, KEY_FONT_TOKENS, KEY_THEME_TOKENS, LANG_ZH_CN } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
+import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 
 /** 历史记录视图组件 */
 @Component
@@ -16,13 +17,14 @@ export struct HistoryPage {
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   /** 订阅主题变化，主题切换时触发组件立即重渲染 */
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
+  @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
 
   build() {
     Column() {
       // 顶部 Header：页面标题
       Row() {
         Text(I18nHelper.t(I18nKeys.TAB_HISTORY, this.currentLanguage))
-          .fontSize($r('app.float.font_size_header_title'))
+          .fontSize(this.fontTokens.headerTitle)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.themeTokens.colorTextPrimary)
       }
@@ -40,7 +42,7 @@ export struct HistoryPage {
       // 主内容区占位（后续开发历史记录列表与数据统计面板）
       Column() {
         Text(I18nHelper.t(I18nKeys.HISTORY_EMPTY_HINT, this.currentLanguage))
-          .fontSize($r('app.float.font_size_caption'))
+          .fontSize(this.fontTokens.caption)
           .fontColor(this.themeTokens.colorTextSecondary)
       }
       .width('100%')

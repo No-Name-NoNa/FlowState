@@ -18,8 +18,9 @@
 import { router } from '@kit.ArkUI';
 import { I18nHelper } from '../util/I18nHelper';
 import { I18nKeys } from '../constants/I18nKeys';
-import { KEY_APP_LANGUAGE, KEY_THEME_TOKENS, LANG_ZH_CN } from '../constants/AppConstants';
+import { KEY_APP_LANGUAGE, KEY_FONT_TOKENS, KEY_THEME_TOKENS, LANG_ZH_CN } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
+import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { TaskViewModel } from '../viewmodel/TaskViewModel';
 import { formatTaskDeadline, TaskCompletionType, TaskPriority, TaskStatus } from '../model/TaskEntry';
 import { parseTags } from '../model/InboxEntry';
@@ -58,6 +59,7 @@ export struct TaskItemComponent {
   };
   @StorageLink(KEY_APP_LANGUAGE) private lang: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) private themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
+  @StorageLink(KEY_FONT_TOKENS) private fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
   // ── 条目点击横向扩散特效状态 ─────────────────────────────────────────────
   @State private spreadScale: number = 0;
   @State private spreadOpacity: number = 0;
@@ -208,7 +210,7 @@ export struct TaskItemComponent {
       // ── 横向扩散特效矩形（始终挂载，用 opacity/scale 控制可见性） ────────
       Rect()
         .width('100%')
-        .height($r('app.float.inbox_item_min_height'))
+        .height(this.fontTokens.inboxItemMinHeight)
         .fill(this.themeTokens.colorTextPrimary)
         .opacity(this.spreadOpacity)
         .scale({ x: this.spreadScale, y: 1.0, centerX: this.spreadCenterX })
@@ -217,7 +219,7 @@ export struct TaskItemComponent {
       Row({ space: 10 }) {
         // ── 序号（1-based，固定宽，次要色） ────────────────────────────────
         Text(this.entryIndex.toString())
-          .fontSize(16)
+          .fontSize(this.fontTokens.body)
           .fontColor(this.themeTokens.colorTextSecondary)
           .width(26)
           .textAlign(TextAlign.Start)
@@ -228,7 +230,7 @@ export struct TaskItemComponent {
           // 标题行：标题文本 + 置顶 chip（仅置顶时显示）
           Row({ space: 6 }) {
             Text(this.entryTitle)
-              .fontSize(16)
+              .fontSize(this.fontTokens.body)
               .fontColor(
                 this.entryStatus === TaskStatus.COMPLETED
                   ? this.themeTokens.colorTextSecondary
@@ -248,7 +250,7 @@ export struct TaskItemComponent {
             // 置顶标识 chip（不与优先级竖条冲突，显示在标题右侧）
             if (this.entryIsPinned === 1) {
               Text(I18nHelper.t(I18nKeys.TASK_MENU_PIN, this.lang))
-                .fontSize($r('app.float.font_size_label'))
+                .fontSize(this.fontTokens.label)
                 .fontColor(this.themeTokens.colorAccent)
                 .border({ width: 0.5, color: this.themeTokens.colorAccent, radius: 4 })
                 .padding({
@@ -273,7 +275,7 @@ export struct TaskItemComponent {
               if (this.entryTags !== '') {
                 ForEach(parseTags(this.entryTags).slice(0, 2), (tag: string) => {
                   Text('#' + tag)
-                    .fontSize($r('app.float.font_size_label'))
+                    .fontSize(this.fontTokens.label)
                     .fontColor(this.themeTokens.colorAccent)
                     .maxLines(1)
                     .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -288,7 +290,7 @@ export struct TaskItemComponent {
               // 计时中标签（IN_PROGRESS 时显示，与截止时间并列，互不遮盖）
               if (this.entryStatus === TaskStatus.IN_PROGRESS) {
                 Text(I18nHelper.t(I18nKeys.TASK_STATUS_IN_PROGRESS, this.lang))
-                  .fontSize($r('app.float.font_size_label'))
+                  .fontSize(this.fontTokens.label)
                   .fontColor(this.themeTokens.colorAccent)
                   .maxLines(1)
                   .flexShrink(0)
@@ -297,7 +299,7 @@ export struct TaskItemComponent {
               // 截止剩余时间（有截止时间时始终显示，不受 IN_PROGRESS 影响）
               if (this.entryDeadline > 0) {
                 Text(formatTaskDeadline(this.entryDeadline, this.lang))
-                  .fontSize($r('app.float.font_size_label'))
+                  .fontSize(this.fontTokens.label)
                   .fontColor(
                     this.entryDeadline < Date.now()
                       ? this.themeTokens.colorAccent
@@ -310,7 +312,7 @@ export struct TaskItemComponent {
               // DURATION 进度百分比
               if (this.entryCompletionType === TaskCompletionType.DURATION && this.entryTargetDuration > 0) {
                 Text(this.getProgressPercent().toString() + '%')
-                  .fontSize($r('app.float.font_size_label'))
+                  .fontSize(this.fontTokens.label)
                   .fontColor(
                     this.getProgressPercent() >= 100
                       ? this.themeTokens.colorAccent
@@ -343,7 +345,7 @@ export struct TaskItemComponent {
           .bindMenu(this.buildItemMenu)
       }
       .width('100%')
-      .constraintSize({ minHeight: $r('app.float.inbox_item_min_height') })
+      .constraintSize({ minHeight: this.fontTokens.inboxItemMinHeight })
       .padding({
         left: 12,
         right: 16,

@@ -14,7 +14,7 @@ import {
   DIVIDER_STROKE_WIDTH,
   KEY_APP_LANGUAGE,
   KEY_THEME_ID,
-  KEY_THEME_TOKENS,
+  KEY_FONT_TOKENS, KEY_THEME_TOKENS,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import {
@@ -26,6 +26,7 @@ import {
   ThemeId,
   ThemeTokens,
 } from '../constants/ThemeConstants';
+import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
 
 /** 主题设置页 */
@@ -36,6 +37,7 @@ struct ThemePage {
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   /** 订阅主题 tokens 变化，确保本页配色也随主题即时更新 */
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
+  @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
   /** 订阅主题 ID，用于渲染选中态高亮 */
   @StorageLink(KEY_THEME_ID) currentThemeId: string = ThemeId.LIGHT;
   // ── 行点击扩散特效状态 ───────────────────────────────────────────────────────
@@ -116,7 +118,7 @@ struct ThemePage {
       if (this.pressedRowIndex === rowIndex) {
         Rect()
           .width('100%')
-          .height($r('app.float.settings_item_height'))
+          .height(this.fontTokens.settingsItemHeight)
           .fill(this.themeTokens.colorTextPrimary)
           .opacity(this.rowSpreadOpacity)
           .scale({ x: this.rowSpreadScale, y: 1, centerX: this.spreadCenterX })
@@ -124,7 +126,7 @@ struct ThemePage {
       }
       Row() {
         Text(I18nHelper.t(nameKey, this.currentLanguage))
-          .fontSize($r('app.float.font_size_body'))
+          .fontSize(this.fontTokens.body)
           .fontColor(this.currentThemeId === themeId
             ? this.themeTokens.colorSettingsSelected
             : this.themeTokens.colorTextPrimary)
@@ -141,7 +143,7 @@ struct ThemePage {
         }
       }
       .width('100%')
-      .height($r('app.float.settings_item_height'))
+      .height(this.fontTokens.settingsItemHeight)
       .padding({ left: $r('app.float.spacing_lg'), right: $r('app.float.spacing_lg') })
       .alignItems(VerticalAlign.Center)
       .onTouch((e: TouchEvent) => {
@@ -158,7 +160,7 @@ struct ThemePage {
       })
     }
     .width('100%')
-    .height($r('app.float.settings_item_height'))
+    .height(this.fontTokens.settingsItemHeight)
   }
 
   /**
@@ -176,7 +178,7 @@ struct ThemePage {
           : I18nKeys.SETTINGS_THEME_CUSTOM_ACCENT,
         this.currentLanguage,
       ))
-        .fontSize($r('app.float.font_size_caption'))
+        .fontSize(this.fontTokens.caption)
         .fontColor(this.themeTokens.colorTextSecondary)
         .width('100%')
 
@@ -240,7 +242,7 @@ struct ThemePage {
         })
           .width(92)
           .height(34)
-          .fontSize($r('app.float.font_size_caption'))
+          .fontSize(this.fontTokens.caption)
           .fontColor(this.themeTokens.colorTextPrimary)
           .placeholderColor(this.themeTokens.colorTextSecondary)
           .backgroundColor(this.themeTokens.colorBackground)
@@ -297,7 +299,7 @@ struct ThemePage {
           })
 
         Text(I18nHelper.t(I18nKeys.SETTINGS_THEME_LABEL, this.currentLanguage))
-          .fontSize($r('app.float.font_size_header_title'))
+          .fontSize(this.fontTokens.headerTitle)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.themeTokens.colorTextPrimary)
           .layoutWeight(1)

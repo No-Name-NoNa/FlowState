@@ -14,6 +14,7 @@ import {
   KEY_THEME_ID,
   LANG_ZH_CN,
   LOG_DOMAIN,
+  PREFS_KEY_FONT_SCALE,
   PREFS_KEY_NOTIF_MESSAGE,
   PREFS_STORE_NAME
 } from '../constants/AppConstants';
@@ -169,6 +170,43 @@ export class PreferencesHelper {
       });
     } catch (err) {
       hilog.error(LOG_DOMAIN, 'PreferencesHelper', '保存通知消息失败：%{public}s', JSON.stringify(err));
+    }
+  }
+
+  // ── 字体缩放倍数 ────────────────────────────────────────────────────────────
+
+  /**
+   * 同步读取已保存的字体缩放倍数。
+   * 值以数字字符串形式存储（如 "1.0"、"0.85"），读取后解析为 number。
+   * @returns 缩放倍数（0.8～1.5），默认 1.0
+   */
+  static getFontScale(): number {
+    try {
+      const stored: string = PreferencesHelper.store?.getSync(PREFS_KEY_FONT_SCALE, '1.0') as string ?? '1.0';
+      const scale: number = Number(stored);
+      return (isNaN(scale) || scale < 0.8 || scale > 1.5) ? 1.0 : scale;
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'PreferencesHelper', '读取字体缩放倍数失败：%{public}s', JSON.stringify(err));
+      return 1.0;
+    }
+  }
+
+  /**
+   * 持久化保存字体缩放倍数。
+   * @param scale 缩放倍数（0.8～1.5），存储为数字字符串
+   */
+  static saveFontScale(scale: number): void {
+    if (!PreferencesHelper.store) {
+      hilog.warn(LOG_DOMAIN, 'PreferencesHelper', '偏好设置未初始化，跳过字体缩放保存');
+      return;
+    }
+    try {
+      PreferencesHelper.store.putSync(PREFS_KEY_FONT_SCALE, scale.toString());
+      PreferencesHelper.store.flush().catch((err: Error) => {
+        hilog.error(LOG_DOMAIN, 'PreferencesHelper', '字体缩放写盘失败：%{public}s', JSON.stringify(err));
+      });
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'PreferencesHelper', '保存字体缩放失败：%{public}s', JSON.stringify(err));
     }
   }
 }

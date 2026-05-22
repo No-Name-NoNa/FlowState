@@ -11,11 +11,12 @@ import { SettingsViewModel } from '../viewmodel/SettingsViewModel';
 import {
   DIVIDER_STROKE_WIDTH,
   KEY_APP_LANGUAGE,
-  KEY_THEME_TOKENS,
+  KEY_FONT_TOKENS, KEY_THEME_TOKENS,
   LANG_EN_US,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
+import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
 
 /** 语言选择页 */
@@ -26,6 +27,7 @@ struct LanguagePage {
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   /** 订阅主题变化，确保配色随主题即时更新 */
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
+  @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
   // ── 行点击扩散特效状态 ───────────────────────────────────────────────────────
   /** 当前正在播放扩散动效的行索引，-1 表示无动效 */
   @State pressedRowIndex: number = -1;
@@ -72,7 +74,7 @@ struct LanguagePage {
       if (this.pressedRowIndex === rowIndex) {
         Rect()
           .width('100%')
-          .height($r('app.float.settings_item_height'))
+          .height(this.fontTokens.settingsItemHeight)
           .fill(this.themeTokens.colorTextPrimary)
           .opacity(this.rowSpreadOpacity)
           .scale({ x: this.rowSpreadScale, y: 1, centerX: this.spreadCenterX })
@@ -80,7 +82,7 @@ struct LanguagePage {
       }
       Row() {
         Text(displayName)
-          .fontSize($r('app.float.font_size_body'))
+          .fontSize(this.fontTokens.body)
           .fontColor(this.currentLanguage === langCode
             ? this.themeTokens.colorSettingsSelected
             : this.themeTokens.colorTextPrimary)
@@ -98,7 +100,7 @@ struct LanguagePage {
         }
       }
       .width('100%')
-      .height($r('app.float.settings_item_height'))
+      .height(this.fontTokens.settingsItemHeight)
       .padding({ left: $r('app.float.spacing_lg'), right: $r('app.float.spacing_lg') })
       .alignItems(VerticalAlign.Center)
       .onTouch((e: TouchEvent) => {
@@ -111,7 +113,7 @@ struct LanguagePage {
       })
     }
     .width('100%')
-    .height($r('app.float.settings_item_height'))
+    .height(this.fontTokens.settingsItemHeight)
   }
 
   build() {
@@ -127,7 +129,7 @@ struct LanguagePage {
           })
 
         Text(I18nHelper.t(I18nKeys.SETTINGS_LANGUAGE_LABEL, this.currentLanguage))
-          .fontSize($r('app.float.font_size_header_title'))
+          .fontSize(this.fontTokens.headerTitle)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.themeTokens.colorTextPrimary)
           .layoutWeight(1)

@@ -11,12 +11,15 @@ import { I18nKeys } from '../constants/I18nKeys';
 import {
   DIVIDER_STROKE_WIDTH,
   KEY_APP_LANGUAGE,
+  KEY_FONT_SCALE_ID,
+  KEY_FONT_TOKENS,
   KEY_THEME_ID,
   KEY_THEME_TOKENS,
   LANG_EN_US,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeId, ThemeTokens, } from '../constants/ThemeConstants';
+import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
 
 /** 设置页（导航列表） */
@@ -29,6 +32,10 @@ struct SettingsPage {
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
   /** 订阅主题 ID，用于在渲染树中直接读取并显示当前主题名称 */
   @StorageLink(KEY_THEME_ID) currentThemeId: string = ThemeId.LIGHT;
+  /** 订阅字体缩放档位 ID，用于在渲染树中显示当前档名 */
+  @StorageLink(KEY_FONT_SCALE_ID) currentFontScaleId: string = '1.0';
+  /** 订阅字体大小 tokens，确保设置页自身字号也随档位即时更新 */
+  @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
   // ── 行点击扩散特效状态 ───────────────────────────────────────────────────────
   /** 当前正在播放扩散动效的行索引，-1 表示无动效 */
   @State pressedRowIndex: number = -1;
@@ -73,7 +80,7 @@ struct SettingsPage {
       if (this.pressedRowIndex === 0) {
         Rect()
           .width('100%')
-          .height($r('app.float.settings_item_height'))
+          .height(this.fontTokens.settingsItemHeight)
           .fill(this.themeTokens.colorTextPrimary)
           .opacity(this.rowSpreadOpacity)
           .scale({ x: this.rowSpreadScale, y: 1, centerX: this.spreadCenterX })
@@ -81,7 +88,7 @@ struct SettingsPage {
       }
       Row() {
         Text(I18nHelper.t(I18nKeys.SETTINGS_LANGUAGE_LABEL, this.currentLanguage))
-          .fontSize($r('app.float.font_size_body'))
+          .fontSize(this.fontTokens.body)
           .fontColor(this.themeTokens.colorTextPrimary)
           .layoutWeight(1)
 
@@ -89,7 +96,7 @@ struct SettingsPage {
         Text(this.currentLanguage === LANG_EN_US
           ? I18nHelper.t(I18nKeys.SETTINGS_LANGUAGE_EN, this.currentLanguage)
           : I18nHelper.t(I18nKeys.SETTINGS_LANGUAGE_ZH, this.currentLanguage))
-          .fontSize($r('app.float.font_size_body'))
+          .fontSize(this.fontTokens.body)
           .fontColor(this.themeTokens.colorTextSecondary)
           .margin({ right: $r('app.float.spacing_sm') })
 
@@ -99,7 +106,7 @@ struct SettingsPage {
           .fillColor(this.themeTokens.colorTextSecondary)
       }
       .width('100%')
-      .height($r('app.float.settings_item_height'))
+      .height(this.fontTokens.settingsItemHeight)
       .padding({ left: $r('app.float.spacing_lg'), right: $r('app.float.spacing_lg') })
       .alignItems(VerticalAlign.Center)
       .onTouch((e: TouchEvent) => {
@@ -112,7 +119,7 @@ struct SettingsPage {
       })
     }
     .width('100%')
-    .height($r('app.float.settings_item_height'))
+    .height(this.fontTokens.settingsItemHeight)
   }
 
   /**
@@ -126,7 +133,7 @@ struct SettingsPage {
       if (this.pressedRowIndex === 1) {
         Rect()
           .width('100%')
-          .height($r('app.float.settings_item_height'))
+          .height(this.fontTokens.settingsItemHeight)
           .fill(this.themeTokens.colorTextPrimary)
           .opacity(this.rowSpreadOpacity)
           .scale({ x: this.rowSpreadScale, y: 1, centerX: this.spreadCenterX })
@@ -134,7 +141,7 @@ struct SettingsPage {
       }
       Row() {
         Text(I18nHelper.t(I18nKeys.SETTINGS_THEME_LABEL, this.currentLanguage))
-          .fontSize($r('app.float.font_size_body'))
+          .fontSize(this.fontTokens.body)
           .fontColor(this.themeTokens.colorTextPrimary)
           .layoutWeight(1)
 
@@ -154,7 +161,7 @@ struct SettingsPage {
                               : I18nKeys.SETTINGS_THEME_LIGHT,
           this.currentLanguage,
         ))
-          .fontSize($r('app.float.font_size_body'))
+          .fontSize(this.fontTokens.body)
           .fontColor(this.themeTokens.colorTextSecondary)
           .margin({ right: $r('app.float.spacing_sm') })
 
@@ -164,7 +171,7 @@ struct SettingsPage {
           .fillColor(this.themeTokens.colorTextSecondary)
       }
       .width('100%')
-      .height($r('app.float.settings_item_height'))
+      .height(this.fontTokens.settingsItemHeight)
       .padding({ left: $r('app.float.spacing_lg'), right: $r('app.float.spacing_lg') })
       .alignItems(VerticalAlign.Center)
       .onTouch((e: TouchEvent) => {
@@ -177,7 +184,7 @@ struct SettingsPage {
       })
     }
     .width('100%')
-    .height($r('app.float.settings_item_height'))
+    .height(this.fontTokens.settingsItemHeight)
   }
 
   /**
@@ -190,7 +197,7 @@ struct SettingsPage {
       if (this.pressedRowIndex === 2) {
         Rect()
           .width('100%')
-          .height($r('app.float.settings_item_height'))
+          .height(this.fontTokens.settingsItemHeight)
           .fill(this.themeTokens.colorTextPrimary)
           .opacity(this.rowSpreadOpacity)
           .scale({ x: this.rowSpreadScale, y: 1, centerX: this.spreadCenterX })
@@ -198,12 +205,12 @@ struct SettingsPage {
       }
       Row() {
         Text(I18nHelper.t(I18nKeys.SETTINGS_NOTIF_LABEL, this.currentLanguage))
-          .fontSize($r('app.float.font_size_body'))
+          .fontSize(this.fontTokens.body)
           .fontColor(this.themeTokens.colorTextPrimary)
           .layoutWeight(1)
 
         Text(I18nHelper.t(I18nKeys.NOTIF_DEFAULT_MESSAGE_LABEL, this.currentLanguage))
-          .fontSize($r('app.float.font_size_body'))
+          .fontSize(this.fontTokens.body)
           .fontColor(this.themeTokens.colorTextSecondary)
           .margin({ right: $r('app.float.spacing_sm') })
 
@@ -213,7 +220,7 @@ struct SettingsPage {
           .fillColor(this.themeTokens.colorTextSecondary)
       }
       .width('100%')
-      .height($r('app.float.settings_item_height'))
+      .height(this.fontTokens.settingsItemHeight)
       .padding({ left: $r('app.float.spacing_lg'), right: $r('app.float.spacing_lg') })
       .alignItems(VerticalAlign.Center)
       .onTouch((e: TouchEvent) => {
@@ -226,7 +233,60 @@ struct SettingsPage {
       })
     }
     .width('100%')
-    .height($r('app.float.settings_item_height'))
+    .height(this.fontTokens.settingsItemHeight)
+  }
+
+  /**
+   * 字体大小导航行。
+   * 直接在渲染树中读取 this.currentFontScaleId + this.currentLanguage 建立双重响应式依赖，
+   * 档位或语言切换后右侧副文字均即时刷新。
+   */
+  @Builder
+  fontSizeNavRow(): void {
+    Stack({ alignContent: Alignment.Center }) {
+      if (this.pressedRowIndex === 3) {
+        Rect()
+          .width('100%')
+          .height(this.fontTokens.settingsItemHeight)
+          .fill(this.themeTokens.colorTextPrimary)
+          .opacity(this.rowSpreadOpacity)
+          .scale({ x: this.rowSpreadScale, y: 1, centerX: this.spreadCenterX })
+          .hitTestBehavior(HitTestMode.None)
+      }
+      Row() {
+        Text(I18nHelper.t(I18nKeys.SETTINGS_FONTSIZE_LABEL, this.currentLanguage))
+          .fontSize(this.fontTokens.body)
+          .fontColor(this.themeTokens.colorTextPrimary)
+          .layoutWeight(1)
+
+        // 直接在渲染树中读取 this.currentFontScaleId 建立响应式依赖，显示为百分比
+        Text((isNaN(Number(this.currentFontScaleId))
+          ? 100
+          : Math.round(Number(this.currentFontScaleId) * 100)).toString() + '%')
+          .fontSize(this.fontTokens.body)
+          .fontColor(this.themeTokens.colorTextSecondary)
+          .margin({ right: $r('app.float.spacing_sm') })
+
+        Image($r('sys.media.ohos_ic_public_arrow_right'))
+          .width($r('app.float.icon_size_sm'))
+          .height($r('app.float.icon_size_sm'))
+          .fillColor(this.themeTokens.colorTextSecondary)
+      }
+      .width('100%')
+      .height(this.fontTokens.settingsItemHeight)
+      .padding({ left: $r('app.float.spacing_lg'), right: $r('app.float.spacing_lg') })
+      .alignItems(VerticalAlign.Center)
+      .onTouch((e: TouchEvent) => {
+        if (e.type === TouchType.Down) {
+          this.triggerRowSpread(3, e.touches[0].x);
+        }
+      })
+      .onClick(() => {
+        router.pushUrl({ url: 'pages/FontSizePage' });
+      })
+    }
+    .width('100%')
+    .height(this.fontTokens.settingsItemHeight)
   }
 
   build() {
@@ -242,7 +302,7 @@ struct SettingsPage {
           })
 
         Text(I18nHelper.t(I18nKeys.SETTINGS_TITLE, this.currentLanguage))
-          .fontSize($r('app.float.font_size_header_title'))
+          .fontSize(this.fontTokens.headerTitle)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.themeTokens.colorTextPrimary)
           .layoutWeight(1)
@@ -283,6 +343,14 @@ struct SettingsPage {
 
         // ── 第三项：通知设置 ──────────────────────────────────────────────
         this.notifNavRow()
+
+        Divider()
+          .strokeWidth(DIVIDER_STROKE_WIDTH)
+          .color(this.themeTokens.colorDivider)
+          .margin({ left: $r('app.float.spacing_lg') })
+
+        // ── 第四项：字体大小 ──────────────────────────────────────────────
+        this.fontSizeNavRow()
       }
       .width('100%')
       .alignItems(HorizontalAlign.Start)

@@ -10,10 +10,11 @@ import {
   DIVIDER_STROKE_WIDTH,
   KEY_APP_LANGUAGE,
   KEY_INBOX_NEEDS_REFRESH,
-  KEY_THEME_TOKENS,
+  KEY_FONT_TOKENS, KEY_THEME_TOKENS,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
+import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { InboxDatabase } from '../util/InboxDatabase';
 import { InboxViewModel } from '../viewmodel/InboxViewModel';
 import { formatTimestamp, InboxEntry, parseTags, serializeTags } from '../model/InboxEntry';
@@ -29,6 +30,7 @@ interface EditorRouterParams {
 struct InboxEditorPage {
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
+  @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
   /** 编辑模式目标条目 ID，0 表示新建 */
   @State entryId: number = 0;
   /** 是否处于编辑模式 */
@@ -186,7 +188,7 @@ struct InboxEditorPage {
   tagChip(tag: string, index: number): void {
     Row({ space: 2 }) {
       Text('#' + tag)
-        .fontSize($r('app.float.font_size_label'))
+        .fontSize(this.fontTokens.label)
         .fontColor(this.themeTokens.colorAccent)
 
       Image($r('sys.media.ohos_ic_public_cancel'))
@@ -242,7 +244,7 @@ struct InboxEditorPage {
         })
           .layoutWeight(1)
           .height(40)
-          .fontSize($r('app.float.font_size_body'))
+          .fontSize(this.fontTokens.body)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.themeTokens.colorTextPrimary)
           .placeholderColor(this.themeTokens.colorTextSecondary)
@@ -267,7 +269,7 @@ struct InboxEditorPage {
               .borderRadius(4)
           }
           Text(I18nHelper.t(I18nKeys.INBOX_EDITOR_SAVE, this.currentLanguage))
-            .fontSize($r('app.float.font_size_body'))
+            .fontSize(this.fontTokens.body)
             .fontWeight(FontWeight.Medium)
             .fontColor(
               this.text.trim() !== ''
@@ -306,7 +308,7 @@ struct InboxEditorPage {
           })
             .width('100%')
             .constraintSize({ minHeight: 120 })
-            .fontSize($r('app.float.font_size_body'))
+            .fontSize(this.fontTokens.body)
             .fontColor(this.themeTokens.colorTextPrimary)
             .placeholderColor(this.themeTokens.colorTextSecondary)
             .caretColor(this.themeTokens.colorAccent)
@@ -337,7 +339,7 @@ struct InboxEditorPage {
               Flex({ wrap: FlexWrap.Wrap, direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
                 ForEach(this.existingTags, (tag: string) => {
                   Text('#' + tag)
-                    .fontSize($r('app.float.font_size_label'))
+                    .fontSize(this.fontTokens.label)
                     .fontColor(
                       this.tags.indexOf(tag) >= 0
                         ? this.themeTokens.colorBackground
@@ -393,7 +395,7 @@ struct InboxEditorPage {
                 .height($r('app.float.tag_chip_height'))
                 .constraintSize({ minWidth: 80 })
                 .layoutWeight(1)
-                .fontSize($r('app.float.font_size_label'))
+                .fontSize(this.fontTokens.label)
                 .fontColor(this.themeTokens.colorTextPrimary)
                 .placeholderColor(this.themeTokens.colorTextSecondary)
                 .caretColor(this.themeTokens.colorAccent)
@@ -438,19 +440,19 @@ struct InboxEditorPage {
             Column({ space: 6 }) {
               Row({ space: 6 }) {
                 Text(I18nHelper.t(I18nKeys.INBOX_CREATED_AT, this.currentLanguage))
-                  .fontSize($r('app.float.font_size_label'))
+                  .fontSize(this.fontTokens.label)
                   .fontColor(this.themeTokens.colorTextSecondary)
                 Text(formatTimestamp(this.originalEntry.createdAt, this.currentLanguage))
-                  .fontSize($r('app.float.font_size_label'))
+                  .fontSize(this.fontTokens.label)
                   .fontColor(this.themeTokens.colorTextSecondary)
               }
 
               Row({ space: 6 }) {
                 Text(I18nHelper.t(I18nKeys.INBOX_UPDATED_AT, this.currentLanguage))
-                  .fontSize($r('app.float.font_size_label'))
+                  .fontSize(this.fontTokens.label)
                   .fontColor(this.themeTokens.colorTextSecondary)
                 Text(formatTimestamp(this.originalEntry.updatedAt, this.currentLanguage))
-                  .fontSize($r('app.float.font_size_label'))
+                  .fontSize(this.fontTokens.label)
                   .fontColor(this.themeTokens.colorTextSecondary)
               }
             }

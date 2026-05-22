@@ -11,10 +11,11 @@ import {
   DIVIDER_STROKE_WIDTH,
   KEY_APP_LANGUAGE,
   KEY_INBOX_NEEDS_REFRESH,
-  KEY_THEME_TOKENS,
+  KEY_FONT_TOKENS, KEY_THEME_TOKENS,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
+import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { InboxViewModel } from '../viewmodel/InboxViewModel';
 import { InboxEntry } from '../model/InboxEntry';
 import { InboxListView } from './InboxListView';
@@ -25,6 +26,7 @@ import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
 export struct HomePage {
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
+  @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
   /** 跨页刷新信号：编辑/新建页保存后设为 true，此处检测到后重新加载列表 */
   @Watch('onInboxRefreshChanged')
   @StorageLink(KEY_INBOX_NEEDS_REFRESH) inboxNeedsRefresh: boolean = false;
@@ -139,7 +141,7 @@ export struct HomePage {
       Row() {
         // 问候语（左）
         Text(I18nHelper.t(I18nKeys.HOME_GREETING, this.currentLanguage))
-          .fontSize($r('app.float.font_size_header_title'))
+          .fontSize(this.fontTokens.headerTitle)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.themeTokens.colorTextPrimary)
           .layoutWeight(1)
@@ -188,7 +190,7 @@ export struct HomePage {
         })
           .layoutWeight(1)
           .height(36)
-          .fontSize($r('app.float.font_size_body'))
+          .fontSize(this.fontTokens.body)
           .fontColor(this.themeTokens.colorTextPrimary)
           .placeholderColor(this.themeTokens.colorTextSecondary)
           .caretColor(this.themeTokens.colorAccent)
@@ -218,7 +220,7 @@ export struct HomePage {
           Row({ space: $r('app.float.spacing_xs') }) {
             // 「全部」chip
             Text(I18nHelper.t(I18nKeys.INBOX_TAG_ALL, this.currentLanguage))
-              .fontSize($r('app.float.font_size_label'))
+              .fontSize(this.fontTokens.label)
               .fontColor(this.activeTag === '' ? this.themeTokens.colorBackground : this.themeTokens.colorTextSecondary)
               .height($r('app.float.tag_chip_height'))
               .padding({ left: $r('app.float.tag_chip_padding_h'), right: $r('app.float.tag_chip_padding_h') })
@@ -239,7 +241,7 @@ export struct HomePage {
             // 各标签 chip
             ForEach(this.tagList, (tag: string) => {
               Text('#' + tag)
-                .fontSize($r('app.float.font_size_label'))
+                .fontSize(this.fontTokens.label)
                 .fontColor(
                   this.activeTag === tag
                     ? this.themeTokens.colorBackground
@@ -309,7 +311,7 @@ export struct HomePage {
         }
 
         Text(I18nHelper.t(I18nKeys.INBOX_NEW_BUTTON, this.currentLanguage))
-          .fontSize($r('app.float.font_size_body'))
+          .fontSize(this.fontTokens.body)
           .fontColor(this.themeTokens.colorAccent)
           .fontWeight(FontWeight.Medium)
       }

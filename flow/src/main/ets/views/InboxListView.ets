@@ -14,10 +14,11 @@ import { I18nKeys } from '../constants/I18nKeys';
 import {
   DIVIDER_STROKE_WIDTH,
   KEY_APP_LANGUAGE,
-  KEY_THEME_TOKENS,
+  KEY_FONT_TOKENS, KEY_THEME_TOKENS,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
+import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { InboxViewModel } from '../viewmodel/InboxViewModel';
 import { InboxEntry } from '../model/InboxEntry';
 import { InboxItemComponent } from './InboxItemComponent';
@@ -36,6 +37,7 @@ export struct InboxListView {
   @Prop showEmptyHint: boolean = false;
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
+  @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
 
   /** 左滑显示的红色删除按钮 */
   @Builder
@@ -122,7 +124,7 @@ export struct InboxListView {
       if (this.showEmptyHint) {
         Column() {
           Text(I18nHelper.t(I18nKeys.INBOX_EMPTY_HINT, this.currentLanguage))
-            .fontSize($r('app.float.font_size_caption'))
+            .fontSize(this.fontTokens.caption)
             .fontColor(this.themeTokens.colorTextSecondary)
         }
         .width('100%')

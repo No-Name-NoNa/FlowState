@@ -21,8 +21,9 @@
 import { router } from '@kit.ArkUI';
 import { I18nHelper } from '../util/I18nHelper';
 import { I18nKeys } from '../constants/I18nKeys';
-import { KEY_APP_LANGUAGE, KEY_THEME_TOKENS, LANG_ZH_CN } from '../constants/AppConstants';
+import { KEY_APP_LANGUAGE, KEY_FONT_TOKENS, KEY_THEME_TOKENS, LANG_ZH_CN } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
+import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { InboxViewModel } from '../viewmodel/InboxViewModel';
 import { formatTimestamp, parseTags } from '../model/InboxEntry';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
@@ -52,6 +53,7 @@ export struct InboxItemComponent {
   };
   @StorageLink(KEY_APP_LANGUAGE) private lang: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) private themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
+  @StorageLink(KEY_FONT_TOKENS) private fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
   // ── 条目点击横向扩散特效状态（独立于其他条目，彻底消除整列重绘） ──────────
   @State private spreadScale: number = 0;
   @State private spreadOpacity: number = 0;
@@ -150,7 +152,7 @@ export struct InboxItemComponent {
       // ── 横向扩散点击特效矩形（始终挂载，用 opacity/scale 控制可见性） ────
       Rect()
         .width('100%')
-        .height($r('app.float.inbox_item_min_height'))
+        .height(this.fontTokens.inboxItemMinHeight)
         .fill(this.themeTokens.colorTextPrimary)
         .opacity(this.spreadOpacity)
         .scale({ x: this.spreadScale, y: 1.0, centerX: this.spreadCenterX })
@@ -159,7 +161,7 @@ export struct InboxItemComponent {
       Row({ space: 10 }) {
         // ── 序号（1-based，固定宽，次要色） ────────────────────────────────
         Text(this.entryIndex.toString())
-          .fontSize(16)
+          .fontSize(this.fontTokens.body)
           .fontColor(this.themeTokens.colorTextSecondary)
           .width(26)
           .textAlign(TextAlign.Start)
@@ -170,7 +172,7 @@ export struct InboxItemComponent {
           // 标题行：标题文本 + 置顶 chip（仅置顶时显示）
           Row({ space: 6 }) {
             Text(this.entryText)
-              .fontSize(16)
+              .fontSize(this.fontTokens.body)
               .fontColor(this.themeTokens.colorTextPrimary)
               .fontWeight(FontWeight.Medium)
               .maxLines(1)
@@ -180,7 +182,7 @@ export struct InboxItemComponent {
             // 置顶标识 chip（与任务列表保持一致）
             if (this.entryIsPinned === 1) {
               Text(I18nHelper.t(I18nKeys.INBOX_MENU_PIN, this.lang))
-                .fontSize($r('app.float.font_size_label'))
+                .fontSize(this.fontTokens.label)
                 .fontColor(this.themeTokens.colorAccent)
                 .border({ width: 0.5, color: this.themeTokens.colorAccent, radius: 4 })
                 .padding({
@@ -200,7 +202,7 @@ export struct InboxItemComponent {
             if (this.entryTags !== '') {
               ForEach(parseTags(this.entryTags).slice(0, 2), (tag: string) => {
                 Text('#' + tag)
-                  .fontSize($r('app.float.font_size_label'))
+                  .fontSize(this.fontTokens.label)
                   .fontColor(this.themeTokens.colorAccent)
                   .maxLines(1)
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -212,7 +214,7 @@ export struct InboxItemComponent {
             Blank()
 
             Text(formatTimestamp(this.entryUpdatedAt, this.lang))
-              .fontSize($r('app.float.font_size_label'))
+              .fontSize(this.fontTokens.label)
               .fontColor(this.themeTokens.colorTextSecondary)
               .maxLines(1)
               .flexShrink(0)
@@ -239,7 +241,7 @@ export struct InboxItemComponent {
           .bindMenu(this.buildItemMenu)
       }
       .width('100%')
-      .constraintSize({ minHeight: $r('app.float.inbox_item_min_height') })
+      .constraintSize({ minHeight: this.fontTokens.inboxItemMinHeight })
       .padding({
         left: 12,
         right: 16,

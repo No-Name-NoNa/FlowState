@@ -110,5 +110,11 @@
   "notif_sound_chime": "Chime",
   "notif_sound_bell": "Bell",
   "notif_sound_ping": "Ping",
-  "notif_action_archive": "Archive"
+  "notif_action_archive": "Archive",
+  "settings_fontsize_label": "Font Size",
+  "settings_fontsize_preview": "Preview",
+  "font_scale_small": "Small",
+  "font_scale_normal": "Normal",
+  "font_scale_large": "Large",
+  "font_scale_xlarge": "Extra Large"
 }

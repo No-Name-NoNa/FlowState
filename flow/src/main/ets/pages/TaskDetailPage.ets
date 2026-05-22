@@ -15,10 +15,11 @@ import {
   DIVIDER_STROKE_WIDTH,
   KEY_APP_LANGUAGE,
   KEY_TASK_NEEDS_REFRESH,
-  KEY_THEME_TOKENS,
+  KEY_FONT_TOKENS, KEY_THEME_TOKENS,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
+import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { TaskViewModel } from '../viewmodel/TaskViewModel';
 import { TaskCompletionType, TaskEntry, TaskStatus } from '../model/TaskEntry';
 import { parseTags } from '../model/InboxEntry';
@@ -36,6 +37,7 @@ interface DetailRouterParams {
 struct TaskDetailPage {
   @StorageLink(KEY_APP_LANGUAGE) private lang: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) private themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
+  @StorageLink(KEY_FONT_TOKENS) private fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
   /** 当前任务条目（加载后赋值） */
   @State private taskEntry: TaskEntry | null = null;
   /** 当前会话已计时毫秒数（页面退出时累加到 accumulatedDuration） */
@@ -320,7 +322,7 @@ struct TaskDetailPage {
           if (this.taskEntry !== null) {
             // 标题
             Text(this.taskEntry.title)
-              .fontSize(26)
+              .fontSize(this.fontTokens.titleLarge)
               .fontWeight(FontWeight.Bold)
               .fontColor(this.themeTokens.colorTextPrimary)
               .width('100%')
@@ -336,7 +338,7 @@ struct TaskDetailPage {
               Row({ space: 8 }) {
                 ForEach(parseTags(this.taskEntry.tags), (tag: string) => {
                   Text('#' + tag)
-                    .fontSize($r('app.float.font_size_label'))
+                    .fontSize(this.fontTokens.label)
                     .fontColor(this.themeTokens.colorAccent)
                     .padding({
                       left: 8,
@@ -355,7 +357,7 @@ struct TaskDetailPage {
             // 正文备注（若有）
             if (this.taskEntry.content !== '') {
               Text(this.taskEntry.content)
-                .fontSize(15)
+                .fontSize(this.fontTokens.bodySmall)
                 .fontColor(this.themeTokens.colorTextSecondary)
                 .width('100%')
                 .padding({
@@ -378,7 +380,7 @@ struct TaskDetailPage {
                 // 进度信息行：左侧「已专注」，右侧「XX% · 目标 Xmin」
                 Row() {
                   Text(I18nHelper.t(I18nKeys.TASK_DETAIL_ELAPSED, this.lang))
-                    .fontSize($r('app.float.font_size_label'))
+                    .fontSize(this.fontTokens.label)
                     .fontColor(this.themeTokens.colorTextSecondary)
 
                   Blank()
@@ -391,7 +393,7 @@ struct TaskDetailPage {
                       + this.taskEntry.targetDuration.toString()
                       + I18nHelper.t(I18nKeys.TASK_DURATION_UNIT, this.lang)
                   )
-                    .fontSize($r('app.float.font_size_label'))
+                    .fontSize(this.fontTokens.label)
                     .fontColor(
                       this.getDurationProgressValue() >= 100
                         ? this.themeTokens.colorAccent
@@ -423,7 +425,7 @@ struct TaskDetailPage {
               } else {
                 // 非 DURATION 类型：仅显示「已专注」标签
                 Text(I18nHelper.t(I18nKeys.TASK_DETAIL_ELAPSED, this.lang))
-                  .fontSize($r('app.float.font_size_label'))
+                  .fontSize(this.fontTokens.label)
                   .fontColor(this.themeTokens.colorTextSecondary)
                   .width('100%')
                   .padding({
@@ -436,7 +438,7 @@ struct TaskDetailPage {
 
               // 大号计时器数字（两种类型均展示）
               Text(this.formatElapsed(this.totalAccumulatedMs()))
-                .fontSize(52)
+                .fontSize(this.fontTokens.timerDigit)
                 .fontWeight(FontWeight.Lighter)
                 .fontColor(
                   this.isTimerRunning
@@ -458,7 +460,7 @@ struct TaskDetailPage {
                   if (this.pressedRowIndex === 0) {
                     Rect()
                       .width('100%')
-                      .height(64)
+                      .height(this.fontTokens.inboxItemMinHeight)
                       .fill(this.themeTokens.colorTextPrimary)
                       .opacity(this.rowSpreadOpacity)
                       .scale({ x: this.rowSpreadScale, y: 1, centerX: this.spreadCenterX })
@@ -479,11 +481,11 @@ struct TaskDetailPage {
                       this.isTimerRunning ? I18nKeys.TASK_DETAIL_PAUSE : I18nKeys.TASK_DETAIL_START,
                       this.lang,
                     ))
-                      .fontSize(16)
+                      .fontSize(this.fontTokens.body)
                       .fontColor(this.themeTokens.colorAccent)
                   }
                   .width('100%')
-                  .height(64)
+                  .height(this.fontTokens.inboxItemMinHeight)
                   .justifyContent(FlexAlign.Center)
                   .alignItems(VerticalAlign.Center)
                   .onTouch((e: TouchEvent) => {
@@ -515,7 +517,7 @@ struct TaskDetailPage {
                 if (this.pressedRowIndex === 1) {
                   Rect()
                     .width('100%')
-                    .height($r('app.float.settings_item_height'))
+                    .height(this.fontTokens.settingsItemHeight)
                     .fill(this.themeTokens.colorTextPrimary)
                     .opacity(this.rowSpreadOpacity)
                     .scale({ x: this.rowSpreadScale, y: 1, centerX: this.spreadCenterX })
@@ -528,7 +530,7 @@ struct TaskDetailPage {
                       : I18nKeys.TASK_MENU_UNCOMPLETE,
                     this.lang,
                   ))
-                    .fontSize(15)
+                    .fontSize(this.fontTokens.bodySmall)
                     .fontColor(
                       this.currentStatus !== TaskStatus.COMPLETED
                         ? this.themeTokens.colorAccent
@@ -542,7 +544,7 @@ struct TaskDetailPage {
                     .fillColor(this.themeTokens.colorTextSecondary)
                 }
                 .width('100%')
-                .height($r('app.float.settings_item_height'))
+                .height(this.fontTokens.settingsItemHeight)
                 .padding({ left: 20, right: 20 })
                 .alignItems(VerticalAlign.Center)
                 .onTouch((e: TouchEvent) => {
@@ -574,7 +576,7 @@ struct TaskDetailPage {
                   if (this.pressedRowIndex === 2) {
                     Rect()
                       .width('100%')
-                      .height($r('app.float.settings_item_height'))
+                      .height(this.fontTokens.settingsItemHeight)
                       .fill(this.themeTokens.colorTextPrimary)
                       .opacity(this.rowSpreadOpacity)
                       .scale({ x: this.rowSpreadScale, y: 1, centerX: this.spreadCenterX })
@@ -582,7 +584,7 @@ struct TaskDetailPage {
                   }
                   Row() {
                     Text(I18nHelper.t(I18nKeys.TASK_DETAIL_RESET, this.lang))
-                      .fontSize(15)
+                      .fontSize(this.fontTokens.bodySmall)
                       .fontColor(this.themeTokens.colorTextPrimary)
                       .layoutWeight(1)
 
@@ -592,7 +594,7 @@ struct TaskDetailPage {
                       .fillColor(this.themeTokens.colorTextSecondary)
                   }
                   .width('100%')
-                  .height($r('app.float.settings_item_height'))
+                  .height(this.fontTokens.settingsItemHeight)
                   .padding({ left: 20, right: 20 })
                   .alignItems(VerticalAlign.Center)
                   .onTouch((e: TouchEvent) => {
@@ -617,7 +619,7 @@ struct TaskDetailPage {
                 if (this.pressedRowIndex === 3) {
                   Rect()
                     .width('100%')
-                    .height($r('app.float.settings_item_height'))
+                    .height(this.fontTokens.settingsItemHeight)
                     .fill(this.themeTokens.colorTextPrimary)
                     .opacity(this.rowSpreadOpacity)
                     .scale({ x: this.rowSpreadScale, y: 1, centerX: this.spreadCenterX })
@@ -625,7 +627,7 @@ struct TaskDetailPage {
                 }
                 Row() {
                   Text(I18nHelper.t(I18nKeys.TASK_DETAIL_ARCHIVE, this.lang))
-                    .fontSize(15)
+                    .fontSize(this.fontTokens.bodySmall)
                     .fontColor(this.themeTokens.colorTextSecondary)
                     .layoutWeight(1)
 
@@ -635,7 +637,7 @@ struct TaskDetailPage {
                     .fillColor(this.themeTokens.colorTextSecondary)
                 }
                 .width('100%')
-                .height($r('app.float.settings_item_height'))
+                .height(this.fontTokens.settingsItemHeight)
                 .padding({ left: 20, right: 20 })
                 .alignItems(VerticalAlign.Center)
                 .onTouch((e: TouchEvent) => {
@@ -653,7 +655,7 @@ struct TaskDetailPage {
           } else {
             // 数据加载中占位
             Text('...')
-              .fontSize(16)
+              .fontSize(this.fontTokens.body)
               .fontColor(this.themeTokens.colorTextSecondary)
               .padding({ top: 40 })
               .width('100%')

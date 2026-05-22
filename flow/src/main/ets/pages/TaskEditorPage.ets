@@ -25,10 +25,11 @@ import {
   KEY_APP_LANGUAGE,
   KEY_INBOX_NEEDS_REFRESH,
   KEY_TASK_NEEDS_REFRESH,
-  KEY_THEME_TOKENS,
+  KEY_FONT_TOKENS, KEY_THEME_TOKENS,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
+import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { InboxDatabase } from '../util/InboxDatabase';
 import { InboxViewModel } from '../viewmodel/InboxViewModel';
 import { TaskViewModel } from '../viewmodel/TaskViewModel';
@@ -60,6 +61,7 @@ interface TimeResult {
 struct TaskEditorPage {
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
+  @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
   // ── 页面模式 ────────────────────────────────────────────────────────────
   /** 编辑模式目标任务 ID，0 表示新建 */
   @State taskId: number = 0;
@@ -385,7 +387,7 @@ struct TaskEditorPage {
   tagChip(tag: string, index: number): void {
     Row({ space: 2 }) {
       Text('#' + tag)
-        .fontSize($r('app.float.font_size_label'))
+        .fontSize(this.fontTokens.label)
         .fontColor(this.themeTokens.colorAccent)
 
       Image($r('sys.media.ohos_ic_public_cancel'))
@@ -441,7 +443,7 @@ struct TaskEditorPage {
         })
           .layoutWeight(1)
           .height(40)
-          .fontSize($r('app.float.font_size_body'))
+          .fontSize(this.fontTokens.body)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.themeTokens.colorTextPrimary)
           .placeholderColor(this.themeTokens.colorTextSecondary)
@@ -466,7 +468,7 @@ struct TaskEditorPage {
               .borderRadius(4)
           }
           Text(I18nHelper.t(I18nKeys.TASK_EDITOR_SAVE, this.currentLanguage))
-            .fontSize($r('app.float.font_size_body'))
+            .fontSize(this.fontTokens.body)
             .fontWeight(FontWeight.Medium)
             .fontColor(
               this.titleText.trim() !== ''
@@ -506,7 +508,7 @@ struct TaskEditorPage {
           })
             .width('100%')
             .constraintSize({ minHeight: 100 })
-            .fontSize($r('app.float.font_size_body'))
+            .fontSize(this.fontTokens.body)
             .fontColor(this.themeTokens.colorTextPrimary)
             .placeholderColor(this.themeTokens.colorTextSecondary)
             .caretColor(this.themeTokens.colorAccent)
@@ -536,7 +538,7 @@ struct TaskEditorPage {
               Flex({ wrap: FlexWrap.Wrap, direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
                 ForEach(this.existingTags, (tag: string) => {
                   Text('#' + tag)
-                    .fontSize($r('app.float.font_size_label'))
+                    .fontSize(this.fontTokens.label)
                     .fontColor(
                       this.tags.indexOf(tag) >= 0
                         ? this.themeTokens.colorBackground
@@ -594,7 +596,7 @@ struct TaskEditorPage {
                 .height($r('app.float.tag_chip_height'))
                 .constraintSize({ minWidth: 80 })
                 .layoutWeight(1)
-                .fontSize($r('app.float.font_size_label'))
+                .fontSize(this.fontTokens.label)
                 .fontColor(this.themeTokens.colorTextPrimary)
                 .placeholderColor(this.themeTokens.colorTextSecondary)
                 .caretColor(this.themeTokens.colorAccent)
@@ -636,7 +638,7 @@ struct TaskEditorPage {
           // ── 3. 优先级 chips ──────────────────────────────────────────────
           Row({ space: $r('app.float.spacing_sm') }) {
             Text(I18nHelper.t(I18nKeys.TASK_PRIORITY_LABEL, this.currentLanguage))
-              .fontSize($r('app.float.font_size_body'))
+              .fontSize(this.fontTokens.body)
               .fontColor(this.themeTokens.colorTextPrimary)
               .width(80)
               .flexShrink(0)
@@ -656,7 +658,7 @@ struct TaskEditorPage {
                           : I18nKeys.TASK_PRIORITY_URGENT,
                       this.currentLanguage,
                     ))
-                      .fontSize($r('app.float.font_size_label'))
+                      .fontSize(this.fontTokens.label)
                       .fontColor(
                         this.priority === level
                           ? this.themeTokens.colorBackground
@@ -708,14 +710,14 @@ struct TaskEditorPage {
           // ── 4. 截止时间行 ────────────────────────────────────────────────
           Row() {
             Text(I18nHelper.t(I18nKeys.TASK_SCHEDULE_LABEL, this.currentLanguage))
-              .fontSize($r('app.float.font_size_body'))
+              .fontSize(this.fontTokens.body)
               .fontColor(this.themeTokens.colorTextPrimary)
               .width(80)
               .flexShrink(0)
 
             // 当前截止时间显示（点击跳出日期选择器）
             Text(this.formatDeadlineDisplay())
-              .fontSize($r('app.float.font_size_body'))
+              .fontSize(this.fontTokens.body)
               .fontColor(
                 this.deadlineTs > 0 && this.deadlineTs < Date.now()
                   ? this.themeTokens.colorAccent
@@ -731,7 +733,7 @@ struct TaskEditorPage {
             // 清除截止时间按钮（仅截止时间已设置时显示）
             if (this.deadlineTs > 0) {
               Text(I18nHelper.t(I18nKeys.TASK_SCHEDULE_CLEAR, this.currentLanguage))
-                .fontSize($r('app.float.font_size_label'))
+                .fontSize(this.fontTokens.label)
                 .fontColor(this.themeTokens.colorTextSecondary)
                 .padding({ left: $r('app.float.spacing_sm') })
                 .flexShrink(0)
@@ -759,7 +761,7 @@ struct TaskEditorPage {
           // ── 5. 目标时长行 ────────────────────────────────────────────────
           Row() {
             Text(I18nHelper.t(I18nKeys.TASK_DURATION_LABEL, this.currentLanguage))
-              .fontSize($r('app.float.font_size_body'))
+              .fontSize(this.fontTokens.body)
               .fontColor(this.themeTokens.colorTextPrimary)
               .width(80)
               .flexShrink(0)
@@ -770,7 +772,7 @@ struct TaskEditorPage {
             })
               .layoutWeight(1)
               .height(36)
-              .fontSize($r('app.float.font_size_body'))
+              .fontSize(this.fontTokens.body)
               .fontColor(this.themeTokens.colorTextPrimary)
               .placeholderColor(this.themeTokens.colorTextSecondary)
               .caretColor(this.themeTokens.colorAccent)
@@ -784,7 +786,7 @@ struct TaskEditorPage {
               })
 
             Text(I18nHelper.t(I18nKeys.TASK_DURATION_UNIT, this.currentLanguage))
-              .fontSize($r('app.float.font_size_label'))
+              .fontSize(this.fontTokens.label)
               .fontColor(this.themeTokens.colorTextSecondary)
               .flexShrink(0)
           }
@@ -805,7 +807,7 @@ struct TaskEditorPage {
           // ── 6. 完成方式 chips ────────────────────────────────────────────
           Row({ space: $r('app.float.spacing_sm') }) {
             Text(I18nHelper.t(I18nKeys.TASK_COMPLETION_LABEL, this.currentLanguage))
-              .fontSize($r('app.float.font_size_body'))
+              .fontSize(this.fontTokens.body)
               .fontColor(this.themeTokens.colorTextPrimary)
               .width(80)
               .flexShrink(0)
@@ -820,7 +822,7 @@ struct TaskEditorPage {
                       : I18nKeys.TASK_COMPLETION_DURATION,
                     this.currentLanguage,
                   ))
-                    .fontSize($r('app.float.font_size_label'))
+                    .fontSize(this.fontTokens.label)
                     .fontColor(
                       this.completionType === type
                         ? this.themeTokens.colorBackground
@@ -869,7 +871,7 @@ struct TaskEditorPage {
           // 提醒类型 chips（4 种）
           Row({ space: $r('app.float.spacing_sm') }) {
             Text(I18nHelper.t(I18nKeys.TASK_REMINDER_LABEL, this.currentLanguage))
-              .fontSize($r('app.float.font_size_body'))
+              .fontSize(this.fontTokens.body)
               .fontColor(this.themeTokens.colorTextPrimary)
               .width(80)
               .flexShrink(0)
@@ -886,7 +888,7 @@ struct TaskEditorPage {
                       : I18nKeys.TASK_REMINDER_SOUND,
                     this.currentLanguage,
                   ))
-                    .fontSize($r('app.float.font_size_label'))
+                    .fontSize(this.fontTokens.label)
                     .fontColor(
                       this.reminderType === type
                         ? this.themeTokens.colorBackground
@@ -936,7 +938,7 @@ struct TaskEditorPage {
 
             Row({ space: $r('app.float.spacing_sm') }) {
               Text(I18nHelper.t(I18nKeys.TASK_REMINDER_MESSAGE_LABEL, this.currentLanguage))
-                .fontSize($r('app.float.font_size_body'))
+                .fontSize(this.fontTokens.body)
                 .fontColor(this.themeTokens.colorTextPrimary)
                 .width(80)
                 .flexShrink(0)
@@ -945,7 +947,7 @@ struct TaskEditorPage {
                 placeholder: I18nHelper.t(I18nKeys.TASK_REMINDER_MESSAGE_PLACEHOLDER, this.currentLanguage),
                 text: this.reminderMessage,
               })
-                .fontSize($r('app.float.font_size_body'))
+                .fontSize(this.fontTokens.body)
                 .fontColor(this.themeTokens.colorTextPrimary)
                 .placeholderColor(this.themeTokens.colorTextSecondary)
                 .backgroundColor(Color.Transparent)
@@ -975,19 +977,19 @@ struct TaskEditorPage {
             Column({ space: 6 }) {
               Row({ space: 6 }) {
                 Text(I18nHelper.t(I18nKeys.TASK_CREATED_AT, this.currentLanguage))
-                  .fontSize($r('app.float.font_size_label'))
+                  .fontSize(this.fontTokens.label)
                   .fontColor(this.themeTokens.colorTextSecondary)
                 Text(formatTimestamp(this.originalEntry.createdAt, this.currentLanguage))
-                  .fontSize($r('app.float.font_size_label'))
+                  .fontSize(this.fontTokens.label)
                   .fontColor(this.themeTokens.colorTextSecondary)
               }
 
               Row({ space: 6 }) {
                 Text(I18nHelper.t(I18nKeys.TASK_UPDATED_AT, this.currentLanguage))
-                  .fontSize($r('app.float.font_size_label'))
+                  .fontSize(this.fontTokens.label)
                   .fontColor(this.themeTokens.colorTextSecondary)
                 Text(formatTimestamp(this.originalEntry.updatedAt, this.currentLanguage))
-                  .fontSize($r('app.float.font_size_label'))
+                  .fontSize(this.fontTokens.label)
                   .fontColor(this.themeTokens.colorTextSecondary)
               }
             }

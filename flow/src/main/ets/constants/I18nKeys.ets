@@ -131,4 +131,11 @@ export enum I18nKeys {
   TASK_REMINDER_USE_GLOBAL = 'task_reminder_use_global',
   // 通知操作按钮（归档、查看）
   NOTIF_ACTION_ARCHIVE = 'notif_action_archive',
+  // 字体大小设置
+  SETTINGS_FONTSIZE_LABEL = 'settings_fontsize_label',
+  SETTINGS_FONTSIZE_PREVIEW = 'settings_fontsize_preview',
+  FONT_SCALE_SMALL = 'font_scale_small',
+  FONT_SCALE_NORMAL = 'font_scale_normal',
+  FONT_SCALE_LARGE = 'font_scale_large',
+  FONT_SCALE_XLARGE = 'font_scale_xlarge',
 }

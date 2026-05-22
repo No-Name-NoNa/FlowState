@@ -15,10 +15,11 @@ import { HistoryPage } from '../views/HistoryPage';
 import {
   KEY_APP_LANGUAGE,
   KEY_NOTIFY_TAB_INDEX,
-  KEY_THEME_TOKENS,
+  KEY_FONT_TOKENS, KEY_THEME_TOKENS,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
+import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
 
 /** 应用主框架：承载底部双 Tab 导航 */
@@ -31,6 +32,7 @@ struct MainPage {
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   /** 订阅主题变化，主题切换时触发组件立即重渲染 */
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
+  @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
   /** 订阅通知跳转信号，收到非负值时切换到对应 Tab */
   @Watch('onNotifyTabChanged')
   @StorageLink(KEY_NOTIFY_TAB_INDEX) notifyTabIndex: number = -1;
@@ -123,7 +125,7 @@ struct MainPage {
 
         // 在 @Builder 内部读取 this.currentLanguage，建立 ArkUI 响应式依赖
         Text(I18nHelper.t(labelKey, this.currentLanguage))
-          .fontSize($r('app.float.font_size_tab_label'))
+          .fontSize(this.fontTokens.tabLabel)
           .fontColor(this.currentTabIndex === tabIndex
             ? this.themeTokens.colorTabSelected
             : this.themeTokens.colorTabNormal)

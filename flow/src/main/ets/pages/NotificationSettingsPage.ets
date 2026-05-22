@@ -4,10 +4,11 @@ import { I18nKeys } from '../constants/I18nKeys';
 import {
   DIVIDER_STROKE_WIDTH,
   KEY_APP_LANGUAGE,
-  KEY_THEME_TOKENS,
+  KEY_FONT_TOKENS, KEY_THEME_TOKENS,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
+import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { NotificationSettingsViewModel } from '../viewmodel/NotificationSettingsViewModel';
 
 @Entry
@@ -15,6 +16,7 @@ import { NotificationSettingsViewModel } from '../viewmodel/NotificationSettings
 struct NotificationSettingsPage {
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
+  @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
   @State notifMessage: string = '';
 
   aboutToAppear(): void {
@@ -33,7 +35,7 @@ struct NotificationSettingsPage {
           })
 
         Text(I18nHelper.t(I18nKeys.NOTIF_PAGE_TITLE, this.currentLanguage))
-          .fontSize($r('app.float.font_size_header_title'))
+          .fontSize(this.fontTokens.headerTitle)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.themeTokens.colorTextPrimary)
           .layoutWeight(1)
@@ -56,7 +58,7 @@ struct NotificationSettingsPage {
         Column() {
           Column() {
             Text(I18nHelper.t(I18nKeys.NOTIF_DEFAULT_MESSAGE_LABEL, this.currentLanguage))
-              .fontSize($r('app.float.font_size_caption'))
+              .fontSize(this.fontTokens.caption)
               .fontColor(this.themeTokens.colorTextSecondary)
               .width('100%')
               .padding({
@@ -69,7 +71,7 @@ struct NotificationSettingsPage {
               placeholder: I18nHelper.t(I18nKeys.NOTIF_DEFAULT_MESSAGE_PLACEHOLDER, this.currentLanguage),
               text: this.notifMessage,
             })
-              .fontSize($r('app.float.font_size_body'))
+              .fontSize(this.fontTokens.body)
               .fontColor(this.themeTokens.colorTextPrimary)
               .placeholderColor(this.themeTokens.colorTextSecondary)
               .backgroundColor(this.themeTokens.colorBackground)

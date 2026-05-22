@@ -12,10 +12,11 @@ import {
   KEY_APP_LANGUAGE,
   KEY_PENDING_ARCHIVE_TASK_ID,
   KEY_TASK_NEEDS_REFRESH,
-  KEY_THEME_TOKENS,
+  KEY_FONT_TOKENS, KEY_THEME_TOKENS,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
+import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { TaskViewModel } from '../viewmodel/TaskViewModel';
 import { TaskEntry } from '../model/TaskEntry';
 import { TaskListView } from './TaskListView';
@@ -26,6 +27,7 @@ import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
 export struct TaskPage {
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
+  @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
   /** 跨页刷新信号：任务编辑/新建页保存后置 true，此处检测到后重新加载列表 */
   @Watch('onTaskRefreshChanged')
   @StorageLink(KEY_TASK_NEEDS_REFRESH) taskNeedsRefresh: boolean = false;
@@ -141,7 +143,7 @@ export struct TaskPage {
       Row() {
         // 页面标题（左）
         Text(I18nHelper.t(I18nKeys.TAB_TASKS, this.currentLanguage))
-          .fontSize($r('app.float.font_size_header_title'))
+          .fontSize(this.fontTokens.headerTitle)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.themeTokens.colorTextPrimary)
           .layoutWeight(1)
@@ -190,7 +192,7 @@ export struct TaskPage {
         })
           .layoutWeight(1)
           .height(36)
-          .fontSize($r('app.float.font_size_body'))
+          .fontSize(this.fontTokens.body)
           .fontColor(this.themeTokens.colorTextPrimary)
           .placeholderColor(this.themeTokens.colorTextSecondary)
           .caretColor(this.themeTokens.colorAccent)
@@ -220,7 +222,7 @@ export struct TaskPage {
           Row({ space: $r('app.float.spacing_xs') }) {
             // 「全部」chip
             Text(I18nHelper.t(I18nKeys.TASK_TAG_ALL, this.currentLanguage))
-              .fontSize($r('app.float.font_size_label'))
+              .fontSize(this.fontTokens.label)
               .fontColor(this.activeTag === '' ? this.themeTokens.colorBackground : this.themeTokens.colorTextSecondary)
               .height($r('app.float.tag_chip_height'))
               .padding({ left: $r('app.float.tag_chip_padding_h'), right: $r('app.float.tag_chip_padding_h') })
@@ -241,7 +243,7 @@ export struct TaskPage {
             // 各标签 chip
             ForEach(this.tagList, (tag: string) => {
               Text('#' + tag)
-                .fontSize($r('app.float.font_size_label'))
+                .fontSize(this.fontTokens.label)
                 .fontColor(
                   this.activeTag === tag
                     ? this.themeTokens.colorBackground
@@ -310,7 +312,7 @@ export struct TaskPage {
         }
 
         Text(I18nHelper.t(I18nKeys.TASK_NEW_BUTTON, this.currentLanguage))
-          .fontSize($r('app.float.font_size_body'))
+          .fontSize(this.fontTokens.body)
           .fontColor(this.themeTokens.colorAccent)
           .fontWeight(FontWeight.Medium)
       }

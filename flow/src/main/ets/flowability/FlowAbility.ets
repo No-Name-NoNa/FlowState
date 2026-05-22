@@ -16,6 +16,7 @@ import { InboxDatabase } from '../util/InboxDatabase';
 import { TaskDatabase } from '../util/TaskDatabase';
 import { PreferencesHelper } from '../util/PreferencesHelper';
 import { ThemeHelper } from '../util/ThemeHelper';
+import { FontSizeHelper } from '../util/FontSizeHelper';
 import { NotificationSettingsViewModel } from '../viewmodel/NotificationSettingsViewModel';
 import { TaskViewModel } from '../viewmodel/TaskViewModel';
 
@@ -37,6 +38,10 @@ export default class FlowAbility extends UIAbility {
     // 从持久化存储恢复主题 ID 和颜色 tokens，写入 AppStorage
     // 必须在页面加载前完成，确保组件初始化时即读到正确的主题配色
     ThemeHelper.initFromStorage();
+
+    // 从持久化存储恢复字体缩放档位，写入 AppStorage
+    // 必须在页面加载前完成，确保组件初始化时即读到正确的字号 tokens
+    FontSizeHelper.initFromStorage();
 
     // 从持久化存储恢复全局通知设置，写入 AppStorage
     NotificationSettingsViewModel.initFromStorage();

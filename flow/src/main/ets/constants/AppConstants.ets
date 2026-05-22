@@ -69,3 +69,24 @@ export const WANT_PARAM_NOTIFY_TAB: string = 'notifyTabIndex';
 
 /** AppStorage：冷启动时待处理的归档任务 ID（0 = 无待处理归档） */
 export const KEY_PENDING_ARCHIVE_TASK_ID: string = 'pendingArchiveTaskId';
+
+/** AppStorage：字体大小 token 键名（值为 FontSizeTokens 对象） */
+export const KEY_FONT_TOKENS: string = 'fontSizeTokens';
+
+/** AppStorage：当前字体缩放档位 ID 键名（值为 FontScaleId 字符串） */
+export const KEY_FONT_SCALE_ID: string = 'fontScaleId';
+
+/** Preferences：字体缩放档位存储键名 */
+export const PREFS_KEY_FONT_SCALE: string = 'font_scale_id';
+
+/** 字体缩放默认倍数（1.0 = 100%，与 float.json 基准值完全一致） */
+export const DEFAULT_FONT_SCALE: number = 1.0;
+
+/** 字体缩放最小倍数（80%） */
+export const FONT_SCALE_MIN: number = 0.8;
+
+/** 字体缩放最大倍数（150%） */
+export const FONT_SCALE_MAX: number = 1.5;
+
+/** 字体缩放滑块步长（5%） */
+export const FONT_SCALE_STEP: number = 0.05;

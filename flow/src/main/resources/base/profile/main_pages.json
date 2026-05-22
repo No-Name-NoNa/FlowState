@@ -7,6 +7,7 @@
     "pages/NotificationSettingsPage",
     "pages/InboxEditorPage",
     "pages/TaskEditorPage",
-    "pages/TaskDetailPage"
+    "pages/TaskDetailPage",
+    "pages/FontSizePage"
   ]
 }
