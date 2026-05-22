@@ -6,9 +6,7 @@
  */
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
-  buildFontTokens,
-  DEFAULT_FONT_TOKENS,
-  FontSizeTokens,
+  buildFontTokens, DEFAULT_FONT_TOKENS, FontSizeTokens,
 } from '../constants/FontSizeConstants';
 import { KEY_FONT_SCALE_ID, KEY_FONT_TOKENS, LOG_DOMAIN } from '../constants/AppConstants';
 import { PreferencesHelper } from './PreferencesHelper';

@@ -166,7 +166,12 @@ struct FontSizePage {
           .backgroundColor(this.isPresetActive(PRESET_SCALE_SMALL)
             ? this.themeTokens.colorAccent
             : this.themeTokens.colorDivider)
-          .padding({ left: 14, right: 14, top: 6, bottom: 6 })
+          .padding({
+            left: 14,
+            right: 14,
+            top: 6,
+            bottom: 6
+          })
           .borderRadius(8)
           .onClick(() => {
             this.sliderValue = Math.round(PRESET_SCALE_SMALL * 100);
@@ -182,7 +187,12 @@ struct FontSizePage {
           .backgroundColor(this.isPresetActive(PRESET_SCALE_NORMAL)
             ? this.themeTokens.colorAccent
             : this.themeTokens.colorDivider)
-          .padding({ left: 14, right: 14, top: 6, bottom: 6 })
+          .padding({
+            left: 14,
+            right: 14,
+            top: 6,
+            bottom: 6
+          })
           .borderRadius(8)
           .onClick(() => {
             this.sliderValue = Math.round(PRESET_SCALE_NORMAL * 100);
@@ -198,7 +208,12 @@ struct FontSizePage {
           .backgroundColor(this.isPresetActive(PRESET_SCALE_LARGE)
             ? this.themeTokens.colorAccent
             : this.themeTokens.colorDivider)
-          .padding({ left: 14, right: 14, top: 6, bottom: 6 })
+          .padding({
+            left: 14,
+            right: 14,
+            top: 6,
+            bottom: 6
+          })
           .borderRadius(8)
           .onClick(() => {
             this.sliderValue = Math.round(PRESET_SCALE_LARGE * 100);
@@ -214,7 +229,12 @@ struct FontSizePage {
           .backgroundColor(this.isPresetActive(PRESET_SCALE_XLARGE)
             ? this.themeTokens.colorAccent
             : this.themeTokens.colorDivider)
-          .padding({ left: 14, right: 14, top: 6, bottom: 6 })
+          .padding({
+            left: 14,
+            right: 14,
+            top: 6,
+            bottom: 6
+          })
           .borderRadius(8)
           .onClick(() => {
             this.sliderValue = Math.round(PRESET_SCALE_XLARGE * 100);

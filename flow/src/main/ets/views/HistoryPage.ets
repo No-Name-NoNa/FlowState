@@ -6,7 +6,13 @@
  */
 import { I18nHelper } from '../util/I18nHelper';
 import { I18nKeys } from '../constants/I18nKeys';
-import { DIVIDER_STROKE_WIDTH, KEY_APP_LANGUAGE, KEY_FONT_TOKENS, KEY_THEME_TOKENS, LANG_ZH_CN } from '../constants/AppConstants';
+import {
+  DIVIDER_STROKE_WIDTH,
+  KEY_APP_LANGUAGE,
+  KEY_FONT_TOKENS,
+  KEY_THEME_TOKENS,
+  LANG_ZH_CN
+} from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
 import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 

@@ -15,8 +15,11 @@ export enum FontScaleId {
 
 /** 各快捷预设对应的缩放倍数 */
 export const PRESET_SCALE_SMALL: number = 0.85;
+
 export const PRESET_SCALE_NORMAL: number = 1.0;
+
 export const PRESET_SCALE_LARGE: number = 1.15;
+
 export const PRESET_SCALE_XLARGE: number = 1.3;
 
 /**
@@ -26,22 +29,31 @@ export const PRESET_SCALE_XLARGE: number = 1.3;
 export interface FontSizeTokens {
   /** 页面大标题字号（基准 22fp） */
   headerTitle: number;
+
   /** 正文字号（基准 16fp） */
   body: number;
+
   /** 辅助说明字号（基准 13fp） */
   caption: number;
+
   /** Tab 标签字号（基准 12fp） */
   tabLabel: number;
+
   /** 小标签字号（基准 11fp） */
   label: number;
+
   /** 任务详情页大标题字号（基准 26fp） */
   titleLarge: number;
+
   /** 操作行说明文本字号（基准 15fp） */
   bodySmall: number;
+
   /** 计时器数字字号（基准 52fp） */
   timerDigit: number;
+
   /** 设置导航行 / 操作行高（基准 52vp） */
   settingsItemHeight: number;
+
   /** 任务 / 收集箱列表行最小高（基准 64vp） */
   inboxItemMinHeight: number;
 }

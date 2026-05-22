@@ -14,8 +14,9 @@ import { I18nKeys } from '../constants/I18nKeys';
 import {
   DIVIDER_STROKE_WIDTH,
   KEY_APP_LANGUAGE,
+  KEY_FONT_TOKENS,
   KEY_TASK_NEEDS_REFRESH,
-  KEY_FONT_TOKENS, KEY_THEME_TOKENS,
+  KEY_THEME_TOKENS,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
@@ -666,6 +667,7 @@ struct TaskDetailPage {
       }
       .layoutWeight(1)
       .scrollable(ScrollDirection.Vertical)
+      .align(Alignment.TopStart)
       .scrollBar(BarState.Off)
     }
     .width('100%')

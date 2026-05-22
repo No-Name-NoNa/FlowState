@@ -14,13 +14,15 @@ import { TaskPage } from '../views/TaskPage';
 import { HistoryPage } from '../views/HistoryPage';
 import {
   KEY_APP_LANGUAGE,
+  KEY_FONT_TOKENS,
   KEY_NOTIFY_TAB_INDEX,
-  KEY_FONT_TOKENS, KEY_THEME_TOKENS,
+  KEY_THEME_TOKENS,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
 import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
+;
 
 /** 应用主框架：承载底部双 Tab 导航 */
 @Entry

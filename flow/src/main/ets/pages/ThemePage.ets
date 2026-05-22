@@ -13,8 +13,9 @@ import {
   COLOR_INPUT_ERROR,
   DIVIDER_STROKE_WIDTH,
   KEY_APP_LANGUAGE,
+  KEY_FONT_TOKENS,
   KEY_THEME_ID,
-  KEY_FONT_TOKENS, KEY_THEME_TOKENS,
+  KEY_THEME_TOKENS,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import {
@@ -28,6 +29,7 @@ import {
 } from '../constants/ThemeConstants';
 import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
+;
 
 /** 主题设置页 */
 @Entry

@@ -10,9 +10,10 @@ import { I18nKeys } from '../constants/I18nKeys';
 import {
   DIVIDER_STROKE_WIDTH,
   KEY_APP_LANGUAGE,
+  KEY_FONT_TOKENS,
   KEY_PENDING_ARCHIVE_TASK_ID,
   KEY_TASK_NEEDS_REFRESH,
-  KEY_FONT_TOKENS, KEY_THEME_TOKENS,
+  KEY_THEME_TOKENS,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
@@ -21,6 +22,7 @@ import { TaskViewModel } from '../viewmodel/TaskViewModel';
 import { TaskEntry } from '../model/TaskEntry';
 import { TaskListView } from './TaskListView';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
+;
 
 /** 任务模块主视图组件 */
 @Component
