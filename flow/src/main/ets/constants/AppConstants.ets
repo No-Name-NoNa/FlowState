@@ -90,3 +90,12 @@ export const FONT_SCALE_MAX: number = 1.5;
 
 /** 字体缩放滑块步长（5%） */
 export const FONT_SCALE_STEP: number = 0.05;
+
+/** Preferences：全局默认「开始提醒」消息文本存储键（空字符串 = 使用 App 生成） */
+export const PREFS_KEY_NOTIF_START_MESSAGE: string = 'notif_start_message';
+
+/** WantAgent 参数键：点击通知后需要打开的任务 ID（> 0 触发导航） */
+export const WANT_PARAM_OPEN_TASK_ID: string = 'openTaskId';
+
+/** AppStorage：冷/热启动时待处理的「打开任务详情」任务 ID（0 = 无待处理） */
+export const KEY_PENDING_OPEN_TASK_ID: string = 'pendingOpenTaskId';

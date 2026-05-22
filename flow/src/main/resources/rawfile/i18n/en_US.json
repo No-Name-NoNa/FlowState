@@ -111,10 +111,20 @@
   "notif_sound_bell": "Bell",
   "notif_sound_ping": "Ping",
   "notif_action_archive": "Archive",
+  "notif_section_start": "Start Reminder",
+  "notif_section_end": "End Reminder",
+  "notif_start_message_placeholder": "Leave empty to auto-generate…",
+  "notif_end_message_label": "Default Message",
   "settings_fontsize_label": "Font Size",
   "settings_fontsize_preview": "Preview",
   "font_scale_small": "Small",
   "font_scale_normal": "Normal",
   "font_scale_large": "Large",
-  "font_scale_xlarge": "Extra Large"
+  "font_scale_xlarge": "Extra Large",
+  "task_type_label": "Type",
+  "task_type_single": "One-time",
+  "task_type_interval": "Interval",
+  "task_interval_start_label": "Start",
+  "task_start_reminder_label": "Start Reminder",
+  "task_end_reminder_label": "End Reminder"
 }

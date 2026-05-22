@@ -21,7 +21,7 @@ import {
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
 import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { TaskViewModel } from '../viewmodel/TaskViewModel';
-import { getNextDeadline, TaskEntry } from '../model/TaskEntry';
+import { getNextDeadline, getStartTime, TaskEntry } from '../model/TaskEntry';
 import { TaskItemComponent } from './TaskItemComponent';
 
 /** 任务列表组件 */
@@ -87,6 +87,8 @@ export struct TaskListView {
               entryPriority: task.priority,
               entryIsPinned: task.isPinned,
               entryDeadline: getNextDeadline(task),
+              entryScheduleType: task.scheduleType,
+              entryStartTime: getStartTime(task),
               entryUpdatedAt: task.updatedAt,
               entryIndex: index + 1,
               entryCompletionType: task.completionType,

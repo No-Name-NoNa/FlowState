@@ -16,6 +16,7 @@ import {
   LOG_DOMAIN,
   PREFS_KEY_FONT_SCALE,
   PREFS_KEY_NOTIF_MESSAGE,
+  PREFS_KEY_NOTIF_START_MESSAGE,
   PREFS_STORE_NAME
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_ID } from '../constants/ThemeConstants';
@@ -170,6 +171,37 @@ export class PreferencesHelper {
       });
     } catch (err) {
       hilog.error(LOG_DOMAIN, 'PreferencesHelper', '保存通知消息失败：%{public}s', JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 同步读取全局默认「开始提醒」消息文本。
+   * @returns 消息文本，默认空字符串（App 自动生成）
+   */
+  static getNotifStartMessage(): string {
+    try {
+      return PreferencesHelper.store?.getSync(PREFS_KEY_NOTIF_START_MESSAGE, '') as string ?? '';
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'PreferencesHelper', '读取开始提醒消息失败：%{public}s', JSON.stringify(err));
+      return '';
+    }
+  }
+
+  /**
+   * 持久化保存全局默认「开始提醒」消息文本。
+   * @param message 自定义消息文本，空字符串表示使用 App 自动生成
+   */
+  static saveNotifStartMessage(message: string): void {
+    if (!PreferencesHelper.store) {
+      return;
+    }
+    try {
+      PreferencesHelper.store.putSync(PREFS_KEY_NOTIF_START_MESSAGE, message);
+      PreferencesHelper.store.flush().catch((err: Error) => {
+        hilog.error(LOG_DOMAIN, 'PreferencesHelper', '开始提醒消息写盘失败：%{public}s', JSON.stringify(err));
+      });
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'PreferencesHelper', '保存开始提醒消息失败：%{public}s', JSON.stringify(err));
     }
   }
 

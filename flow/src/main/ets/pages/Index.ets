@@ -9,6 +9,7 @@
  */
 import { I18nHelper } from '../util/I18nHelper';
 import { I18nKeys } from '../constants/I18nKeys';
+import { router } from '@kit.ArkUI';
 import { HomePage } from '../views/HomePage';
 import { TaskPage } from '../views/TaskPage';
 import { HistoryPage } from '../views/HistoryPage';
@@ -16,13 +17,15 @@ import {
   KEY_APP_LANGUAGE,
   KEY_FONT_TOKENS,
   KEY_NOTIFY_TAB_INDEX,
+  KEY_PENDING_OPEN_TASK_ID,
   KEY_THEME_TOKENS,
   LANG_ZH_CN,
+  LOG_DOMAIN,
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
 import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
-;
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 /** 应用主框架：承载底部双 Tab 导航 */
 @Entry
@@ -38,6 +41,9 @@ struct MainPage {
   /** 订阅通知跳转信号，收到非负值时切换到对应 Tab */
   @Watch('onNotifyTabChanged')
   @StorageLink(KEY_NOTIFY_TAB_INDEX) notifyTabIndex: number = -1;
+  /** 订阅「打开任务详情」信号，收到 > 0 的任务 ID 时导航到 TaskDetailPage */
+  @Watch('onPendingOpenTaskChanged')
+  @StorageLink(KEY_PENDING_OPEN_TASK_ID) pendingOpenTaskId: number = 0;
   /** Tabs 编程控制器，用于响应通知点击后的 Tab 切换 */
   private tabsCtrl: TabsController = new TabsController();
   // ── Tab 点击扩散特效状态 ─────────────────────────────────────────────────
@@ -60,6 +66,22 @@ struct MainPage {
       this.currentTabIndex = this.notifyTabIndex;
       // 消费后重置，避免下次进入页面重复触发
       AppStorage.setOrCreate<number>(KEY_NOTIFY_TAB_INDEX, -1);
+    }
+  }
+
+  /**
+   * 响应「打开任务详情」信号：导航到对应 TaskDetailPage。
+   * 由 FlowAbility.handleWantParams 通过 AppStorage 写入信号触发（点击开始/截止提醒通知时）。
+   */
+  private onPendingOpenTaskChanged(): void {
+    if (this.pendingOpenTaskId > 0) {
+      const taskId: number = this.pendingOpenTaskId;
+      // 先消费信号，再导航，避免重复触发
+      AppStorage.setOrCreate<number>(KEY_PENDING_OPEN_TASK_ID, 0);
+      router.pushUrl({ url: 'pages/TaskDetailPage', params: { taskId: taskId } }).catch((err: Error) => {
+        hilog.warn(LOG_DOMAIN, 'MainPage', '导航到任务详情失败（taskId=%{public}d）：%{public}s',
+          taskId, JSON.stringify(err));
+      });
     }
   }
 

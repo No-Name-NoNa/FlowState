@@ -18,10 +18,14 @@ struct NotificationSettingsPage {
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
   @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
-  @State notifMessage: string = '';
+  /** 开始提醒默认消息文字 */
+  @State startMessage: string = '';
+  /** 结束提醒默认消息文字 */
+  @State endMessage: string = '';
 
   aboutToAppear(): void {
-    this.notifMessage = NotificationSettingsViewModel.getDefaultMessage();
+    this.startMessage = NotificationSettingsViewModel.getDefaultStartMessage();
+    this.endMessage = NotificationSettingsViewModel.getDefaultMessage();
   }
 
   build() {
@@ -57,39 +61,75 @@ struct NotificationSettingsPage {
 
       Scroll() {
         Column() {
-          Column() {
-            Text(I18nHelper.t(I18nKeys.NOTIF_DEFAULT_MESSAGE_LABEL, this.currentLanguage))
-              .fontSize(this.fontTokens.caption)
-              .fontColor(this.themeTokens.colorTextSecondary)
-              .width('100%')
-              .padding({
-                left: $r('app.float.spacing_lg'),
-                top: $r('app.float.spacing_lg'),
-                bottom: $r('app.float.spacing_sm'),
-              })
-
-            TextInput({
-              placeholder: I18nHelper.t(I18nKeys.NOTIF_DEFAULT_MESSAGE_PLACEHOLDER, this.currentLanguage),
-              text: this.notifMessage,
+          // ── 开始提醒区 ──────────────────────────────────────────────────────
+          Text(I18nHelper.t(I18nKeys.NOTIF_SECTION_START, this.currentLanguage))
+            .fontSize(this.fontTokens.caption)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(this.themeTokens.colorTextSecondary)
+            .width('100%')
+            .padding({
+              left: $r('app.float.spacing_lg'),
+              top: $r('app.float.spacing_lg'),
+              bottom: $r('app.float.spacing_sm'),
             })
-              .fontSize(this.fontTokens.body)
-              .fontColor(this.themeTokens.colorTextPrimary)
-              .placeholderColor(this.themeTokens.colorTextSecondary)
-              .backgroundColor(this.themeTokens.colorBackground)
-              .borderWidth({ bottom: 1 })
-              .borderColor(this.themeTokens.colorDivider)
-              .padding({
-                left: $r('app.float.spacing_lg'),
-                right: $r('app.float.spacing_lg'),
-                bottom: $r('app.float.spacing_md'),
-              })
-              .onChange((value: string) => {
-                this.notifMessage = value;
-                NotificationSettingsViewModel.setDefaultMessage(value);
-              })
-          }
-          .width('100%')
-          .alignItems(HorizontalAlign.Start)
+
+          TextInput({
+            placeholder: I18nHelper.t(I18nKeys.NOTIF_START_MESSAGE_PLACEHOLDER, this.currentLanguage),
+            text: this.startMessage,
+          })
+            .fontSize(this.fontTokens.body)
+            .fontColor(this.themeTokens.colorTextPrimary)
+            .placeholderColor(this.themeTokens.colorTextSecondary)
+            .backgroundColor(this.themeTokens.colorBackground)
+            .borderWidth({ bottom: 1 })
+            .borderColor(this.themeTokens.colorDivider)
+            .padding({
+              left: $r('app.float.spacing_lg'),
+              right: $r('app.float.spacing_lg'),
+              bottom: $r('app.float.spacing_md'),
+            })
+            .onChange((value: string) => {
+              this.startMessage = value;
+              NotificationSettingsViewModel.setDefaultStartMessage(value);
+            })
+
+          Divider()
+            .strokeWidth(DIVIDER_STROKE_WIDTH)
+            .color(this.themeTokens.colorDivider)
+            .width('100%')
+            .margin({ top: $r('app.float.spacing_md') })
+
+          // ── 结束提醒区 ──────────────────────────────────────────────────────
+          Text(I18nHelper.t(I18nKeys.NOTIF_SECTION_END, this.currentLanguage))
+            .fontSize(this.fontTokens.caption)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(this.themeTokens.colorTextSecondary)
+            .width('100%')
+            .padding({
+              left: $r('app.float.spacing_lg'),
+              top: $r('app.float.spacing_lg'),
+              bottom: $r('app.float.spacing_sm'),
+            })
+
+          TextInput({
+            placeholder: I18nHelper.t(I18nKeys.NOTIF_DEFAULT_MESSAGE_PLACEHOLDER, this.currentLanguage),
+            text: this.endMessage,
+          })
+            .fontSize(this.fontTokens.body)
+            .fontColor(this.themeTokens.colorTextPrimary)
+            .placeholderColor(this.themeTokens.colorTextSecondary)
+            .backgroundColor(this.themeTokens.colorBackground)
+            .borderWidth({ bottom: 1 })
+            .borderColor(this.themeTokens.colorDivider)
+            .padding({
+              left: $r('app.float.spacing_lg'),
+              right: $r('app.float.spacing_lg'),
+              bottom: $r('app.float.spacing_md'),
+            })
+            .onChange((value: string) => {
+              this.endMessage = value;
+              NotificationSettingsViewModel.setDefaultMessage(value);
+            })
         }
         .width('100%')
         .alignItems(HorizontalAlign.Start)

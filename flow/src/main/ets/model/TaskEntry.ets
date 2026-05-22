@@ -45,6 +45,8 @@ export const enum TaskScheduleType {
   MULTI_NODE = 2,
   /** 规则循环（绝对/相对） */
   RECURRING = 3,
+  /** 区间任务：有开始时间和截止时间，timeNodes=[startTs, endTs] */
+  INTERVAL = 4,
 }
 
 /** 任务完成方式 */
@@ -217,10 +219,30 @@ export interface TaskEntry {
   updatedAt: number;
 
   /**
-   * 系统提醒代理 ID（由 reminderAgentManager.publishReminder 返回）。
-   * 0 = 未注册提醒；> 0 = 已注册，可用于取消。
+   * 截止提醒标识符（由 NotificationHelper.scheduleDeadlineReminder 返回）。
+   * 新约定：等于 task.id；0 = 未注册，> 0 = 已注册，可用于取消。
    */
   reminderId: number;
+
+  // ── 区间任务专属：开始时间提醒 ─────────────────────────────────────────────
+
+  /**
+   * 区间任务「开始时间」的提醒类型，取值 TaskReminderType。
+   * 非 INTERVAL 类型任务此字段固定为 0（NONE）。
+   */
+  startReminderType: number;
+
+  /**
+   * 区间任务「开始时间」的自定义通知消息文本。
+   * '' = 使用任务标题作为消息；非空值为本任务自定义内容。
+   */
+  startReminderMessage: string;
+
+  /**
+   * 区间任务「开始时间」提醒标识符（由 NotificationHelper.scheduleStartReminder 返回）。
+   * 新约定：等于 task.id + 1000000；0 = 未注册，> 0 = 已注册，可用于取消。
+   */
+  startReminderId: number;
 }
 
 // ── 序列化工具函数 ─────────────────────────────────────────────────────────────
@@ -296,16 +318,57 @@ export function getNextDeadline(entry: TaskEntry): number {
   if (nodes.length === 0) {
     return 0;
   }
+  // 区间任务：timeNodes=[startTs, endTs]，截止时间取索引 1
+  if (entry.scheduleType === TaskScheduleType.INTERVAL) {
+    return nodes.length >= 2 ? nodes[1] : nodes[0];
+  }
   const idx: number = entry.currentNodeIndex < nodes.length ? entry.currentNodeIndex : 0;
   return nodes[idx];
 }
 
 /**
- * 将数字补零为两位字符串。
- * @param n 非负整数
- * @returns 两位字符串（不足补前导零）
+ * 获取区间任务的开始时间戳。
+ * 非 INTERVAL 类型或无节点时返回 0。
+ * @param entry 任务条目
+ * @returns 开始时间戳（ms），0 表示无开始时间
  */
-function padTwo(n: number): string {
+export function getStartTime(entry: TaskEntry): number {
+  if (entry.scheduleType !== TaskScheduleType.INTERVAL) {
+    return 0;
+  }
+  const nodes: number[] = parseTimeNodes(entry.timeNodes);
+  return nodes.length >= 1 ? nodes[0] : 0;
+}
+
+/**
+ * 将两位数字补零为两位字符串（内部工具，避免与下方 padTwo 重复定义）。
+ */
+function padTwoDigits(n: number): string {
+  return n < 10 ? '0' + n.toString() : n.toString();
+}
+
+/**
+ * 将区间任务的开始/截止时间格式化为简洁区间字符串。
+ * 格式：「M/D HH:mm → M/D HH:mm」（跨天时显示日期，同天简写截止侧）
+ * @param startTs 开始时间戳（ms）
+ * @param endTs   截止时间戳（ms）
+ * @param lang    当前语言标识
+ * @returns 格式化区间字符串
+ */
+export function formatTaskInterval(startTs: number, endTs: number, lang: string): string {
+  if (startTs <= 0 || endTs <= 0) {
+    return '';
+  }
+  const s: Date = new Date(startTs);
+  const e: Date = new Date(endTs);
+  const sStr: string = (s.getMonth() + 1).toString() + '/' + s.getDate().toString()
+    + ' ' + padTwoDigits(s.getHours()) + ':' + padTwoDigits(s.getMinutes());
+  const eStr: string = (e.getMonth() + 1).toString() + '/' + e.getDate().toString()
+    + ' ' + padTwoDigits(e.getHours()) + ':' + padTwoDigits(e.getMinutes());
+  return sStr + ' → ' + eStr;
+}
+
+function padTwo(n: number) {
   return n < 10 ? '0' + n.toString() : n.toString();
 }
 

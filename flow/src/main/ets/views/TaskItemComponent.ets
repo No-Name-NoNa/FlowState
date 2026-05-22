@@ -22,7 +22,14 @@ import { KEY_APP_LANGUAGE, KEY_FONT_TOKENS, KEY_THEME_TOKENS, LANG_ZH_CN } from 
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
 import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { TaskViewModel } from '../viewmodel/TaskViewModel';
-import { formatTaskDeadline, TaskCompletionType, TaskPriority, TaskStatus } from '../model/TaskEntry';
+import {
+  formatTaskDeadline,
+  formatTaskInterval,
+  TaskCompletionType,
+  TaskPriority,
+  TaskScheduleType,
+  TaskStatus
+} from '../model/TaskEntry';
 import { parseTags } from '../model/InboxEntry';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
 
@@ -44,6 +51,10 @@ export struct TaskItemComponent {
   @Prop entryIsPinned: number = 0;
   /** 预计算的截止时间戳（ms），0 表示无截止时间；由父组件调用 getNextDeadline 计算后传入 */
   @Prop entryDeadline: number = 0;
+  /** 任务调度类型（TaskScheduleType 枚举值），用于区分区间任务和单次任务 */
+  @Prop entryScheduleType: number = 0;
+  /** 区间任务的开始时间戳（ms），0 表示非区间任务或未设置 */
+  @Prop entryStartTime: number = 0;
   /** 最后修改时间戳（ms），用于 ForEach key 使 ArkUI 感知数据变化 */
   @Prop entryUpdatedAt: number = 0;
   /** 列表中的显示序号（1-based） */
@@ -268,6 +279,7 @@ export struct TaskItemComponent {
           // 元信息行：标签列表 + 截止剩余时间 + 进度（仅有内容时渲染）
           if (this.entryTags !== ''
             || this.entryDeadline > 0
+            || this.entryStartTime > 0
             || (this.entryCompletionType === TaskCompletionType.DURATION && this.entryTargetDuration > 0)
             || this.entryStatus === TaskStatus.IN_PROGRESS) {
             Row({ space: 6 }) {
@@ -296,17 +308,30 @@ export struct TaskItemComponent {
                   .flexShrink(0)
               }
 
-              // 截止剩余时间（有截止时间时始终显示，不受 IN_PROGRESS 影响）
+              // 截止剩余时间 / 区间时间范围（有截止时间时始终显示，不受 IN_PROGRESS 影响）
               if (this.entryDeadline > 0) {
-                Text(formatTaskDeadline(this.entryDeadline, this.lang))
-                  .fontSize(this.fontTokens.label)
-                  .fontColor(
-                    this.entryDeadline < Date.now()
-                      ? this.themeTokens.colorAccent
-                      : this.themeTokens.colorTextSecondary
-                  )
-                  .maxLines(1)
-                  .flexShrink(0)
+                // 区间任务显示「开始 → 截止」格式
+                if (this.entryScheduleType === TaskScheduleType.INTERVAL && this.entryStartTime > 0) {
+                  Text(formatTaskInterval(this.entryStartTime, this.entryDeadline, this.lang))
+                    .fontSize(this.fontTokens.label)
+                    .fontColor(
+                      this.entryDeadline < Date.now()
+                        ? this.themeTokens.colorAccent
+                        : this.themeTokens.colorTextSecondary
+                    )
+                    .maxLines(1)
+                    .flexShrink(0)
+                } else {
+                  Text(formatTaskDeadline(this.entryDeadline, this.lang))
+                    .fontSize(this.fontTokens.label)
+                    .fontColor(
+                      this.entryDeadline < Date.now()
+                        ? this.themeTokens.colorAccent
+                        : this.themeTokens.colorTextSecondary
+                    )
+                    .maxLines(1)
+                    .flexShrink(0)
+                }
               }
 
               // DURATION 进度百分比

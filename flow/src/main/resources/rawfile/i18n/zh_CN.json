@@ -111,10 +111,20 @@
   "notif_sound_bell": "沉稳",
   "notif_sound_ping": "提示音",
   "notif_action_archive": "归档",
+  "notif_section_start": "开始提醒",
+  "notif_section_end": "结束提醒",
+  "notif_start_message_placeholder": "留空则由 App 自动生成…",
+  "notif_end_message_label": "默认提醒内容",
   "settings_fontsize_label": "字体大小",
   "settings_fontsize_preview": "预览",
   "font_scale_small": "小",
   "font_scale_normal": "标准",
   "font_scale_large": "大",
-  "font_scale_xlarge": "特大"
+  "font_scale_xlarge": "特大",
+  "task_type_label": "类型",
+  "task_type_single": "单次",
+  "task_type_interval": "区间",
+  "task_interval_start_label": "开始",
+  "task_start_reminder_label": "开始提醒",
+  "task_end_reminder_label": "截止提醒"
 }

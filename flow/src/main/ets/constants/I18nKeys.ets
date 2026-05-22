@@ -131,6 +131,11 @@ export enum I18nKeys {
   TASK_REMINDER_USE_GLOBAL = 'task_reminder_use_global',
   // 通知操作按钮（归档、查看）
   NOTIF_ACTION_ARCHIVE = 'notif_action_archive',
+  // 通知设置页分区标题与开始提醒默认消息
+  NOTIF_SECTION_START = 'notif_section_start',
+  NOTIF_SECTION_END = 'notif_section_end',
+  NOTIF_START_MESSAGE_PLACEHOLDER = 'notif_start_message_placeholder',
+  NOTIF_END_MESSAGE_LABEL = 'notif_end_message_label',
   // 字体大小设置
   SETTINGS_FONTSIZE_LABEL = 'settings_fontsize_label',
   SETTINGS_FONTSIZE_PREVIEW = 'settings_fontsize_preview',
@@ -138,4 +143,11 @@ export enum I18nKeys {
   FONT_SCALE_NORMAL = 'font_scale_normal',
   FONT_SCALE_LARGE = 'font_scale_large',
   FONT_SCALE_XLARGE = 'font_scale_xlarge',
+  // 区间任务相关
+  TASK_TYPE_LABEL = 'task_type_label',
+  TASK_TYPE_SINGLE = 'task_type_single',
+  TASK_TYPE_INTERVAL = 'task_type_interval',
+  TASK_INTERVAL_START_LABEL = 'task_interval_start_label',
+  TASK_START_REMINDER_LABEL = 'task_start_reminder_label',
+  TASK_END_REMINDER_LABEL = 'task_end_reminder_label',
 }

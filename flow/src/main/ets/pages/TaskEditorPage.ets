@@ -122,7 +122,21 @@ struct TaskEditorPage {
     reminderId: 0,
     createdAt: 0,
     updatedAt: 0,
+    startReminderType: 0,
+    startReminderMessage: '',
+    startReminderId: 0,
   };
+  // ── 区间任务专属状态 ──────────────────────────────────────────────────────
+  /** 当前任务类型选择：0 = 单次截止，TaskScheduleType.INTERVAL = 区间 */
+  @State scheduleTypeSelection: number = 0;
+  /** 区间任务开始时间戳（ms），0 表示未设置 */
+  @State startTs: number = 0;
+  /** DatePickerDialog 暂存的日期部分（用于开始时间选择器链式调用） */
+  @State pendingStartDateMs: number = 0;
+  /** 区间任务开始提醒类型（TaskReminderType 枚举值） */
+  @State startReminderType: number = TaskReminderType.NONE;
+  /** 区间任务开始提醒自定义消息，'' = 使用任务标题 */
+  @State startReminderMessage: string = '';
   // ── 保存按钮扩散特效状态 ─────────────────────────────────────────────────
   @State savePressedIndex: number = -1;
   @State saveSpreadScale: number = 0;
@@ -157,11 +171,22 @@ struct TaskEditorPage {
         this.content = entry.content;
         this.tags = parseTags(entry.tags);
         this.priority = entry.priority;
-        this.deadlineTs = entry.timeNodes !== '' ? JSON.parse(entry.timeNodes)[0] as number : 0;
+        // 根据调度类型加载时间字段
+        if (entry.scheduleType === TaskScheduleType.INTERVAL) {
+          this.scheduleTypeSelection = TaskScheduleType.INTERVAL;
+          const nodes: number[] = JSON.parse(entry.timeNodes) as number[];
+          this.startTs = nodes.length >= 1 ? nodes[0] : 0;
+          this.deadlineTs = nodes.length >= 2 ? nodes[1] : 0;
+        } else {
+          this.scheduleTypeSelection = 0;
+          this.deadlineTs = entry.timeNodes !== '' ? (JSON.parse(entry.timeNodes) as number[])[0] : 0;
+        }
         this.targetDurationStr = entry.targetDuration > 0 ? entry.targetDuration.toString() : '';
         this.completionType = entry.completionType;
         this.reminderType = entry.reminderType;
         this.reminderMessage = entry.reminderMessage;
+        this.startReminderType = entry.startReminderType;
+        this.startReminderMessage = entry.startReminderMessage;
       });
     } else if (p.fromInboxId !== undefined && p.fromInboxId > 0) {
       // 从收集箱转入：记录来源 ID 并预填标题/内容/标签
@@ -296,6 +321,55 @@ struct TaskEditorPage {
     return month.toString() + '/' + day.toString() + ' ' + hh + ':' + mm;
   }
 
+  /** 将开始时间戳格式化为简洁显示字符串（区间任务用） */
+  private formatStartDisplay(): string {
+    if (this.startTs === 0) {
+      return I18nHelper.t(I18nKeys.TASK_SCHEDULE_NONE, this.currentLanguage);
+    }
+    const d: Date = new Date(this.startTs);
+    const month: number = d.getMonth() + 1;
+    const day: number = d.getDate();
+    const hour: number = d.getHours();
+    const minute: number = d.getMinutes();
+    const hh: string = hour < 10 ? '0' + hour.toString() : hour.toString();
+    const mm: string = minute < 10 ? '0' + minute.toString() : minute.toString();
+    return month.toString() + '/' + day.toString() + ' ' + hh + ':' + mm;
+  }
+
+  /**
+   * 弹出开始时间日期选择器（区间任务用）。
+   * 日期确认后自动弹出时间选择器，两者均确认后合并写入 startTs。
+   */
+  private showStartDatePicker(): void {
+    const initDate: Date = this.startTs > 0 ? new Date(this.startTs) : new Date();
+    DatePickerDialog.show({
+      start: new Date(),
+      end: new Date(Date.now() + 365 * 86400000),
+      selected: initDate,
+      onDateAccept: (dateValue: Date) => {
+        const d: Date = new Date(dateValue.getTime());
+        d.setHours(0, 0, 0, 0);
+        this.pendingStartDateMs = d.getTime();
+        this.showStartTimePicker();
+      },
+    });
+  }
+
+  /** 弹出开始时间的时间选择器，确认后合并写入 startTs */
+  private showStartTimePicker(): void {
+    const initDate: Date = this.startTs > 0 ? new Date(this.startTs) : new Date();
+    TimePickerDialog.show({
+      selected: initDate,
+      useMilitaryTime: true,
+      onAccept: (timeValue: TimeResult) => {
+        const combined: number = this.pendingStartDateMs
+          + timeValue.hour * 3600000
+          + timeValue.minute * 60000;
+        this.startTs = combined;
+      },
+    });
+  }
+
   /** 验证并保存，成功后发送跨页刷新信号并返回 */
   private async doSave(): Promise<void> {
     const trimmedTitle: string = this.titleText.trim();
@@ -308,13 +382,20 @@ struct TaskEditorPage {
       : parseInt(this.targetDurationStr.trim(), 10);
     const safeTargetDuration: number = isNaN(targetDuration) ? 0 : targetDuration;
 
-    // 根据截止时间决定 scheduleType 和 timeNodes
-    const scheduleType: number = this.deadlineTs > 0
-      ? TaskScheduleType.SINGLE
-      : TaskScheduleType.NONE;
-    const timeNodesStr: string = this.deadlineTs > 0
-      ? JSON.stringify([this.deadlineTs])
-      : '';
+    // 根据任务类型决定 scheduleType 和 timeNodes
+    let scheduleType: number;
+    let timeNodesStr: string;
+    if (this.scheduleTypeSelection === TaskScheduleType.INTERVAL) {
+      // 区间任务：必须同时有开始时间和截止时间，且开始 < 截止
+      if (this.startTs <= 0 || this.deadlineTs <= 0 || this.startTs >= this.deadlineTs) {
+        return;
+      }
+      scheduleType = TaskScheduleType.INTERVAL;
+      timeNodesStr = JSON.stringify([this.startTs, this.deadlineTs]);
+    } else {
+      scheduleType = this.deadlineTs > 0 ? TaskScheduleType.SINGLE : TaskScheduleType.NONE;
+      timeNodesStr = this.deadlineTs > 0 ? JSON.stringify([this.deadlineTs]) : '';
+    }
     const now: number = Date.now();
 
     if (this.isEditMode) {
@@ -343,6 +424,9 @@ struct TaskEditorPage {
         createdAt: this.originalEntry.createdAt,
         updatedAt: now,
         reminderId: this.originalEntry.reminderId,
+        startReminderType: this.startReminderType,
+        startReminderMessage: this.startReminderMessage,
+        startReminderId: this.originalEntry.startReminderId,
       };
       await TaskViewModel.update(updated);
     } else {
@@ -371,6 +455,9 @@ struct TaskEditorPage {
         createdAt: now,
         updatedAt: now,
         reminderId: 0,
+        startReminderType: this.startReminderType,
+        startReminderMessage: this.startReminderMessage,
+        startReminderId: 0,
       };
       await TaskViewModel.create(newEntry);
       // 从收集箱转入时，任务创建成功后删除对应收集箱条目并通知收集箱刷新
@@ -708,6 +795,124 @@ struct TaskEditorPage {
             .color(this.themeTokens.colorDivider)
             .width('100%')
 
+          // ── 3.5 任务类型 chips ──────────────────────────────────────────
+          Row({ space: $r('app.float.spacing_sm') }) {
+            Text(I18nHelper.t(I18nKeys.TASK_TYPE_LABEL, this.currentLanguage))
+              .fontSize(this.fontTokens.body)
+              .fontColor(this.themeTokens.colorTextPrimary)
+              .width(80)
+              .flexShrink(0)
+
+            Row({ space: $r('app.float.spacing_xs') }) {
+              ForEach(
+                [0, TaskScheduleType.INTERVAL],
+                (typeVal: number) => {
+                  Text(I18nHelper.t(
+                    typeVal === TaskScheduleType.INTERVAL
+                      ? I18nKeys.TASK_TYPE_INTERVAL
+                      : I18nKeys.TASK_TYPE_SINGLE,
+                    this.currentLanguage,
+                  ))
+                    .fontSize(this.fontTokens.label)
+                    .fontColor(
+                      this.scheduleTypeSelection === typeVal
+                        ? this.themeTokens.colorBackground
+                        : this.themeTokens.colorTextSecondary
+                    )
+                    .height($r('app.float.tag_chip_height'))
+                    .padding({
+                      left: $r('app.float.tag_chip_padding_h'),
+                      right: $r('app.float.tag_chip_padding_h'),
+                    })
+                    .backgroundColor(
+                      this.scheduleTypeSelection === typeVal
+                        ? this.themeTokens.colorAccent
+                        : Color.Transparent
+                    )
+                    .border({
+                      width: 0.5,
+                      color: this.scheduleTypeSelection === typeVal
+                        ? this.themeTokens.colorAccent
+                        : this.themeTokens.colorDivider,
+                      radius: 11,
+                    })
+                    .onClick(() => {
+                      animateTo({ duration: 200, curve: Curve.EaseOut }, () => {
+                        this.scheduleTypeSelection = typeVal;
+                        // 切换为单次时清除开始时间
+                        if (typeVal !== TaskScheduleType.INTERVAL) {
+                          this.startTs = 0;
+                          this.startReminderType = TaskReminderType.NONE;
+                          this.startReminderMessage = '';
+                        }
+                      });
+                    })
+                },
+                (typeVal: number) => typeVal.toString(),
+              )
+            }
+          }
+          .width('100%')
+          .padding({
+            left: $r('app.float.spacing_lg'),
+            right: $r('app.float.spacing_lg'),
+            top: $r('app.float.spacing_md'),
+            bottom: $r('app.float.spacing_md'),
+          })
+          .alignItems(VerticalAlign.Center)
+
+          Divider()
+            .strokeWidth(DIVIDER_STROKE_WIDTH)
+            .color(this.themeTokens.colorDivider)
+            .width('100%')
+
+          // ── 3.6 开始时间行（仅区间任务） ─────────────────────────────────
+          if (this.scheduleTypeSelection === TaskScheduleType.INTERVAL) {
+            Row() {
+              Text(I18nHelper.t(I18nKeys.TASK_INTERVAL_START_LABEL, this.currentLanguage))
+                .fontSize(this.fontTokens.body)
+                .fontColor(this.themeTokens.colorTextPrimary)
+                .width(80)
+                .flexShrink(0)
+
+              Text(this.formatStartDisplay())
+                .fontSize(this.fontTokens.body)
+                .fontColor(this.startTs > 0
+                  ? this.themeTokens.colorAccent
+                  : this.themeTokens.colorTextSecondary)
+                .layoutWeight(1)
+                .onClick(() => {
+                  this.showStartDatePicker();
+                })
+
+              if (this.startTs > 0) {
+                Text(I18nHelper.t(I18nKeys.TASK_SCHEDULE_CLEAR, this.currentLanguage))
+                  .fontSize(this.fontTokens.label)
+                  .fontColor(this.themeTokens.colorTextSecondary)
+                  .padding({ left: $r('app.float.spacing_sm') })
+                  .flexShrink(0)
+                  .onClick(() => {
+                    animateTo({ duration: 200, curve: Curve.EaseOut }, () => {
+                      this.startTs = 0;
+                    });
+                  })
+              }
+            }
+            .width('100%')
+            .padding({
+              left: $r('app.float.spacing_lg'),
+              right: $r('app.float.spacing_lg'),
+              top: $r('app.float.spacing_md'),
+              bottom: $r('app.float.spacing_md'),
+            })
+            .alignItems(VerticalAlign.Center)
+
+            Divider()
+              .strokeWidth(DIVIDER_STROKE_WIDTH)
+              .color(this.themeTokens.colorDivider)
+              .width('100%')
+          }
+
           // ── 4. 截止时间行 ────────────────────────────────────────────────
           Row() {
             Text(I18nHelper.t(I18nKeys.TASK_SCHEDULE_LABEL, this.currentLanguage))
@@ -869,94 +1074,59 @@ struct TaskEditorPage {
             .width('100%')
 
           // ── 7. 提醒 ─────────────────────────────────────────────────────
-          // 提醒类型 chips（4 种）
-          Row({ space: $r('app.float.spacing_sm') }) {
-            Text(I18nHelper.t(I18nKeys.TASK_REMINDER_LABEL, this.currentLanguage))
-              .fontSize(this.fontTokens.body)
-              .fontColor(this.themeTokens.colorTextPrimary)
-              .width(80)
-              .flexShrink(0)
-
-            Flex({ wrap: FlexWrap.Wrap }) {
-              ForEach(
-                [TaskReminderType.NONE, TaskReminderType.POPUP, TaskReminderType.SOUND],
-                (type: number) => {
-                  Text(I18nHelper.t(
-                    type === TaskReminderType.NONE
-                      ? I18nKeys.TASK_REMINDER_NONE
-                      : type === TaskReminderType.POPUP
-                      ? I18nKeys.TASK_REMINDER_POPUP
-                      : I18nKeys.TASK_REMINDER_SOUND,
-                    this.currentLanguage,
-                  ))
-                    .fontSize(this.fontTokens.label)
-                    .fontColor(
-                      this.reminderType === type
-                        ? this.themeTokens.colorBackground
-                        : this.themeTokens.colorTextSecondary
-                    )
-                    .height($r('app.float.tag_chip_height'))
-                    .padding({
-                      left: $r('app.float.tag_chip_padding_h'),
-                      right: $r('app.float.tag_chip_padding_h'),
-                    })
-                    .margin({ right: $r('app.float.spacing_xs') })
-                    .backgroundColor(
-                      this.reminderType === type ? this.themeTokens.colorAccent : Color.Transparent
-                    )
-                    .border({
-                      width: 0.5,
-                      color: this.reminderType === type
-                        ? this.themeTokens.colorAccent
-                        : this.themeTokens.colorDivider,
-                      radius: 11,
-                    })
-                    .onClick(() => {
-                      animateTo({ duration: 200, curve: Curve.EaseOut }, () => {
-                        this.reminderType = type;
-                      });
-                    })
-                },
-                (type: number) => type.toString(),
-              )
-            }
-          }
-          .width('100%')
-          .padding({
-            left: $r('app.float.spacing_lg'),
-            right: $r('app.float.spacing_lg'),
-            top: $r('app.float.spacing_md'),
-            bottom: $r('app.float.spacing_md'),
-          })
-          .alignItems(VerticalAlign.Center)
-
-          // 自定义通知文字（POPUP / SOUND 时显示）
-          if (this.reminderType !== TaskReminderType.NONE) {
-            Divider()
-              .strokeWidth(DIVIDER_STROKE_WIDTH)
-              .color(this.themeTokens.colorDivider)
-              .width('100%')
-
+          if (this.scheduleTypeSelection === TaskScheduleType.INTERVAL) {
+            // ── 区间任务：开始提醒 + 截止提醒分块 ─────────────────────────
+            // 开始提醒 chips
             Row({ space: $r('app.float.spacing_sm') }) {
-              Text(I18nHelper.t(I18nKeys.TASK_REMINDER_MESSAGE_LABEL, this.currentLanguage))
+              Text(I18nHelper.t(I18nKeys.TASK_START_REMINDER_LABEL, this.currentLanguage))
                 .fontSize(this.fontTokens.body)
                 .fontColor(this.themeTokens.colorTextPrimary)
                 .width(80)
                 .flexShrink(0)
 
-              TextInput({
-                placeholder: I18nHelper.t(I18nKeys.TASK_REMINDER_MESSAGE_PLACEHOLDER, this.currentLanguage),
-                text: this.reminderMessage,
-              })
-                .fontSize(this.fontTokens.body)
-                .fontColor(this.themeTokens.colorTextPrimary)
-                .placeholderColor(this.themeTokens.colorTextSecondary)
-                .backgroundColor(Color.Transparent)
-                .borderWidth(0)
-                .layoutWeight(1)
-                .onChange((value: string) => {
-                  this.reminderMessage = value;
-                })
+              Flex({ wrap: FlexWrap.Wrap }) {
+                ForEach(
+                  [TaskReminderType.NONE, TaskReminderType.POPUP, TaskReminderType.SOUND],
+                  (type: number) => {
+                    Text(I18nHelper.t(
+                      type === TaskReminderType.NONE
+                        ? I18nKeys.TASK_REMINDER_NONE
+                        : type === TaskReminderType.POPUP
+                        ? I18nKeys.TASK_REMINDER_POPUP
+                        : I18nKeys.TASK_REMINDER_SOUND,
+                      this.currentLanguage,
+                    ))
+                      .fontSize(this.fontTokens.label)
+                      .fontColor(
+                        this.startReminderType === type
+                          ? this.themeTokens.colorBackground
+                          : this.themeTokens.colorTextSecondary
+                      )
+                      .height($r('app.float.tag_chip_height'))
+                      .padding({
+                        left: $r('app.float.tag_chip_padding_h'),
+                        right: $r('app.float.tag_chip_padding_h'),
+                      })
+                      .margin({ right: $r('app.float.spacing_xs') })
+                      .backgroundColor(
+                        this.startReminderType === type ? this.themeTokens.colorAccent : Color.Transparent
+                      )
+                      .border({
+                        width: 0.5,
+                        color: this.startReminderType === type
+                          ? this.themeTokens.colorAccent
+                          : this.themeTokens.colorDivider,
+                        radius: 11,
+                      })
+                      .onClick(() => {
+                        animateTo({ duration: 200, curve: Curve.EaseOut }, () => {
+                          this.startReminderType = type;
+                        });
+                      })
+                  },
+                  (type: number) => 'sr_' + type.toString(),
+                )
+              }
             }
             .width('100%')
             .padding({
@@ -966,6 +1136,248 @@ struct TaskEditorPage {
               bottom: $r('app.float.spacing_md'),
             })
             .alignItems(VerticalAlign.Center)
+
+            // 开始提醒自定义消息
+            if (this.startReminderType !== TaskReminderType.NONE) {
+              Divider()
+                .strokeWidth(DIVIDER_STROKE_WIDTH)
+                .color(this.themeTokens.colorDivider)
+                .width('100%')
+
+              Row({ space: $r('app.float.spacing_sm') }) {
+                Text(I18nHelper.t(I18nKeys.TASK_REMINDER_MESSAGE_LABEL, this.currentLanguage))
+                  .fontSize(this.fontTokens.body)
+                  .fontColor(this.themeTokens.colorTextPrimary)
+                  .width(80)
+                  .flexShrink(0)
+
+                TextInput({
+                  placeholder: I18nHelper.t(I18nKeys.TASK_REMINDER_MESSAGE_PLACEHOLDER, this.currentLanguage),
+                  text: this.startReminderMessage,
+                })
+                  .fontSize(this.fontTokens.body)
+                  .fontColor(this.themeTokens.colorTextPrimary)
+                  .placeholderColor(this.themeTokens.colorTextSecondary)
+                  .backgroundColor(Color.Transparent)
+                  .borderWidth(0)
+                  .layoutWeight(1)
+                  .onChange((value: string) => {
+                    this.startReminderMessage = value;
+                  })
+              }
+              .width('100%')
+              .padding({
+                left: $r('app.float.spacing_lg'),
+                right: $r('app.float.spacing_lg'),
+                top: $r('app.float.spacing_md'),
+                bottom: $r('app.float.spacing_md'),
+              })
+              .alignItems(VerticalAlign.Center)
+            }
+
+            Divider()
+              .strokeWidth(DIVIDER_STROKE_WIDTH)
+              .color(this.themeTokens.colorDivider)
+              .width('100%')
+
+            // 截止提醒 chips
+            Row({ space: $r('app.float.spacing_sm') }) {
+              Text(I18nHelper.t(I18nKeys.TASK_END_REMINDER_LABEL, this.currentLanguage))
+                .fontSize(this.fontTokens.body)
+                .fontColor(this.themeTokens.colorTextPrimary)
+                .width(80)
+                .flexShrink(0)
+
+              Flex({ wrap: FlexWrap.Wrap }) {
+                ForEach(
+                  [TaskReminderType.NONE, TaskReminderType.POPUP, TaskReminderType.SOUND],
+                  (type: number) => {
+                    Text(I18nHelper.t(
+                      type === TaskReminderType.NONE
+                        ? I18nKeys.TASK_REMINDER_NONE
+                        : type === TaskReminderType.POPUP
+                        ? I18nKeys.TASK_REMINDER_POPUP
+                        : I18nKeys.TASK_REMINDER_SOUND,
+                      this.currentLanguage,
+                    ))
+                      .fontSize(this.fontTokens.label)
+                      .fontColor(
+                        this.reminderType === type
+                          ? this.themeTokens.colorBackground
+                          : this.themeTokens.colorTextSecondary
+                      )
+                      .height($r('app.float.tag_chip_height'))
+                      .padding({
+                        left: $r('app.float.tag_chip_padding_h'),
+                        right: $r('app.float.tag_chip_padding_h'),
+                      })
+                      .margin({ right: $r('app.float.spacing_xs') })
+                      .backgroundColor(
+                        this.reminderType === type ? this.themeTokens.colorAccent : Color.Transparent
+                      )
+                      .border({
+                        width: 0.5,
+                        color: this.reminderType === type
+                          ? this.themeTokens.colorAccent
+                          : this.themeTokens.colorDivider,
+                        radius: 11,
+                      })
+                      .onClick(() => {
+                        animateTo({ duration: 200, curve: Curve.EaseOut }, () => {
+                          this.reminderType = type;
+                        });
+                      })
+                  },
+                  (type: number) => 'er_' + type.toString(),
+                )
+              }
+            }
+            .width('100%')
+            .padding({
+              left: $r('app.float.spacing_lg'),
+              right: $r('app.float.spacing_lg'),
+              top: $r('app.float.spacing_md'),
+              bottom: $r('app.float.spacing_md'),
+            })
+            .alignItems(VerticalAlign.Center)
+
+            // 截止提醒自定义消息
+            if (this.reminderType !== TaskReminderType.NONE) {
+              Divider()
+                .strokeWidth(DIVIDER_STROKE_WIDTH)
+                .color(this.themeTokens.colorDivider)
+                .width('100%')
+
+              Row({ space: $r('app.float.spacing_sm') }) {
+                Text(I18nHelper.t(I18nKeys.TASK_REMINDER_MESSAGE_LABEL, this.currentLanguage))
+                  .fontSize(this.fontTokens.body)
+                  .fontColor(this.themeTokens.colorTextPrimary)
+                  .width(80)
+                  .flexShrink(0)
+
+                TextInput({
+                  placeholder: I18nHelper.t(I18nKeys.TASK_REMINDER_MESSAGE_PLACEHOLDER, this.currentLanguage),
+                  text: this.reminderMessage,
+                })
+                  .fontSize(this.fontTokens.body)
+                  .fontColor(this.themeTokens.colorTextPrimary)
+                  .placeholderColor(this.themeTokens.colorTextSecondary)
+                  .backgroundColor(Color.Transparent)
+                  .borderWidth(0)
+                  .layoutWeight(1)
+                  .onChange((value: string) => {
+                    this.reminderMessage = value;
+                  })
+              }
+              .width('100%')
+              .padding({
+                left: $r('app.float.spacing_lg'),
+                right: $r('app.float.spacing_lg'),
+                top: $r('app.float.spacing_md'),
+                bottom: $r('app.float.spacing_md'),
+              })
+              .alignItems(VerticalAlign.Center)
+            }
+          } else {
+            // ── 单次任务：单块提醒 ──────────────────────────────────────────
+            // 提醒类型 chips（4 种）
+            Row({ space: $r('app.float.spacing_sm') }) {
+              Text(I18nHelper.t(I18nKeys.TASK_REMINDER_LABEL, this.currentLanguage))
+                .fontSize(this.fontTokens.body)
+                .fontColor(this.themeTokens.colorTextPrimary)
+                .width(80)
+                .flexShrink(0)
+
+              Flex({ wrap: FlexWrap.Wrap }) {
+                ForEach(
+                  [TaskReminderType.NONE, TaskReminderType.POPUP, TaskReminderType.SOUND],
+                  (type: number) => {
+                    Text(I18nHelper.t(
+                      type === TaskReminderType.NONE
+                        ? I18nKeys.TASK_REMINDER_NONE
+                        : type === TaskReminderType.POPUP
+                        ? I18nKeys.TASK_REMINDER_POPUP
+                        : I18nKeys.TASK_REMINDER_SOUND,
+                      this.currentLanguage,
+                    ))
+                      .fontSize(this.fontTokens.label)
+                      .fontColor(
+                        this.reminderType === type
+                          ? this.themeTokens.colorBackground
+                          : this.themeTokens.colorTextSecondary
+                      )
+                      .height($r('app.float.tag_chip_height'))
+                      .padding({
+                        left: $r('app.float.tag_chip_padding_h'),
+                        right: $r('app.float.tag_chip_padding_h'),
+                      })
+                      .margin({ right: $r('app.float.spacing_xs') })
+                      .backgroundColor(
+                        this.reminderType === type ? this.themeTokens.colorAccent : Color.Transparent
+                      )
+                      .border({
+                        width: 0.5,
+                        color: this.reminderType === type
+                          ? this.themeTokens.colorAccent
+                          : this.themeTokens.colorDivider,
+                        radius: 11,
+                      })
+                      .onClick(() => {
+                        animateTo({ duration: 200, curve: Curve.EaseOut }, () => {
+                          this.reminderType = type;
+                        });
+                      })
+                  },
+                  (type: number) => type.toString(),
+                )
+              }
+            }
+            .width('100%')
+            .padding({
+              left: $r('app.float.spacing_lg'),
+              right: $r('app.float.spacing_lg'),
+              top: $r('app.float.spacing_md'),
+              bottom: $r('app.float.spacing_md'),
+            })
+            .alignItems(VerticalAlign.Center)
+
+            // 自定义通知文字（POPUP / SOUND 时显示）
+            if (this.reminderType !== TaskReminderType.NONE) {
+              Divider()
+                .strokeWidth(DIVIDER_STROKE_WIDTH)
+                .color(this.themeTokens.colorDivider)
+                .width('100%')
+
+              Row({ space: $r('app.float.spacing_sm') }) {
+                Text(I18nHelper.t(I18nKeys.TASK_REMINDER_MESSAGE_LABEL, this.currentLanguage))
+                  .fontSize(this.fontTokens.body)
+                  .fontColor(this.themeTokens.colorTextPrimary)
+                  .width(80)
+                  .flexShrink(0)
+
+                TextInput({
+                  placeholder: I18nHelper.t(I18nKeys.TASK_REMINDER_MESSAGE_PLACEHOLDER, this.currentLanguage),
+                  text: this.reminderMessage,
+                })
+                  .fontSize(this.fontTokens.body)
+                  .fontColor(this.themeTokens.colorTextPrimary)
+                  .placeholderColor(this.themeTokens.colorTextSecondary)
+                  .backgroundColor(Color.Transparent)
+                  .borderWidth(0)
+                  .layoutWeight(1)
+                  .onChange((value: string) => {
+                    this.reminderMessage = value;
+                  })
+              }
+              .width('100%')
+              .padding({
+                left: $r('app.float.spacing_lg'),
+                right: $r('app.float.spacing_lg'),
+                top: $r('app.float.spacing_md'),
+                bottom: $r('app.float.spacing_md'),
+              })
+              .alignItems(VerticalAlign.Center)
+            }
           }
 
           // ── 8. 时间戳（仅编辑模式） ──────────────────────────────────────

@@ -22,6 +22,7 @@ import { TaskViewModel } from '../viewmodel/TaskViewModel';
 import { TaskEntry } from '../model/TaskEntry';
 import { TaskListView } from './TaskListView';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
+
 ;
 
 /** 任务模块主视图组件 */
@@ -87,11 +88,11 @@ export struct TaskPage {
     this.tasksIsEmpty = this.tasks.length === 0;
   }
 
-  /** 跨页刷新信号回调：TaskEditorPage 保存后触发 */
+  /** 跨页刷新信号回调：TaskEditorPage 保存后触发，需重新从 DB 加载以包含新建/编辑的任务 */
   private onTaskRefreshChanged(): void {
     if (this.taskNeedsRefresh) {
       AppStorage.set<boolean>(KEY_TASK_NEEDS_REFRESH, false);
-      this.refreshTasks();
+      this.loadData();
     }
   }
 

@@ -16,6 +16,8 @@ import {
 } from '../model/TaskEntry';
 import { InboxEntry, parseTags } from '../model/InboxEntry';
 import { NotificationHelper } from '../util/NotificationHelper';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { LOG_DOMAIN } from '../constants/AppConstants';
 
 /** 任务 ViewModel，所有方法均为静态 */
 export class TaskViewModel {
@@ -29,6 +31,12 @@ export class TaskViewModel {
   private static currentStatus: number = -1;
   /** 当前标签过滤（空字符串 = 不按标签过滤） */
   private static currentTag: string = '';
+  /** 防止 reconcileReminders 并发执行的互斥标志 */
+  private static isReconciling: boolean = false;
+  /** 上次 reconcileReminders 完成的时间戳（ms），供 maybeReconcile 限频使用 */
+  private static lastReconcileAt: number = 0;
+  /** maybeReconcile 的最短调用间隔：60 秒 */
+  private static readonly RECONCILE_INTERVAL_MS: number = 60 * 1000;
 
   /**
    * 从 DB 重新加载全部任务并按动态权重排序。
@@ -161,6 +169,9 @@ export class TaskViewModel {
       createdAt: now,
       updatedAt: now,
       reminderId: 0,
+      startReminderType: 0,
+      startReminderMessage: '',
+      startReminderId: 0,
     };
   }
 
@@ -198,9 +209,13 @@ export class TaskViewModel {
         createdAt: entry.createdAt,
         updatedAt: entry.updatedAt,
         reminderId: 0,
+        startReminderType: entry.startReminderType,
+        startReminderMessage: entry.startReminderMessage,
+        startReminderId: 0,
       };
       const reminderId: number = await NotificationHelper.scheduleDeadlineReminder(entryWithId);
-      if (reminderId > 0) {
+      const startReminderId: number = await NotificationHelper.scheduleStartReminder(entryWithId);
+      if (reminderId > 0 || startReminderId > 0) {
         const withReminder: TaskEntry = {
           id: entryWithId.id,
           title: entryWithId.title,
@@ -226,6 +241,9 @@ export class TaskViewModel {
           createdAt: entryWithId.createdAt,
           updatedAt: entryWithId.updatedAt,
           reminderId: reminderId,
+          startReminderType: entryWithId.startReminderType,
+          startReminderMessage: entryWithId.startReminderMessage,
+          startReminderId: startReminderId,
         };
         await TaskDatabase.update(withReminder);
       }
@@ -239,10 +257,12 @@ export class TaskViewModel {
    * @param entry 含有效 id 的完整任务条目
    */
   static async update(entry: TaskEntry): Promise<void> {
-    // 取消旧的截止提醒
+    // 取消旧的截止提醒和开始提醒
     await NotificationHelper.cancelReminder(entry.reminderId);
+    await NotificationHelper.cancelReminder(entry.startReminderId);
     // 注册新提醒并写入 reminderId
     const reminderId: number = await NotificationHelper.scheduleDeadlineReminder(entry);
+    const startReminderId: number = await NotificationHelper.scheduleStartReminder(entry);
     const updated: TaskEntry = {
       id: entry.id,
       title: entry.title,
@@ -268,6 +288,9 @@ export class TaskViewModel {
       createdAt: entry.createdAt,
       updatedAt: entry.updatedAt,
       reminderId: reminderId,
+      startReminderType: entry.startReminderType,
+      startReminderMessage: entry.startReminderMessage,
+      startReminderId: startReminderId,
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
@@ -281,9 +304,72 @@ export class TaskViewModel {
     const entry: TaskEntry | null = await TaskDatabase.getById(id);
     if (entry !== null) {
       await NotificationHelper.cancelReminder(entry.reminderId);
+      await NotificationHelper.cancelReminder(entry.startReminderId);
     }
     await TaskDatabase.delete(id);
     await TaskViewModel.load();
+  }
+
+  /**
+   * 启动时协调提醒定时器：清除全部内存定时器后，为所有活跃任务重新调度。
+   * 解决应用重启后定时器失效导致的提醒丢失问题。
+   * 火后不管（fire-and-forget）异步调用，不阻塞页面加载。
+   * 内置互斥锁防止并发执行导致重复注册。
+   */
+  static async reconcileReminders(): Promise<void> {
+    // 互斥：防止并发调用导致重复注册
+    if (TaskViewModel.isReconciling) {
+      hilog.debug(LOG_DOMAIN, 'TaskViewModel', '提醒协调正在进行中，跳过本次并发调用');
+      return;
+    }
+    TaskViewModel.isReconciling = true;
+    TaskViewModel.lastReconcileAt = Date.now();
+    try {
+      // 清空全部已注册提醒，重置槽位计数
+      await NotificationHelper.cancelAllReminders();
+      const tasks: TaskEntry[] = await TaskDatabase.queryAll();
+      let count: number = 0;
+      let deadlineCount: number = 0;
+      let startCount: number = 0;
+      for (const task of tasks) {
+        if (task.status === TaskStatus.COMPLETED || task.status === TaskStatus.ARCHIVED) {
+          // 已完成/归档任务无需提醒，若 DB 残留旧 ID 一并清零
+          if (task.reminderId !== 0 || task.startReminderId !== 0) {
+            await TaskDatabase.updateReminderIds(task.id, 0, 0);
+          }
+          continue;
+        }
+        const newReminderId: number = await NotificationHelper.scheduleDeadlineReminder(task);
+        const newStartReminderId: number = await NotificationHelper.scheduleStartReminder(task);
+        if (newReminderId !== task.reminderId || newStartReminderId !== task.startReminderId) {
+          await TaskDatabase.updateReminderIds(task.id, newReminderId, newStartReminderId);
+        }
+        if (newReminderId > 0) {
+          deadlineCount++;
+        }
+        if (newStartReminderId > 0) {
+          startCount++;
+        }
+        count++;
+      }
+      hilog.info(LOG_DOMAIN, 'TaskViewModel',
+        '提醒协调完成，活跃任务 %{public}d 条，截止提醒 %{public}d 条，开始提醒 %{public}d 条',
+        count, deadlineCount, startCount);
+    } finally {
+      TaskViewModel.isReconciling = false;
+    }
+  }
+
+  /**
+   * 限频版 reconcileReminders：距上次协调未满 60 秒时直接返回，避免频繁重调度。
+   * 供 onForeground 调用，每次进入前台时补调度可能遗漏的定时器。
+   */
+  static async maybeReconcile(): Promise<void> {
+    const now: number = Date.now();
+    if (now - TaskViewModel.lastReconcileAt < TaskViewModel.RECONCILE_INTERVAL_MS) {
+      return;
+    }
+    await TaskViewModel.reconcileReminders();
   }
 
   /**
@@ -328,8 +414,9 @@ export class TaskViewModel {
     if (entry === null) {
       return;
     }
-    // 任务完成，取消截止提醒
+    // 任务完成，取消截止提醒和开始提醒
     await NotificationHelper.cancelReminder(entry.reminderId);
+    await NotificationHelper.cancelReminder(entry.startReminderId);
     const now: number = Date.now();
     const updated: TaskEntry = {
       id: entry.id,
@@ -356,6 +443,9 @@ export class TaskViewModel {
       createdAt: entry.createdAt,
       updatedAt: now,
       reminderId: 0,
+      startReminderType: entry.startReminderType,
+      startReminderMessage: entry.startReminderMessage,
+      startReminderId: 0,
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
@@ -396,6 +486,9 @@ export class TaskViewModel {
       createdAt: entry.createdAt,
       updatedAt: now,
       reminderId: entry.reminderId,
+      startReminderType: entry.startReminderType,
+      startReminderMessage: entry.startReminderMessage,
+      startReminderId: entry.startReminderId,
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
@@ -410,8 +503,9 @@ export class TaskViewModel {
     if (entry === null) {
       return;
     }
-    // 归档时取消截止提醒
+    // 归档时取消截止提醒和开始提醒
     await NotificationHelper.cancelReminder(entry.reminderId);
+    await NotificationHelper.cancelReminder(entry.startReminderId);
     const now: number = Date.now();
     const updated: TaskEntry = {
       id: entry.id,
@@ -438,6 +532,9 @@ export class TaskViewModel {
       createdAt: entry.createdAt,
       updatedAt: now,
       reminderId: 0,
+      startReminderType: entry.startReminderType,
+      startReminderMessage: entry.startReminderMessage,
+      startReminderId: 0,
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
@@ -482,6 +579,9 @@ export class TaskViewModel {
       createdAt: entry.createdAt,
       updatedAt: now,
       reminderId: entry.reminderId,
+      startReminderType: entry.startReminderType,
+      startReminderMessage: entry.startReminderMessage,
+      startReminderId: entry.startReminderId,
     };
     await TaskDatabase.update(updated);
   }
@@ -521,6 +621,9 @@ export class TaskViewModel {
       createdAt: entry.createdAt,
       updatedAt: now,
       reminderId: entry.reminderId,
+      startReminderType: entry.startReminderType,
+      startReminderMessage: entry.startReminderMessage,
+      startReminderId: entry.startReminderId,
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();

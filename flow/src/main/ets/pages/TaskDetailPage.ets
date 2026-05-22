@@ -22,7 +22,16 @@ import {
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
 import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { TaskViewModel } from '../viewmodel/TaskViewModel';
-import { TaskCompletionType, TaskEntry, TaskStatus } from '../model/TaskEntry';
+import {
+  formatTaskDeadline,
+  formatTaskInterval,
+  getNextDeadline,
+  getStartTime,
+  TaskCompletionType,
+  TaskEntry,
+  TaskScheduleType,
+  TaskStatus
+} from '../model/TaskEntry';
 import { parseTags } from '../model/InboxEntry';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
 import { NotificationHelper } from '../util/NotificationHelper';
@@ -368,6 +377,61 @@ struct TaskDetailPage {
                   bottom: 12
                 })
                 .lineHeight(22)
+            }
+
+            // ── 区间任务时间行（INTERVAL 类型时显示开始 / 截止两行） ────────
+            if (this.taskEntry.scheduleType === TaskScheduleType.INTERVAL) {
+              Column({ space: 0 }) {
+                // 开始时间行
+                Row() {
+                  Text(I18nHelper.t(I18nKeys.TASK_INTERVAL_START_LABEL, this.lang))
+                    .fontSize(this.fontTokens.bodySmall)
+                    .fontColor(this.themeTokens.colorTextSecondary)
+                    .width(72)
+                    .flexShrink(0)
+
+                  Text(
+                    getStartTime(this.taskEntry) > 0
+                      ? formatTaskDeadline(getStartTime(this.taskEntry), this.lang)
+                      : '-'
+                  )
+                    .fontSize(this.fontTokens.bodySmall)
+                    .fontColor(this.themeTokens.colorTextPrimary)
+                    .layoutWeight(1)
+                }
+                .width('100%')
+                .height(this.fontTokens.settingsItemHeight)
+                .padding({ left: 20, right: 20 })
+                .alignItems(VerticalAlign.Center)
+
+                Divider()
+                  .strokeWidth(DIVIDER_STROKE_WIDTH)
+                  .color(this.themeTokens.colorDivider)
+                  .margin({ left: 20, right: 20 })
+
+                // 截止时间行
+                Row() {
+                  Text(I18nHelper.t(I18nKeys.TASK_END_REMINDER_LABEL, this.lang))
+                    .fontSize(this.fontTokens.bodySmall)
+                    .fontColor(this.themeTokens.colorTextSecondary)
+                    .width(72)
+                    .flexShrink(0)
+
+                  Text(
+                    getNextDeadline(this.taskEntry) > 0
+                      ? formatTaskDeadline(getNextDeadline(this.taskEntry), this.lang)
+                      : '-'
+                  )
+                    .fontSize(this.fontTokens.bodySmall)
+                    .fontColor(this.themeTokens.colorTextPrimary)
+                    .layoutWeight(1)
+                }
+                .width('100%')
+                .height(this.fontTokens.settingsItemHeight)
+                .padding({ left: 20, right: 20 })
+                .alignItems(VerticalAlign.Center)
+              }
+              .width('100%')
             }
 
             Divider()

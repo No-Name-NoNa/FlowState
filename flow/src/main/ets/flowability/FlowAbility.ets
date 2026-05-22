@@ -6,10 +6,12 @@ import {
   KEY_APP_LANGUAGE,
   KEY_NOTIFY_TAB_INDEX,
   KEY_PENDING_ARCHIVE_TASK_ID,
+  KEY_PENDING_OPEN_TASK_ID,
   KEY_TASK_NEEDS_REFRESH,
   LOG_DOMAIN,
   WANT_PARAM_ARCHIVE_TASK_ID,
   WANT_PARAM_NOTIFY_TAB,
+  WANT_PARAM_OPEN_TASK_ID,
 } from '../constants/AppConstants';
 import { I18nHelper } from '../util/I18nHelper';
 import { InboxDatabase } from '../util/InboxDatabase';
@@ -54,6 +56,11 @@ export default class FlowAbility extends UIAbility {
 
     // 初始化任务 RDB 数据库（异步，不阻塞页面加载）
     TaskDatabase.init(this.context);
+
+    // 启动时协调提醒定时器：为全部活跃任务重新调度内存定时器（fire-and-forget）
+    TaskViewModel.reconcileReminders().catch((err: Error) => {
+      hilog.error(LOG_DOMAIN, 'FlowAbility', '提醒协调异常：%{public}s', JSON.stringify(err));
+    });
 
     // 冷启动时读取 Want 参数：若携带归档任务 ID，暂存到 AppStorage 等 DB 加载完后处理
     this.handleWantParams(want, false);
@@ -103,6 +110,12 @@ export default class FlowAbility extends UIAbility {
     if (tabIdx >= 0) {
       AppStorage.setOrCreate<number>(KEY_NOTIFY_TAB_INDEX, tabIdx);
     }
+
+    // 读取「打开任务详情」参数，无论冷热均写入 AppStorage，由 Index.ets @Watch 消费
+    const openTaskId: number = want.parameters[WANT_PARAM_OPEN_TASK_ID] as number ?? 0;
+    if (openTaskId > 0) {
+      AppStorage.setOrCreate<number>(KEY_PENDING_OPEN_TASK_ID, openTaskId);
+    }
   }
 
   onDestroy(): void {
@@ -132,6 +145,10 @@ export default class FlowAbility extends UIAbility {
 
   onForeground(): void {
     hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onForeground');
+    // 每次进入前台时限频协调提醒，补调度应用存活期间可能遗漏的定时器
+    TaskViewModel.maybeReconcile().catch((err: Error) => {
+      hilog.error(LOG_DOMAIN, 'FlowAbility', '前台提醒协调异常：%{public}s', JSON.stringify(err));
+    });
   }
 
   onBackground(): void {

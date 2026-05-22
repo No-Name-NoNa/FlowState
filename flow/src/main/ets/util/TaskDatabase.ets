@@ -39,6 +39,12 @@ const COL_REMINDER_MESSAGE: string = 'reminder_message';
 const COL_CREATED_AT: string = 'created_at';
 const COL_UPDATED_AT: string = 'updated_at';
 const COL_REMINDER_ID: string = 'reminder_id';
+/** 区间任务开始提醒类型 */
+const COL_START_REMINDER_TYPE: string = 'start_reminder_type';
+/** 区间任务开始提醒自定义消息 */
+const COL_START_REMINDER_MESSAGE: string = 'start_reminder_message';
+/** 区间任务开始提醒代理 ID */
+const COL_START_REMINDER_ID: string = 'start_reminder_id';
 
 /** 查询时返回的列名列表 */
 const ALL_COLUMNS: string[] = [
@@ -51,6 +57,7 @@ const ALL_COLUMNS: string[] = [
   COL_COMPLETION_TYPE, COL_COMPLETED_AT,
   COL_SOURCE_INBOX_ID, COL_IS_PINNED, COL_SORT_ORDER,
   COL_CREATED_AT, COL_UPDATED_AT, COL_REMINDER_ID,
+  COL_START_REMINDER_TYPE, COL_START_REMINDER_MESSAGE, COL_START_REMINDER_ID,
 ];
 
 /** 建表 SQL（IF NOT EXISTS 保证幂等） */
@@ -79,7 +86,10 @@ const CREATE_TABLE_SQL: string =
     `${COL_SORT_ORDER} INTEGER NOT NULL DEFAULT 0,` +
     `${COL_CREATED_AT} INTEGER NOT NULL,` +
     `${COL_UPDATED_AT} INTEGER NOT NULL,` +
-    `${COL_REMINDER_ID} INTEGER NOT NULL DEFAULT 0` +
+    `${COL_REMINDER_ID} INTEGER NOT NULL DEFAULT 0,` +
+    `${COL_START_REMINDER_TYPE} INTEGER NOT NULL DEFAULT 0,` +
+    `${COL_START_REMINDER_MESSAGE} TEXT NOT NULL DEFAULT '',` +
+    `${COL_START_REMINDER_ID} INTEGER NOT NULL DEFAULT 0` +
     `)`;
 
 /** 旧库迁移 SQL：为已有数据库添加 is_pinned 列（若已存在则报错被忽略） */
@@ -89,6 +99,18 @@ const ALTER_ADD_IS_PINNED_SQL: string =
 /** 旧库迁移 SQL：为已有数据库添加 reminder_id 列 */
 const ALTER_ADD_REMINDER_ID_SQL: string =
   `ALTER TABLE ${TABLE_NAME} ADD COLUMN ${COL_REMINDER_ID} INTEGER NOT NULL DEFAULT 0`;
+
+/** 旧库迁移 SQL：为已有数据库添加 start_reminder_type 列（区间任务） */
+const ALTER_ADD_START_REMINDER_TYPE_SQL: string =
+  `ALTER TABLE ${TABLE_NAME} ADD COLUMN ${COL_START_REMINDER_TYPE} INTEGER NOT NULL DEFAULT 0`;
+
+/** 旧库迁移 SQL：为已有数据库添加 start_reminder_message 列（区间任务） */
+const ALTER_ADD_START_REMINDER_MESSAGE_SQL: string =
+  `ALTER TABLE ${TABLE_NAME} ADD COLUMN ${COL_START_REMINDER_MESSAGE} TEXT NOT NULL DEFAULT ''`;
+
+/** 旧库迁移 SQL：为已有数据库添加 start_reminder_id 列（区间任务） */
+const ALTER_ADD_START_REMINDER_ID_SQL: string =
+  `ALTER TABLE ${TABLE_NAME} ADD COLUMN ${COL_START_REMINDER_ID} INTEGER NOT NULL DEFAULT 0`;
 
 /** 任务 RDB 数据库封装，所有方法均为静态 */
 export class TaskDatabase {
@@ -124,6 +146,24 @@ export class TaskDatabase {
       // 旧库迁移：添加 reminder_id 列
       try {
         await TaskDatabase.store.executeSql(ALTER_ADD_REMINDER_ID_SQL);
+      } catch {
+        // 列已存在时忽略错误
+      }
+      // 旧库迁移：添加 start_reminder_type 列（区间任务开始提醒）
+      try {
+        await TaskDatabase.store.executeSql(ALTER_ADD_START_REMINDER_TYPE_SQL);
+      } catch {
+        // 列已存在时忽略错误
+      }
+      // 旧库迁移：添加 start_reminder_message 列（区间任务开始提醒）
+      try {
+        await TaskDatabase.store.executeSql(ALTER_ADD_START_REMINDER_MESSAGE_SQL);
+      } catch {
+        // 列已存在时忽略错误
+      }
+      // 旧库迁移：添加 start_reminder_id 列（区间任务开始提醒）
+      try {
+        await TaskDatabase.store.executeSql(ALTER_ADD_START_REMINDER_ID_SQL);
       } catch {
         // 列已存在时忽略错误
       }
@@ -167,6 +207,9 @@ export class TaskDatabase {
       createdAt: rs.getLong(rs.getColumnIndex(COL_CREATED_AT)),
       updatedAt: rs.getLong(rs.getColumnIndex(COL_UPDATED_AT)),
       reminderId: rs.getLong(rs.getColumnIndex(COL_REMINDER_ID)),
+      startReminderType: rs.getLong(rs.getColumnIndex(COL_START_REMINDER_TYPE)),
+      startReminderMessage: rs.getString(rs.getColumnIndex(COL_START_REMINDER_MESSAGE)),
+      startReminderId: rs.getLong(rs.getColumnIndex(COL_START_REMINDER_ID)),
     };
   }
 
@@ -283,6 +326,9 @@ export class TaskDatabase {
       bucket[COL_CREATED_AT] = entry.createdAt;
       bucket[COL_UPDATED_AT] = entry.updatedAt;
       bucket[COL_REMINDER_ID] = entry.reminderId;
+      bucket[COL_START_REMINDER_TYPE] = entry.startReminderType;
+      bucket[COL_START_REMINDER_MESSAGE] = entry.startReminderMessage;
+      bucket[COL_START_REMINDER_ID] = entry.startReminderId;
       return await TaskDatabase.store.insert(TABLE_NAME, bucket);
     } catch (err) {
       hilog.error(LOG_DOMAIN, 'TaskDatabase', 'insert 失败：%{public}s', JSON.stringify(err));
@@ -324,12 +370,40 @@ export class TaskDatabase {
       bucket[COL_CREATED_AT] = entry.createdAt;
       bucket[COL_UPDATED_AT] = entry.updatedAt;
       bucket[COL_REMINDER_ID] = entry.reminderId;
+      bucket[COL_START_REMINDER_TYPE] = entry.startReminderType;
+      bucket[COL_START_REMINDER_MESSAGE] = entry.startReminderMessage;
+      bucket[COL_START_REMINDER_ID] = entry.startReminderId;
       const predicates: relationalStore.RdbPredicates = new relationalStore.RdbPredicates(TABLE_NAME);
       predicates.equalTo(COL_ID, entry.id);
       await TaskDatabase.store.update(bucket, predicates);
     } catch (err) {
       hilog.error(LOG_DOMAIN, 'TaskDatabase', 'update 失败（id=%{public}d）：%{public}s',
         entry.id, JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 仅更新任务的截止提醒 ID 和开始提醒 ID，不触碰其余字段。
+   * 用于启动时协调提醒的批量写回，避免构造完整 TaskEntry。
+   * @param id              任务主键
+   * @param reminderId      新的截止提醒 ID（0 表示无）
+   * @param startReminderId 新的开始提醒 ID（0 表示无）
+   */
+  static async updateReminderIds(id: number, reminderId: number, startReminderId: number): Promise<void> {
+    await TaskDatabase.ensureReady();
+    if (TaskDatabase.store === null) {
+      return;
+    }
+    try {
+      const bucket: relationalStore.ValuesBucket = {};
+      bucket[COL_REMINDER_ID] = reminderId;
+      bucket[COL_START_REMINDER_ID] = startReminderId;
+      const predicates: relationalStore.RdbPredicates = new relationalStore.RdbPredicates(TABLE_NAME);
+      predicates.equalTo(COL_ID, id);
+      await TaskDatabase.store.update(bucket, predicates);
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'TaskDatabase',
+        'updateReminderIds 失败（id=%{public}d）：%{public}s', id, JSON.stringify(err));
     }
   }
 
