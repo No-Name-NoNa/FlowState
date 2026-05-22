@@ -80,7 +80,6 @@
   "task_reminder_weak": "带音效",
   "task_reminder_popup": "只弹消息",
   "task_reminder_sound": "带音效",
-  "task_reminder_alarm": "闹钟提醒",
   "task_reminder_sound_label": "音效",
   "task_reminder_message_label": "自定义通知文字",
   "task_reminder_message_placeholder": "留空则使用全局默认…",
@@ -110,5 +109,6 @@
   "notif_sound_default": "系统默认",
   "notif_sound_chime": "清脆",
   "notif_sound_bell": "沉稳",
-  "notif_sound_ping": "提示音"
+  "notif_sound_ping": "提示音",
+  "notif_action_archive": "归档"
 }

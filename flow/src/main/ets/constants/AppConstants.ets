@@ -57,3 +57,15 @@ export const KEY_TASK_NEEDS_REFRESH: string = 'taskNeedsRefresh';
  * 不接受 Resource 类型，故此处以字符串常量统一管理，与 float.json 中的 0.5vp 保持一致。
  */
 export const DIVIDER_STROKE_WIDTH: string = '0.5vp';
+
+/** AppStorage：通知点击后需切换到的 Tab 索引（-1 = 无需切换） */
+export const KEY_NOTIFY_TAB_INDEX: string = 'notifyTabIndex';
+
+/** WantAgent 参数键：需要被归档的任务 ID（> 0 触发归档） */
+export const WANT_PARAM_ARCHIVE_TASK_ID: string = 'archiveTaskId';
+
+/** WantAgent 参数键：通知点击后需切换到的 Tab 索引 */
+export const WANT_PARAM_NOTIFY_TAB: string = 'notifyTabIndex';
+
+/** AppStorage：冷启动时待处理的归档任务 ID（0 = 无待处理归档） */
+export const KEY_PENDING_ARCHIVE_TASK_ID: string = 'pendingArchiveTaskId';

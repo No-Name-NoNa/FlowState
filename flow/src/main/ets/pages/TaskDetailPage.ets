@@ -152,13 +152,13 @@ struct TaskDetailPage {
   }
 
   /** 直接执行完成（DURATION 计时到达时自动调用，不弹窗） */
-  private executeComplete(): void {
+  private async executeComplete(): Promise<void> {
     this.stopTimer();
     this.currentStatus = TaskStatus.COMPLETED;
-    // 发送即时完成通知
+    // 发送即时完成通知（异步，携带 WantAgent 与归档操作按钮）
     const entry: TaskEntry | null = this.taskEntry;
     if (entry !== null) {
-      NotificationHelper.publishTaskDone(entry, PreferencesHelper.getNotifMessage());
+      await NotificationHelper.publishTaskDone(entry, PreferencesHelper.getNotifMessage());
     }
     router.back();
   }

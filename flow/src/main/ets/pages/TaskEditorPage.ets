@@ -88,8 +88,6 @@ struct TaskEditorPage {
   @State completionType: number = TaskCompletionType.MANUAL;
   /** 提醒类型（TaskReminderType 枚举值） */
   @State reminderType: number = TaskReminderType.NONE;
-  /** 任务专属提醒音效 ID，'' = 跟随全局 */
-  @State reminderSound: string = '';
   /** 任务专属通知消息文本，'' = 跟随全局 */
   @State reminderMessage: string = '';
   // ── 日期选择器临时状态 ───────────────────────────────────────────────────
@@ -160,7 +158,6 @@ struct TaskEditorPage {
         this.targetDurationStr = entry.targetDuration > 0 ? entry.targetDuration.toString() : '';
         this.completionType = entry.completionType;
         this.reminderType = entry.reminderType;
-        this.reminderSound = entry.reminderSound;
         this.reminderMessage = entry.reminderMessage;
       });
     } else if (p.fromInboxId !== undefined && p.fromInboxId > 0) {
@@ -333,7 +330,7 @@ struct TaskEditorPage {
         accumulatedDuration: this.originalEntry.accumulatedDuration,
         reminderType: this.reminderType,
         reminderOffset: this.originalEntry.reminderOffset,
-        reminderSound: this.reminderSound,
+        reminderSound: '',
         reminderMessage: this.reminderMessage,
         completionType: this.completionType,
         completedAt: this.originalEntry.completedAt,
@@ -361,7 +358,7 @@ struct TaskEditorPage {
         accumulatedDuration: 0,
         reminderType: this.reminderType,
         reminderOffset: 0,
-        reminderSound: this.reminderSound,
+        reminderSound: '',
         reminderMessage: this.reminderMessage,
         completionType: this.completionType,
         completedAt: 0,
@@ -879,16 +876,14 @@ struct TaskEditorPage {
 
             Flex({ wrap: FlexWrap.Wrap }) {
               ForEach(
-                [TaskReminderType.NONE, TaskReminderType.POPUP, TaskReminderType.SOUND, TaskReminderType.ALARM],
+                [TaskReminderType.NONE, TaskReminderType.POPUP, TaskReminderType.SOUND],
                 (type: number) => {
                   Text(I18nHelper.t(
                     type === TaskReminderType.NONE
                       ? I18nKeys.TASK_REMINDER_NONE
                       : type === TaskReminderType.POPUP
                       ? I18nKeys.TASK_REMINDER_POPUP
-                      : type === TaskReminderType.SOUND
-                        ? I18nKeys.TASK_REMINDER_SOUND
-                        : I18nKeys.TASK_REMINDER_ALARM,
+                      : I18nKeys.TASK_REMINDER_SOUND,
                     this.currentLanguage,
                   ))
                     .fontSize($r('app.float.font_size_label'))
@@ -916,9 +911,6 @@ struct TaskEditorPage {
                     .onClick(() => {
                       animateTo({ duration: 200, curve: Curve.EaseOut }, () => {
                         this.reminderType = type;
-                        if (type === TaskReminderType.NONE || type === TaskReminderType.POPUP) {
-                          this.reminderSound = '';
-                        }
                       });
                     })
                 },
@@ -935,75 +927,7 @@ struct TaskEditorPage {
           })
           .alignItems(VerticalAlign.Center)
 
-          // 音效选择（仅 SOUND / ALARM 时显示）
-          if (this.reminderType === TaskReminderType.SOUND || this.reminderType === TaskReminderType.ALARM) {
-            Divider()
-              .strokeWidth(DIVIDER_STROKE_WIDTH)
-              .color(this.themeTokens.colorDivider)
-              .width('100%')
-
-            Row({ space: $r('app.float.spacing_sm') }) {
-              Text(I18nHelper.t(I18nKeys.TASK_REMINDER_SOUND_LABEL, this.currentLanguage))
-                .fontSize($r('app.float.font_size_body'))
-                .fontColor(this.themeTokens.colorTextPrimary)
-                .width(80)
-                .flexShrink(0)
-
-              Flex({ wrap: FlexWrap.Wrap }) {
-                ForEach(
-                  ['', 'default', 'chime', 'bell', 'ping'],
-                  (soundId: string) => {
-                    Text(I18nHelper.t(
-                      soundId === '' ? I18nKeys.TASK_REMINDER_USE_GLOBAL
-                        : soundId === 'default' ? I18nKeys.NOTIF_SOUND_DEFAULT
-                        : soundId === 'chime' ? I18nKeys.NOTIF_SOUND_CHIME
-                          : soundId === 'bell' ? I18nKeys.NOTIF_SOUND_BELL
-                            : I18nKeys.NOTIF_SOUND_PING,
-                      this.currentLanguage,
-                    ))
-                      .fontSize($r('app.float.font_size_label'))
-                      .fontColor(
-                        this.reminderSound === soundId
-                          ? this.themeTokens.colorBackground
-                          : this.themeTokens.colorTextSecondary
-                      )
-                      .height($r('app.float.tag_chip_height'))
-                      .padding({
-                        left: $r('app.float.tag_chip_padding_h'),
-                        right: $r('app.float.tag_chip_padding_h'),
-                      })
-                      .margin({ right: $r('app.float.spacing_xs') })
-                      .backgroundColor(
-                        this.reminderSound === soundId ? this.themeTokens.colorAccent : Color.Transparent
-                      )
-                      .border({
-                        width: 0.5,
-                        color: this.reminderSound === soundId
-                          ? this.themeTokens.colorAccent
-                          : this.themeTokens.colorDivider,
-                        radius: 11,
-                      })
-                      .onClick(() => {
-                        animateTo({ duration: 200, curve: Curve.EaseOut }, () => {
-                          this.reminderSound = soundId;
-                        });
-                      })
-                  },
-                  (soundId: string) => soundId === '' ? 'global' : soundId,
-                )
-              }
-            }
-            .width('100%')
-            .padding({
-              left: $r('app.float.spacing_lg'),
-              right: $r('app.float.spacing_lg'),
-              top: $r('app.float.spacing_md'),
-              bottom: $r('app.float.spacing_md'),
-            })
-            .alignItems(VerticalAlign.Center)
-          }
-
-          // 自定义通知文字（POPUP / SOUND / ALARM 时显示）
+          // 自定义通知文字（POPUP / SOUND 时显示）
           if (this.reminderType !== TaskReminderType.NONE) {
             Divider()
               .strokeWidth(DIVIDER_STROKE_WIDTH)

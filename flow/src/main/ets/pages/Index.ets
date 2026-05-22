@@ -12,7 +12,12 @@ import { I18nKeys } from '../constants/I18nKeys';
 import { HomePage } from '../views/HomePage';
 import { TaskPage } from '../views/TaskPage';
 import { HistoryPage } from '../views/HistoryPage';
-import { KEY_APP_LANGUAGE, KEY_THEME_TOKENS, LANG_ZH_CN } from '../constants/AppConstants';
+import {
+  KEY_APP_LANGUAGE,
+  KEY_NOTIFY_TAB_INDEX,
+  KEY_THEME_TOKENS,
+  LANG_ZH_CN,
+} from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
 
@@ -26,6 +31,11 @@ struct MainPage {
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   /** 订阅主题变化，主题切换时触发组件立即重渲染 */
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
+  /** 订阅通知跳转信号，收到非负值时切换到对应 Tab */
+  @Watch('onNotifyTabChanged')
+  @StorageLink(KEY_NOTIFY_TAB_INDEX) notifyTabIndex: number = -1;
+  /** Tabs 编程控制器，用于响应通知点击后的 Tab 切换 */
+  private tabsCtrl: TabsController = new TabsController();
   // ── Tab 点击扩散特效状态 ─────────────────────────────────────────────────
   /** 当前正在播放扩散动效的 Tab 索引，-1 表示无动效 */
   @State pressedTabIndex: number = -1;
@@ -35,6 +45,19 @@ struct MainPage {
   @State spreadingOpacity: number = 0;
   /** 扩散矩形 scale 变换中心 X（vp），来自触摸点坐标 */
   @State spreadCenterX: number = 0;
+
+  /**
+   * 响应通知跳转信号：切换到指定 Tab 并消费信号（重置为 -1）。
+   * 由 FlowAbility.onNewWant / onCreate 通过 AppStorage 写入信号触发。
+   */
+  private onNotifyTabChanged(): void {
+    if (this.notifyTabIndex >= 0) {
+      this.tabsCtrl.changeIndex(this.notifyTabIndex);
+      this.currentTabIndex = this.notifyTabIndex;
+      // 消费后重置，避免下次进入页面重复触发
+      AppStorage.setOrCreate<number>(KEY_NOTIFY_TAB_INDEX, -1);
+    }
+  }
 
   /**
    * 触发指定 Tab 的横向矩形扩散点击特效。
@@ -121,7 +144,7 @@ struct MainPage {
   }
 
   build() {
-    Tabs({ barPosition: BarPosition.End, index: this.currentTabIndex }) {
+    Tabs({ barPosition: BarPosition.End, index: this.currentTabIndex, controller: this.tabsCtrl }) {
       // ── Tab 0：收集箱 ─────────────────────────────────────────────────────
       TabContent() {
         HomePage()
@@ -170,4 +193,3 @@ struct MainPage {
     .height('100%')
   }
 }
-

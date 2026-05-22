@@ -125,9 +125,10 @@ export enum I18nKeys {
   // 任务编辑页提醒区（新增项）
   TASK_REMINDER_POPUP = 'task_reminder_popup',
   TASK_REMINDER_SOUND = 'task_reminder_sound',
-  TASK_REMINDER_ALARM = 'task_reminder_alarm',
   TASK_REMINDER_SOUND_LABEL = 'task_reminder_sound_label',
   TASK_REMINDER_MESSAGE_LABEL = 'task_reminder_message_label',
   TASK_REMINDER_MESSAGE_PLACEHOLDER = 'task_reminder_message_placeholder',
-  TASK_REMINDER_USE_GLOBAL = 'task_reminder_use_global'
+  TASK_REMINDER_USE_GLOBAL = 'task_reminder_use_global',
+  // 通知操作按钮（归档、查看）
+  NOTIF_ACTION_ARCHIVE = 'notif_action_archive',
 }

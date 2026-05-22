@@ -2,13 +2,22 @@ import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.Ab
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { notificationManager } from '@kit.NotificationKit';
-import { KEY_APP_LANGUAGE, LOG_DOMAIN } from '../constants/AppConstants';
+import {
+  KEY_APP_LANGUAGE,
+  KEY_NOTIFY_TAB_INDEX,
+  KEY_PENDING_ARCHIVE_TASK_ID,
+  KEY_TASK_NEEDS_REFRESH,
+  LOG_DOMAIN,
+  WANT_PARAM_ARCHIVE_TASK_ID,
+  WANT_PARAM_NOTIFY_TAB,
+} from '../constants/AppConstants';
 import { I18nHelper } from '../util/I18nHelper';
 import { InboxDatabase } from '../util/InboxDatabase';
 import { TaskDatabase } from '../util/TaskDatabase';
 import { PreferencesHelper } from '../util/PreferencesHelper';
 import { ThemeHelper } from '../util/ThemeHelper';
 import { NotificationSettingsViewModel } from '../viewmodel/NotificationSettingsViewModel';
+import { TaskViewModel } from '../viewmodel/TaskViewModel';
 
 export default class FlowAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
@@ -41,7 +50,54 @@ export default class FlowAbility extends UIAbility {
     // 初始化任务 RDB 数据库（异步，不阻塞页面加载）
     TaskDatabase.init(this.context);
 
+    // 冷启动时读取 Want 参数：若携带归档任务 ID，暂存到 AppStorage 等 DB 加载完后处理
+    this.handleWantParams(want, false);
+
     hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onCreate');
+  }
+
+  /**
+   * App 处于后台或已销毁 Ability 被通知再次唤醒时触发（热启动）。
+   * 此时 DB 已就绪，可直接执行归档操作。
+   */
+  onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onNewWant');
+    this.handleWantParams(want, true);
+  }
+
+  /**
+   * 解析 Want 参数并按冷/热启动分别处理。
+   * 热启动（isHot=true）：DB 已就绪，直接执行归档并触发列表刷新。
+   * 冷启动（isHot=false）：DB 尚未加载，将 archiveTaskId 写入 AppStorage
+   *                        等 TaskPage 加载完数据后再处理。
+   */
+  private handleWantParams(want: Want, isHot: boolean): void {
+    if (want.parameters === undefined) {
+      return;
+    }
+
+    // 读取归档任务 ID（0 或 undefined 表示无需归档）
+    const archiveId: number = want.parameters[WANT_PARAM_ARCHIVE_TASK_ID] as number ?? 0;
+    if (archiveId > 0) {
+      if (isHot) {
+        // 热启动：DB 就绪，直接归档并触发列表刷新
+        TaskViewModel.archive(archiveId).then(() => {
+          AppStorage.setOrCreate<boolean>(KEY_TASK_NEEDS_REFRESH, true);
+        }).catch((err: Error) => {
+          hilog.error(LOG_DOMAIN, 'FlowAbility', '热启动归档失败（taskId=%{public}d）：%{public}s',
+            archiveId, JSON.stringify(err));
+        });
+      } else {
+        // 冷启动：DB 未就绪，暂存 ID，等 TaskPage 加载完后处理
+        AppStorage.setOrCreate<number>(KEY_PENDING_ARCHIVE_TASK_ID, archiveId);
+      }
+    }
+
+    // 读取 Tab 切换参数，无论冷热均写入 AppStorage
+    const tabIdx: number = want.parameters[WANT_PARAM_NOTIFY_TAB] as number ?? -1;
+    if (tabIdx >= 0) {
+      AppStorage.setOrCreate<number>(KEY_NOTIFY_TAB_INDEX, tabIdx);
+    }
   }
 
   onDestroy(): void {

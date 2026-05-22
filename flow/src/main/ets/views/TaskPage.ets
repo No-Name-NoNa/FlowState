@@ -10,6 +10,7 @@ import { I18nKeys } from '../constants/I18nKeys';
 import {
   DIVIDER_STROKE_WIDTH,
   KEY_APP_LANGUAGE,
+  KEY_PENDING_ARCHIVE_TASK_ID,
   KEY_TASK_NEEDS_REFRESH,
   KEY_THEME_TOKENS,
   LANG_ZH_CN,
@@ -59,7 +60,19 @@ export struct TaskPage {
   /** 从 DB 加载数据，刷新所有列表状态 */
   private loadData(): void {
     TaskViewModel.load().then(() => {
-      this.refreshTasks();
+      // 冷启动归档处理：FlowAbility.onCreate 发现通知归档参数时
+      // 将任务 ID 暂存到 AppStorage，此处 DB 就绪后执行实际归档
+      const pendingId: number = AppStorage.get<number>(KEY_PENDING_ARCHIVE_TASK_ID) ?? 0;
+      if (pendingId > 0) {
+        AppStorage.setOrCreate<number>(KEY_PENDING_ARCHIVE_TASK_ID, 0);
+        TaskViewModel.archive(pendingId).then(() => {
+          TaskViewModel.load().then(() => {
+            this.refreshTasks();
+          });
+        });
+      } else {
+        this.refreshTasks();
+      }
     });
   }
 

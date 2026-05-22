@@ -3,7 +3,7 @@
  * 通知发送与调度代理提醒的静态工具类。
  *
  * 功能：
- *  1. publishTaskDone(task, globalMsg)  — 任务计时完成时发即时通知
+ *  1. publishTaskDone(task, globalMsg)  — 任务计时完成时发即时通知，附带 WantAgent 与归档操作按钮
  *  2. scheduleDeadlineReminder(task)    — 为有截止时间的任务注册后台提醒代理
  *  3. cancelReminder(reminderId)        — 取消已注册的提醒代理
  *
@@ -11,21 +11,26 @@
  *  NONE  → 不发送任何通知
  *  POPUP → 静默通知（CONTENT_INFORMATION 频道，无声音）
  *  SOUND → 带音效通知（SOCIAL_COMMUNICATION 频道）
- *  ALARM → 强提醒（SOCIAL_COMMUNICATION 频道 + 长振铃）
  */
 import { notificationManager } from '@kit.NotificationKit';
 import { reminderAgentManager } from '@kit.BackgroundTasksKit';
+import { wantAgent, WantAgent } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { LOG_DOMAIN } from '../constants/AppConstants';
+import {
+  KEY_APP_LANGUAGE, LANG_ZH_CN, LOG_DOMAIN,
+} from '../constants/AppConstants';
 import { getNextDeadline, TaskEntry, TaskReminderType } from '../model/TaskEntry';
 
-/** 应用包名，用于 reminderAgentManager 的 WantAgent 配置 */
+/** 应用包名，用于 WantAgent 与 reminderAgentManager 的配置 */
 const BUNDLE_NAME: string = 'moe.gensoukyo.flowmark';
 /** 应用主 Ability 名称 */
 const ABILITY_NAME: string = 'FlowAbility';
-
 /** 通知日志标签 */
 const TAG: string = 'NotificationHelper';
+/** 点击通知后跳转的历史 Tab 索引 */
+const HISTORY_TAB_INDEX: number = 2;
+/** 归档操作 WantAgent 的请求码偏移量（避免与主 WantAgent 冲突） */
+const ARCHIVE_REQUEST_CODE_OFFSET: number = 10000;
 
 export class NotificationHelper {
   /**
@@ -34,19 +39,20 @@ export class NotificationHelper {
    *  - NONE  → 跳过
    *  - POPUP → 静默通知（CONTENT_INFORMATION）
    *  - SOUND → 带音效通知（SOCIAL_COMMUNICATION）
-   *  - ALARM → 强提醒（SOCIAL_COMMUNICATION，ringDuration 由 reminderAgent 处理，此处同 SOUND）
+   * 通知携带 WantAgent：点击正文跳转历史页；展开后可点击「归档」操作按钮。
    *
    * @param task      已完成的任务条目
    * @param globalMsg 全局默认通知消息文字（任务未配置 reminderMessage 时用作兜底）
    */
-  static publishTaskDone(task: TaskEntry, globalMsg: string): void {
+  static async publishTaskDone(task: TaskEntry, globalMsg: string): Promise<void> {
     if (task.reminderType === TaskReminderType.NONE) {
       return;
     }
 
-    // 消息文字：任务自定义 > 全局兜底 > 空字符串兜底
-    const msgText: string = task.reminderMessage !== '' ? task.reminderMessage
-      : (globalMsg !== '' ? globalMsg : task.title);
+    // 消息文字：任务自定义 > 全局兜底 > 「标题 已完成」
+    const msgText: string = task.reminderMessage !== ''
+      ? task.reminderMessage
+      : (globalMsg !== '' ? globalMsg : (task.title + ' 已完成'));
 
     // 根据提醒类型选择频道
     let slotType: notificationManager.SlotType = notificationManager.SlotType.SOCIAL_COMMUNICATION;
@@ -54,6 +60,47 @@ export class NotificationHelper {
       slotType = notificationManager.SlotType.CONTENT_INFORMATION;
     }
 
+    // 构建点击通知正文时跳转到历史 Tab 的 WantAgent
+    let tapWantAgent: WantAgent | null = null;
+    try {
+      tapWantAgent = await wantAgent.getWantAgent({
+        wants: [{
+          bundleName: BUNDLE_NAME,
+          abilityName: ABILITY_NAME,
+          parameters: { notifyTabIndex: HISTORY_TAB_INDEX },
+        }],
+        actionType: wantAgent.OperationType.START_ABILITY,
+        requestCode: task.id,
+        actionFlags: [wantAgent.WantAgentFlags.UPDATE_PRESENT_FLAG],
+      });
+    } catch (err) {
+      hilog.warn(LOG_DOMAIN, TAG, '创建点击跳转 WantAgent 失败（taskId=%{public}d）：%{public}s',
+        task.id, JSON.stringify(err));
+    }
+
+    // 构建「归档」操作按钮的 WantAgent
+    let archiveWantAgent: WantAgent | null = null;
+    try {
+      archiveWantAgent = await wantAgent.getWantAgent({
+        wants: [{
+          bundleName: BUNDLE_NAME,
+          abilityName: ABILITY_NAME,
+          parameters: { archiveTaskId: task.id },
+        }],
+        actionType: wantAgent.OperationType.START_ABILITY,
+        requestCode: task.id + ARCHIVE_REQUEST_CODE_OFFSET,
+        actionFlags: [wantAgent.WantAgentFlags.UPDATE_PRESENT_FLAG],
+      });
+    } catch (err) {
+      hilog.warn(LOG_DOMAIN, TAG, '创建归档 WantAgent 失败（taskId=%{public}d）：%{public}s',
+        task.id, JSON.stringify(err));
+    }
+
+    // 根据当前语言设置操作按钮文字
+    const currentLang: string = AppStorage.get<string>(KEY_APP_LANGUAGE) ?? LANG_ZH_CN;
+    const archiveBtnTitle: string = currentLang.startsWith('zh') ? '归档' : 'Archive';
+
+    // 组装通知请求
     const request: notificationManager.NotificationRequest = {
       id: task.id,
       content: {
@@ -65,6 +112,19 @@ export class NotificationHelper {
       },
       notificationSlotType: slotType,
     };
+
+    // 注入 WantAgent（若创建成功）
+    if (tapWantAgent !== null) {
+      request.wantAgent = tapWantAgent;
+    }
+
+    // 注入归档操作按钮（若 WantAgent 创建成功）
+    if (archiveWantAgent !== null) {
+      request.actionButtons = [{
+        title: archiveBtnTitle,
+        wantAgent: archiveWantAgent,
+      }];
+    }
 
     notificationManager.publish(request).catch((err: Error) => {
       hilog.error(LOG_DOMAIN, TAG, '发送即时通知失败（taskId=%{public}d）：%{public}s',
@@ -110,15 +170,12 @@ export class NotificationHelper {
     // 消息文字
     const msgText: string = task.reminderMessage !== '' ? task.reminderMessage : task.title;
 
-    // ALARM 类型使用较长振铃时长（60 秒）
-    const ringDuration: number = task.reminderType === TaskReminderType.ALARM ? 60 : 5;
-
     const reminderReq: reminderAgentManager.ReminderRequestCalendar = {
       reminderType: reminderAgentManager.ReminderType.REMINDER_TYPE_CALENDAR,
       dateTime: localDateTime,
       title: task.title,
       content: msgText,
-      ringDuration: ringDuration,
+      ringDuration: 5,
       tapDismissed: true,
       wantAgent: {
         pkgName: BUNDLE_NAME,

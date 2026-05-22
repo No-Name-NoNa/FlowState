@@ -80,7 +80,6 @@
   "task_reminder_weak": "With Sound",
   "task_reminder_popup": "Message Only",
   "task_reminder_sound": "With Sound",
-  "task_reminder_alarm": "Alarm",
   "task_reminder_sound_label": "Sound",
   "task_reminder_message_label": "Custom Notification Text",
   "task_reminder_message_placeholder": "Leave empty to use global default…",
@@ -110,5 +109,6 @@
   "notif_sound_default": "System Default",
   "notif_sound_chime": "Chime",
   "notif_sound_bell": "Bell",
-  "notif_sound_ping": "Ping"
+  "notif_sound_ping": "Ping",
+  "notif_action_archive": "Archive"
 }
