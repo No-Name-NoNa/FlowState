@@ -50,21 +50,6 @@ struct FontSizePage {
     this.sliderValue = isNaN(scale) ? 100 : Math.round(scale * 100);
   }
 
-  /** 将当前 sliderValue 转换为缩放倍数（保留两位小数） */
-  private toScale(value: number): number {
-    return Math.round(value) / 100;
-  }
-
-  /** 将缩放倍数格式化为百分比字符串，如 "100%" */
-  private formatPct(value: number): string {
-    return Math.round(value).toString() + '%';
-  }
-
-  /** 判断某个快捷预设是否为当前选中值 */
-  private isPresetActive(presetScale: number): boolean {
-    return Math.abs(this.sliderValue - Math.round(presetScale * 100)) < 1;
-  }
-
   build() {
     Column() {
       // ── 顶部导航栏 ────────────────────────────────────────────────────────
@@ -287,5 +272,20 @@ struct FontSizePage {
     .width('100%')
     .height('100%')
     .backgroundColor(this.themeTokens.colorBackground)
+  }
+
+  /** 将当前 sliderValue 转换为缩放倍数（保留两位小数） */
+  private toScale(value: number): number {
+    return Math.round(value) / 100;
+  }
+
+  /** 将缩放倍数格式化为百分比字符串，如 "100%" */
+  private formatPct(value: number): string {
+    return Math.round(value).toString() + '%';
+  }
+
+  /** 判断某个快捷预设是否为当前选中值 */
+  private isPresetActive(presetScale: number): boolean {
+    return Math.abs(this.sliderValue - Math.round(presetScale * 100)) < 1;
   }
 }

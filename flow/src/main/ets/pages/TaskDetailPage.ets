@@ -36,6 +36,7 @@ import { parseTags } from '../model/InboxEntry';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
 import { NotificationHelper } from '../util/NotificationHelper';
 import { PreferencesHelper } from '../util/PreferencesHelper';
+import { TimerSessionDatabase } from '../util/TimerSessionDatabase';
 
 /** router.getParams() 的参数结构 */
 interface DetailRouterParams {
@@ -69,6 +70,8 @@ struct TaskDetailPage {
   private taskId: number = 0;
   /** setInterval 返回的计时器 ID，-1 表示未运行 */
   private timerId: number = -1;
+  /** 当前计时分段在 DB 中的 session ID，0 表示无活跃分段 */
+  private currentTimerSessionId: number = 0;
 
   aboutToAppear(): void {
     const params = router.getParams() as DetailRouterParams;
@@ -82,6 +85,11 @@ struct TaskDetailPage {
   }
 
   aboutToDisappear(): void {
+    // 关闭未结束的计时分段
+    if (this.currentTimerSessionId > 0) {
+      TimerSessionDatabase.closeSession(this.currentTimerSessionId, Date.now());
+      this.currentTimerSessionId = 0;
+    }
     // 停止计时器，保存进度后通知列表页刷新（fire-and-forget）
     if (this.timerId !== -1) {
       clearInterval(this.timerId);
@@ -95,198 +103,6 @@ struct TaskDetailPage {
       .then(() => {
         AppStorage.setOrCreate(KEY_TASK_NEEDS_REFRESH, true);
       });
-  }
-
-  /** 触发指定行的横向矩形扩散特效 */
-  private triggerSpread(rowIndex: number, touchX: number): void {
-    SpreadEffectHelper.trigger(
-      (idx) => {
-        this.pressedRowIndex = idx;
-      },
-      (scale, opacity) => {
-        this.rowSpreadScale = scale;
-        this.rowSpreadOpacity = opacity;
-      },
-      (x) => {
-        this.spreadCenterX = x;
-      },
-      rowIndex,
-      touchX,
-    );
-  }
-
-  /** 计算总累计时长（已保存 + 本次会话） */
-  private totalAccumulatedMs(): number {
-    const entry: TaskEntry | null = this.taskEntry;
-    if (entry === null) {
-      return this.sessionElapsedMs;
-    }
-    return entry.accumulatedDuration + this.sessionElapsedMs;
-  }
-
-  /** 判断当前任务是否为时长完成类型且目标有效 */
-  private isDurationTask(): boolean {
-    const entry: TaskEntry | null = this.taskEntry;
-    return entry !== null
-      && entry.completionType === TaskCompletionType.DURATION
-      && entry.targetDuration > 0;
-  }
-
-  /** 启动计时器 */
-  private startTimer(): void {
-    if (this.isTimerRunning) {
-      return;
-    }
-    this.isTimerRunning = true;
-    // 进入进行中状态
-    if (this.currentStatus === TaskStatus.PENDING) {
-      this.currentStatus = TaskStatus.IN_PROGRESS;
-    }
-    this.timerId = setInterval(() => {
-      this.sessionElapsedMs += 1000;
-      // DURATION 类型：达到目标时长后自动完成
-      const entry: TaskEntry | null = this.taskEntry;
-      if (entry !== null && entry.completionType === TaskCompletionType.DURATION && entry.targetDuration > 0) {
-        if (this.totalAccumulatedMs() >= entry.targetDuration * 60000) {
-          this.executeComplete();
-        }
-      }
-    }, 1000);
-  }
-
-  /** 停止计时器（不改变状态，不保存） */
-  private stopTimer(): void {
-    if (this.timerId !== -1) {
-      clearInterval(this.timerId);
-      this.timerId = -1;
-    }
-    this.isTimerRunning = false;
-  }
-
-  /** 直接执行完成（DURATION 计时到达时自动调用，不弹窗） */
-  private async executeComplete(): Promise<void> {
-    this.stopTimer();
-    this.currentStatus = TaskStatus.COMPLETED;
-    // 发送即时完成通知（异步，携带 WantAgent 与归档操作按钮）
-    const entry: TaskEntry | null = this.taskEntry;
-    if (entry !== null) {
-      await NotificationHelper.publishTaskDone(entry, PreferencesHelper.getNotifMessage());
-    }
-    router.back();
-  }
-
-  /** 直接执行归档 */
-  private executeArchive(): void {
-    this.stopTimer();
-    this.currentStatus = TaskStatus.ARCHIVED;
-    router.back();
-  }
-
-  /** 手动标记完成：弹出二次确认弹窗 */
-  private confirmComplete(): void {
-    AlertDialog.show({
-      title: I18nHelper.t(I18nKeys.TASK_DETAIL_COMPLETE, this.lang),
-      message: I18nHelper.t(I18nKeys.DIALOG_COMPLETE_MSG, this.lang),
-      primaryButton: {
-        value: I18nHelper.t(I18nKeys.DIALOG_CONFIRM, this.lang),
-        action: () => {
-          this.executeComplete();
-        },
-      },
-      secondaryButton: {
-        value: I18nHelper.t(I18nKeys.DIALOG_CANCEL, this.lang),
-        action: () => {
-        },
-      },
-      autoCancel: true,
-    });
-  }
-
-  /** 手动归档：弹出二次确认弹窗 */
-  private confirmArchive(): void {
-    AlertDialog.show({
-      title: I18nHelper.t(I18nKeys.TASK_DETAIL_ARCHIVE, this.lang),
-      message: I18nHelper.t(I18nKeys.DIALOG_ARCHIVE_MSG, this.lang),
-      primaryButton: {
-        value: I18nHelper.t(I18nKeys.DIALOG_CONFIRM, this.lang),
-        action: () => {
-          this.executeArchive();
-        },
-      },
-      secondaryButton: {
-        value: I18nHelper.t(I18nKeys.DIALOG_CANCEL, this.lang),
-        action: () => {
-        },
-      },
-      autoCancel: true,
-    });
-  }
-
-  /** 直接执行重置：停止计时并清零所有累计时长 */
-  private executeReset(): void {
-    this.stopTimer();
-    // 清零本次会话时长（@State 变化触发 UI 刷新）
-    this.sessionElapsedMs = 0;
-    // 同时清零已持久化的历史累计时长；re-render 由 sessionElapsedMs 触发，届时读到新值
-    const entry: TaskEntry | null = this.taskEntry;
-    if (entry !== null) {
-      entry.accumulatedDuration = 0;
-    }
-    // 恢复为待办状态
-    if (this.currentStatus === TaskStatus.IN_PROGRESS) {
-      this.currentStatus = TaskStatus.PENDING;
-    }
-  }
-
-  /** 重置计时：弹出二次确认弹窗 */
-  private confirmReset(): void {
-    AlertDialog.show({
-      title: I18nHelper.t(I18nKeys.TASK_DETAIL_RESET, this.lang),
-      message: I18nHelper.t(I18nKeys.DIALOG_RESET_MSG, this.lang),
-      primaryButton: {
-        value: I18nHelper.t(I18nKeys.DIALOG_CONFIRM, this.lang),
-        action: () => {
-          this.executeReset();
-        },
-      },
-      secondaryButton: {
-        value: I18nHelper.t(I18nKeys.DIALOG_CANCEL, this.lang),
-        action: () => {
-        },
-      },
-      autoCancel: true,
-    });
-  }
-
-  /** 将毫秒格式化为 HH:MM:SS */
-  private formatElapsed(ms: number): string {
-    const totalSec: number = Math.floor(ms / 1000);
-    const h: number = Math.floor(totalSec / 3600);
-    const m: number = Math.floor((totalSec % 3600) / 60);
-    const s: number = totalSec % 60;
-    return this.padTwo(h) + ':' + this.padTwo(m) + ':' + this.padTwo(s);
-  }
-
-  /** 数字补齐为两位字符串 */
-  private padTwo(n: number): string {
-    if (n < 10) {
-      return '0' + n.toString();
-    }
-    return n.toString();
-  }
-
-  /** 计算 DURATION 类型的进度值（0 ~ 100） */
-  private getDurationProgressValue(): number {
-    const entry: TaskEntry | null = this.taskEntry;
-    if (entry === null || entry.targetDuration <= 0) {
-      return 0;
-    }
-    const targetMs: number = entry.targetDuration * 60000;
-    const ratio: number = this.totalAccumulatedMs() / targetMs;
-    if (ratio >= 1.0) {
-      return 100;
-    }
-    return Math.floor(ratio * 100);
   }
 
   build() {
@@ -737,5 +553,207 @@ struct TaskDetailPage {
     .width('100%')
     .height('100%')
     .backgroundColor(this.themeTokens.colorBackground)
+  }
+
+  /** 触发指定行的横向矩形扩散特效 */
+  private triggerSpread(rowIndex: number, touchX: number): void {
+    SpreadEffectHelper.trigger(
+      (idx) => {
+        this.pressedRowIndex = idx;
+      },
+      (scale, opacity) => {
+        this.rowSpreadScale = scale;
+        this.rowSpreadOpacity = opacity;
+      },
+      (x) => {
+        this.spreadCenterX = x;
+      },
+      rowIndex,
+      touchX,
+    );
+  }
+
+  /** 计算总累计时长（已保存 + 本次会话） */
+  private totalAccumulatedMs(): number {
+    const entry: TaskEntry | null = this.taskEntry;
+    if (entry === null) {
+      return this.sessionElapsedMs;
+    }
+    return entry.accumulatedDuration + this.sessionElapsedMs;
+  }
+
+  /** 判断当前任务是否为时长完成类型且目标有效 */
+  private isDurationTask(): boolean {
+    const entry: TaskEntry | null = this.taskEntry;
+    return entry !== null
+      && entry.completionType === TaskCompletionType.DURATION
+      && entry.targetDuration > 0;
+  }
+
+  /** 启动计时器 */
+  private startTimer(): void {
+    if (this.isTimerRunning) {
+      return;
+    }
+    this.isTimerRunning = true;
+    // 进入进行中状态
+    if (this.currentStatus === TaskStatus.PENDING) {
+      this.currentStatus = TaskStatus.IN_PROGRESS;
+    }
+    // 记录本次计时分段的开始时间
+    const startAt: number = Date.now();
+    TimerSessionDatabase.insertSession(this.taskId, startAt).then((sessionId: number) => {
+      this.currentTimerSessionId = sessionId;
+    });
+    this.timerId = setInterval(() => {
+      this.sessionElapsedMs += 1000;
+      // DURATION 类型：达到目标时长后自动完成
+      const entry: TaskEntry | null = this.taskEntry;
+      if (entry !== null && entry.completionType === TaskCompletionType.DURATION && entry.targetDuration > 0) {
+        if (this.totalAccumulatedMs() >= entry.targetDuration * 60000) {
+          this.executeComplete();
+        }
+      }
+    }, 1000);
+  }
+
+  /** 停止计时器（不改变状态，不保存） */
+  private stopTimer(): void {
+    if (this.timerId !== -1) {
+      clearInterval(this.timerId);
+      this.timerId = -1;
+    }
+    this.isTimerRunning = false;
+    // 关闭当前计时分段
+    if (this.currentTimerSessionId > 0) {
+      TimerSessionDatabase.closeSession(this.currentTimerSessionId, Date.now());
+      this.currentTimerSessionId = 0;
+    }
+  }
+
+  /** 直接执行完成（DURATION 计时到达时自动调用，不弹窗） */
+  private async executeComplete(): Promise<void> {
+    this.stopTimer();
+    this.currentStatus = TaskStatus.COMPLETED;
+    // 发送即时完成通知（异步，携带 WantAgent 与归档操作按钮）
+    const entry: TaskEntry | null = this.taskEntry;
+    if (entry !== null) {
+      await NotificationHelper.publishTaskDone(entry, PreferencesHelper.getNotifMessage());
+    }
+    router.back();
+  }
+
+  /** 直接执行归档 */
+  private executeArchive(): void {
+    this.stopTimer();
+    this.currentStatus = TaskStatus.ARCHIVED;
+    router.back();
+  }
+
+  /** 手动标记完成：弹出二次确认弹窗 */
+  private confirmComplete(): void {
+    AlertDialog.show({
+      title: I18nHelper.t(I18nKeys.TASK_DETAIL_COMPLETE, this.lang),
+      message: I18nHelper.t(I18nKeys.DIALOG_COMPLETE_MSG, this.lang),
+      primaryButton: {
+        value: I18nHelper.t(I18nKeys.DIALOG_CONFIRM, this.lang),
+        action: () => {
+          this.executeComplete();
+        },
+      },
+      secondaryButton: {
+        value: I18nHelper.t(I18nKeys.DIALOG_CANCEL, this.lang),
+        action: () => {
+        },
+      },
+      autoCancel: true,
+    });
+  }
+
+  /** 手动归档：弹出二次确认弹窗 */
+  private confirmArchive(): void {
+    AlertDialog.show({
+      title: I18nHelper.t(I18nKeys.TASK_DETAIL_ARCHIVE, this.lang),
+      message: I18nHelper.t(I18nKeys.DIALOG_ARCHIVE_MSG, this.lang),
+      primaryButton: {
+        value: I18nHelper.t(I18nKeys.DIALOG_CONFIRM, this.lang),
+        action: () => {
+          this.executeArchive();
+        },
+      },
+      secondaryButton: {
+        value: I18nHelper.t(I18nKeys.DIALOG_CANCEL, this.lang),
+        action: () => {
+        },
+      },
+      autoCancel: true,
+    });
+  }
+
+  /** 直接执行重置：停止计时并清零所有累计时长 */
+  private executeReset(): void {
+    this.stopTimer();
+    // 清零本次会话时长（@State 变化触发 UI 刷新）
+    this.sessionElapsedMs = 0;
+    // 同时清零已持久化的历史累计时长；re-render 由 sessionElapsedMs 触发，届时读到新值
+    const entry: TaskEntry | null = this.taskEntry;
+    if (entry !== null) {
+      entry.accumulatedDuration = 0;
+    }
+    // 恢复为待办状态
+    if (this.currentStatus === TaskStatus.IN_PROGRESS) {
+      this.currentStatus = TaskStatus.PENDING;
+    }
+  }
+
+  /** 重置计时：弹出二次确认弹窗 */
+  private confirmReset(): void {
+    AlertDialog.show({
+      title: I18nHelper.t(I18nKeys.TASK_DETAIL_RESET, this.lang),
+      message: I18nHelper.t(I18nKeys.DIALOG_RESET_MSG, this.lang),
+      primaryButton: {
+        value: I18nHelper.t(I18nKeys.DIALOG_CONFIRM, this.lang),
+        action: () => {
+          this.executeReset();
+        },
+      },
+      secondaryButton: {
+        value: I18nHelper.t(I18nKeys.DIALOG_CANCEL, this.lang),
+        action: () => {
+        },
+      },
+      autoCancel: true,
+    });
+  }
+
+  /** 将毫秒格式化为 HH:MM:SS */
+  private formatElapsed(ms: number): string {
+    const totalSec: number = Math.floor(ms / 1000);
+    const h: number = Math.floor(totalSec / 3600);
+    const m: number = Math.floor((totalSec % 3600) / 60);
+    const s: number = totalSec % 60;
+    return this.padTwo(h) + ':' + this.padTwo(m) + ':' + this.padTwo(s);
+  }
+
+  /** 数字补齐为两位字符串 */
+  private padTwo(n: number): string {
+    if (n < 10) {
+      return '0' + n.toString();
+    }
+    return n.toString();
+  }
+
+  /** 计算 DURATION 类型的进度值（0 ~ 100） */
+  private getDurationProgressValue(): number {
+    const entry: TaskEntry | null = this.taskEntry;
+    if (entry === null || entry.targetDuration <= 0) {
+      return 0;
+    }
+    const targetMs: number = entry.targetDuration * 60000;
+    const ratio: number = this.totalAccumulatedMs() / targetMs;
+    if (ratio >= 1.0) {
+      return 100;
+    }
+    return Math.floor(ratio * 100);
   }
 }

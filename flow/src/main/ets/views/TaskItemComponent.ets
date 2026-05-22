@@ -65,9 +65,10 @@ export struct TaskItemComponent {
   @Prop entryAccumulatedDuration: number = 0;
   /** 目标专注时长（分钟），0 表示无目标 */
   @Prop entryTargetDuration: number = 0;
-  /** 数据变化回调：完成/删除操作后通知父组件刷新 */
-  onDataChanged: () => void = () => {
-  };
+  /** 总节点数（MULTI_NODE / MULTI_NODE_INTERVAL 类型有效，其他传 0） */
+  @Prop entryTotalNodes: number = 0;
+  /** 当前活跃节点索引（MULTI_NODE / MULTI_NODE_INTERVAL 类型有效） */
+  @Prop entryCurrentNodeIndex: number = 0;
   @StorageLink(KEY_APP_LANGUAGE) private lang: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) private themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
   @StorageLink(KEY_FONT_TOKENS) private fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
@@ -76,34 +77,9 @@ export struct TaskItemComponent {
   @State private spreadOpacity: number = 0;
   @State private spreadCenterX: number = 0;
 
-  /** 触发横向扩散特效（Rect 始终挂载） */
-  private triggerSpread(touchX: number): void {
-    SpreadEffectHelper.trigger(
-      (_idx: number) => {
-      },
-      (scale: number, opacity: number) => {
-        this.spreadScale = scale;
-        this.spreadOpacity = opacity;
-      },
-      (x: number) => {
-        this.spreadCenterX = x;
-      },
-      0,
-      touchX,
-    );
-  }
-
-  /** 计算 DURATION 类型的完成进度百分比（0~100） */
-  private getProgressPercent(): number {
-    if (this.entryTargetDuration <= 0) {
-      return 0;
-    }
-    const ratio: number = this.entryAccumulatedDuration / (this.entryTargetDuration * 60000);
-    if (ratio >= 1.0) {
-      return 100;
-    }
-    return Math.floor(ratio * 100);
-  }
+  /** 数据变化回调：完成/删除操作后通知父组件刷新 */
+  onDataChanged: () => void = () => {
+  };
 
   /** 三点菜单内容 */
   @Builder
@@ -198,7 +174,6 @@ export struct TaskItemComponent {
             message: I18nHelper.t(I18nKeys.DIALOG_DELETE_MSG, this.lang),
             primaryButton: {
               value: I18nHelper.t(I18nKeys.DIALOG_CONFIRM, this.lang),
-              fontColor: this.themeTokens.colorTextPrimary,
               action: () => {
                 TaskViewModel.remove(this.entryId).then(() => {
                   this.onDataChanged();
@@ -272,6 +247,40 @@ export struct TaskItemComponent {
                 })
                 .flexShrink(0)
             }
+
+            // 循环标识 chip（周期性任务）
+            if (this.entryScheduleType === TaskScheduleType.RECURRING) {
+              Text(I18nHelper.t(I18nKeys.TASK_BADGE_RECURRING, this.lang))
+                .fontSize(this.fontTokens.label)
+                .fontColor(this.themeTokens.colorAccent)
+                .border({ width: 0.5, color: this.themeTokens.colorAccent, radius: 4 })
+                .padding({
+                  left: 4,
+                  right: 4,
+                  top: 1,
+                  bottom: 1
+                })
+                .flexShrink(0)
+            }
+
+            // 多节点进度 chip（多节点 / 多节点区间任务，节点数 > 1 时显示）
+            if ((this.entryScheduleType === TaskScheduleType.MULTI_NODE
+              || this.entryScheduleType === TaskScheduleType.MULTI_NODE_INTERVAL)
+              && this.entryTotalNodes > 1) {
+              Text((this.entryCurrentNodeIndex + 1).toString()
+                + '/' + this.entryTotalNodes.toString()
+                + ' ' + I18nHelper.t(I18nKeys.TASK_BADGE_MULTI_NODE, this.lang))
+                .fontSize(this.fontTokens.label)
+                .fontColor(this.themeTokens.colorTextSecondary)
+                .border({ width: 0.5, color: this.themeTokens.colorDivider, radius: 4 })
+                .padding({
+                  left: 4,
+                  right: 4,
+                  top: 1,
+                  bottom: 1
+                })
+                .flexShrink(0)
+            }
           }
           .width('100%')
           .alignItems(VerticalAlign.Center)
@@ -310,8 +319,10 @@ export struct TaskItemComponent {
 
               // 截止剩余时间 / 区间时间范围（有截止时间时始终显示，不受 IN_PROGRESS 影响）
               if (this.entryDeadline > 0) {
-                // 区间任务显示「开始 → 截止」格式
-                if (this.entryScheduleType === TaskScheduleType.INTERVAL && this.entryStartTime > 0) {
+                // 区间任务显示「开始 → 截止」格式（包含多节点区间）
+                if ((this.entryScheduleType === TaskScheduleType.INTERVAL
+                  || this.entryScheduleType === TaskScheduleType.MULTI_NODE_INTERVAL)
+                  && this.entryStartTime > 0) {
                   Text(formatTaskInterval(this.entryStartTime, this.entryDeadline, this.lang))
                     .fontSize(this.fontTokens.label)
                     .fontColor(
@@ -390,6 +401,35 @@ export struct TaskItemComponent {
     .borderWidth({ left: 3 })
     .borderColor({ left: this.getPriorityBorderColor() })
     .borderStyle({ left: BorderStyle.Solid })
+  }
+
+  /** 触发横向扩散特效（Rect 始终挂载） */
+  private triggerSpread(touchX: number): void {
+    SpreadEffectHelper.trigger(
+      (_idx: number) => {
+      },
+      (scale: number, opacity: number) => {
+        this.spreadScale = scale;
+        this.spreadOpacity = opacity;
+      },
+      (x: number) => {
+        this.spreadCenterX = x;
+      },
+      0,
+      touchX,
+    );
+  }
+
+  /** 计算 DURATION 类型的完成进度百分比（0~100） */
+  private getProgressPercent(): number {
+    if (this.entryTargetDuration <= 0) {
+      return 0;
+    }
+    const ratio: number = this.entryAccumulatedDuration / (this.entryTargetDuration * 60000);
+    if (ratio >= 1.0) {
+      return 100;
+    }
+    return Math.floor(ratio * 100);
   }
 
   /** 根据优先级返回左侧竖条颜色字符串 */

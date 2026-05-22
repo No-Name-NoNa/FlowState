@@ -44,68 +44,17 @@ struct MainPage {
   /** 订阅「打开任务详情」信号，收到 > 0 的任务 ID 时导航到 TaskDetailPage */
   @Watch('onPendingOpenTaskChanged')
   @StorageLink(KEY_PENDING_OPEN_TASK_ID) pendingOpenTaskId: number = 0;
-  /** Tabs 编程控制器，用于响应通知点击后的 Tab 切换 */
-  private tabsCtrl: TabsController = new TabsController();
-  // ── Tab 点击扩散特效状态 ─────────────────────────────────────────────────
   /** 当前正在播放扩散动效的 Tab 索引，-1 表示无动效 */
   @State pressedTabIndex: number = -1;
+  // ── Tab 点击扩散特效状态 ─────────────────────────────────────────────────
   /** 扩散矩形的横向缩放比，从 0.02 动画至 1.4 */
   @State spreadingScale: number = 0;
   /** 扩散矩形的透明度，从 0.12 动画至 0 */
   @State spreadingOpacity: number = 0;
   /** 扩散矩形 scale 变换中心 X（vp），来自触摸点坐标 */
   @State spreadCenterX: number = 0;
-
-  /**
-   * 响应通知跳转信号：切换到指定 Tab 并消费信号（重置为 -1）。
-   * 由 FlowAbility.onNewWant / onCreate 通过 AppStorage 写入信号触发。
-   */
-  private onNotifyTabChanged(): void {
-    if (this.notifyTabIndex >= 0) {
-      this.tabsCtrl.changeIndex(this.notifyTabIndex);
-      this.currentTabIndex = this.notifyTabIndex;
-      // 消费后重置，避免下次进入页面重复触发
-      AppStorage.setOrCreate<number>(KEY_NOTIFY_TAB_INDEX, -1);
-    }
-  }
-
-  /**
-   * 响应「打开任务详情」信号：导航到对应 TaskDetailPage。
-   * 由 FlowAbility.handleWantParams 通过 AppStorage 写入信号触发（点击开始/截止提醒通知时）。
-   */
-  private onPendingOpenTaskChanged(): void {
-    if (this.pendingOpenTaskId > 0) {
-      const taskId: number = this.pendingOpenTaskId;
-      // 先消费信号，再导航，避免重复触发
-      AppStorage.setOrCreate<number>(KEY_PENDING_OPEN_TASK_ID, 0);
-      router.pushUrl({ url: 'pages/TaskDetailPage', params: { taskId: taskId } }).catch((err: Error) => {
-        hilog.warn(LOG_DOMAIN, 'MainPage', '导航到任务详情失败（taskId=%{public}d）：%{public}s',
-          taskId, JSON.stringify(err));
-      });
-    }
-  }
-
-  /**
-   * 触发指定 Tab 的横向矩形扩散点击特效。
-   * @param tabIndex 被点击的 Tab 索引
-   * @param touchX   触摸点相对于 Tab 项的 X 坐标（vp）
-   */
-  private triggerSpreadEffect(tabIndex: number, touchX: number): void {
-    SpreadEffectHelper.trigger(
-      (idx) => {
-        this.pressedTabIndex = idx;
-      },
-      (scale, opacity) => {
-        this.spreadingScale = scale;
-        this.spreadingOpacity = opacity;
-      },
-      (x) => {
-        this.spreadCenterX = x;
-      },
-      tabIndex,
-      touchX,
-    );
-  }
+  /** Tabs 编程控制器，用于响应通知点击后的 Tab 切换 */
+  private tabsCtrl: TabsController = new TabsController();
 
   /**
    * 自定义 Tab 标签构建函数。
@@ -217,5 +166,56 @@ struct MainPage {
     .backgroundColor(this.themeTokens.colorBackground)
     .width('100%')
     .height('100%')
+  }
+
+  /**
+   * 响应通知跳转信号：切换到指定 Tab 并消费信号（重置为 -1）。
+   * 由 FlowAbility.onNewWant / onCreate 通过 AppStorage 写入信号触发。
+   */
+  private onNotifyTabChanged(): void {
+    if (this.notifyTabIndex >= 0) {
+      this.tabsCtrl.changeIndex(this.notifyTabIndex);
+      this.currentTabIndex = this.notifyTabIndex;
+      // 消费后重置，避免下次进入页面重复触发
+      AppStorage.setOrCreate<number>(KEY_NOTIFY_TAB_INDEX, -1);
+    }
+  }
+
+  /**
+   * 响应「打开任务详情」信号：导航到对应 TaskDetailPage。
+   * 由 FlowAbility.handleWantParams 通过 AppStorage 写入信号触发（点击开始/截止提醒通知时）。
+   */
+  private onPendingOpenTaskChanged(): void {
+    if (this.pendingOpenTaskId > 0) {
+      const taskId: number = this.pendingOpenTaskId;
+      // 先消费信号，再导航，避免重复触发
+      AppStorage.setOrCreate<number>(KEY_PENDING_OPEN_TASK_ID, 0);
+      router.pushUrl({ url: 'pages/TaskDetailPage', params: { taskId: taskId } }).catch((err: Error) => {
+        hilog.warn(LOG_DOMAIN, 'MainPage', '导航到任务详情失败（taskId=%{public}d）：%{public}s',
+          taskId, JSON.stringify(err));
+      });
+    }
+  }
+
+  /**
+   * 触发指定 Tab 的横向矩形扩散点击特效。
+   * @param tabIndex 被点击的 Tab 索引
+   * @param touchX   触摸点相对于 Tab 项的 X 坐标（vp）
+   */
+  private triggerSpreadEffect(tabIndex: number, touchX: number): void {
+    SpreadEffectHelper.trigger(
+      (idx) => {
+        this.pressedTabIndex = idx;
+      },
+      (scale, opacity) => {
+        this.spreadingScale = scale;
+        this.spreadingOpacity = opacity;
+      },
+      (x) => {
+        this.spreadCenterX = x;
+      },
+      tabIndex,
+      touchX,
+    );
   }
 }

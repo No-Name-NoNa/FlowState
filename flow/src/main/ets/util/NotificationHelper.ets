@@ -281,6 +281,68 @@ export class NotificationHelper {
   }
 
   /**
+   * 取消已计划的提醒定时器。
+   * reminderId = 0 时直接返回；
+   * reminderId >= 1000000 视为开始提醒（taskId = reminderId - 1000000）；
+   * reminderId < 1000000 视为截止提醒（taskId = reminderId）。
+   *
+   * @param reminderId 由 scheduleDeadlineReminder 或 scheduleStartReminder 返回的提醒 ID
+   */
+  static async cancelReminder(reminderId: number): Promise<void> {
+    if (reminderId === 0) {
+      return;
+    }
+    if (reminderId >= 1000000) {
+      // 开始提醒：startReminderId = taskId + 1000000
+      const taskId: number = reminderId - 1000000;
+      const handle: number | undefined = NotificationHelper.startTimers.get(taskId);
+      if (handle !== undefined) {
+        clearTimeout(handle);
+        NotificationHelper.startTimers.delete(taskId);
+        hilog.info(LOG_DOMAIN, TAG, '开始提醒定时器已取消（taskId=%{public}d）', taskId);
+      }
+    } else {
+      // 截止提醒：reminderId = taskId
+      const handle: number | undefined = NotificationHelper.deadlineTimers.get(reminderId);
+      if (handle !== undefined) {
+        clearTimeout(handle);
+        NotificationHelper.deadlineTimers.delete(reminderId);
+        hilog.info(LOG_DOMAIN, TAG, '截止提醒定时器已取消（taskId=%{public}d）', reminderId);
+      }
+    }
+  }
+
+  /**
+   * 取消全部内存提醒定时器，并清理遗留的 reminderAgentManager 代理提醒（兼容旧版本）。
+   * 在 reconcileReminders 重新调度前调用，确保无重复触发。
+   */
+  static async cancelAllReminders(): Promise<void> {
+    // 清除全部截止提醒定时器
+    const deadlineCount: number = NotificationHelper.deadlineTimers.size;
+    NotificationHelper.deadlineTimers.forEach((handle: number) => {
+      clearTimeout(handle);
+    });
+    NotificationHelper.deadlineTimers.clear();
+
+    // 清除全部开始提醒定时器
+    const startCount: number = NotificationHelper.startTimers.size;
+    NotificationHelper.startTimers.forEach((handle: number) => {
+      clearTimeout(handle);
+    });
+    NotificationHelper.startTimers.clear();
+
+    hilog.info(LOG_DOMAIN, TAG, '已清除全部内存提醒定时器（%{public}d 个）', deadlineCount + startCount);
+
+    // 清理遗留的 reminderAgentManager 代理提醒（旧版本可能残留）
+    try {
+      await reminderAgentManager.cancelAllReminders();
+      hilog.info(LOG_DOMAIN, TAG, '已清除本应用全部遗留代理提醒');
+    } catch (err) {
+      hilog.warn(LOG_DOMAIN, TAG, '清除遗留代理提醒失败（可忽略）：%{public}s', JSON.stringify(err));
+    }
+  }
+
+  /**
    * 发送截止时间到达通知。
    * 实现方式与 publishTaskDone 一致（notificationManager.publish + WantAgent）。
    * notificationId = task.id，避免与开始提醒通知（task.id + 1000000）冲突。
@@ -400,67 +462,5 @@ export class NotificationHelper {
       hilog.error(LOG_DOMAIN, TAG, '发送开始通知失败（taskId=%{public}d）：%{public}s',
         task.id, JSON.stringify(err));
     });
-  }
-
-  /**
-   * 取消已计划的提醒定时器。
-   * reminderId = 0 时直接返回；
-   * reminderId >= 1000000 视为开始提醒（taskId = reminderId - 1000000）；
-   * reminderId < 1000000 视为截止提醒（taskId = reminderId）。
-   *
-   * @param reminderId 由 scheduleDeadlineReminder 或 scheduleStartReminder 返回的提醒 ID
-   */
-  static async cancelReminder(reminderId: number): Promise<void> {
-    if (reminderId === 0) {
-      return;
-    }
-    if (reminderId >= 1000000) {
-      // 开始提醒：startReminderId = taskId + 1000000
-      const taskId: number = reminderId - 1000000;
-      const handle: number | undefined = NotificationHelper.startTimers.get(taskId);
-      if (handle !== undefined) {
-        clearTimeout(handle);
-        NotificationHelper.startTimers.delete(taskId);
-        hilog.info(LOG_DOMAIN, TAG, '开始提醒定时器已取消（taskId=%{public}d）', taskId);
-      }
-    } else {
-      // 截止提醒：reminderId = taskId
-      const handle: number | undefined = NotificationHelper.deadlineTimers.get(reminderId);
-      if (handle !== undefined) {
-        clearTimeout(handle);
-        NotificationHelper.deadlineTimers.delete(reminderId);
-        hilog.info(LOG_DOMAIN, TAG, '截止提醒定时器已取消（taskId=%{public}d）', reminderId);
-      }
-    }
-  }
-
-  /**
-   * 取消全部内存提醒定时器，并清理遗留的 reminderAgentManager 代理提醒（兼容旧版本）。
-   * 在 reconcileReminders 重新调度前调用，确保无重复触发。
-   */
-  static async cancelAllReminders(): Promise<void> {
-    // 清除全部截止提醒定时器
-    const deadlineCount: number = NotificationHelper.deadlineTimers.size;
-    NotificationHelper.deadlineTimers.forEach((handle: number) => {
-      clearTimeout(handle);
-    });
-    NotificationHelper.deadlineTimers.clear();
-
-    // 清除全部开始提醒定时器
-    const startCount: number = NotificationHelper.startTimers.size;
-    NotificationHelper.startTimers.forEach((handle: number) => {
-      clearTimeout(handle);
-    });
-    NotificationHelper.startTimers.clear();
-
-    hilog.info(LOG_DOMAIN, TAG, '已清除全部内存提醒定时器（%{public}d 个）', deadlineCount + startCount);
-
-    // 清理遗留的 reminderAgentManager 代理提醒（旧版本可能残留）
-    try {
-      await reminderAgentManager.cancelAllReminders();
-      hilog.info(LOG_DOMAIN, TAG, '已清除本应用全部遗留代理提醒');
-    } catch (err) {
-      hilog.warn(LOG_DOMAIN, TAG, '清除遗留代理提醒失败（可忽略）：%{public}s', JSON.stringify(err));
-    }
   }
 }

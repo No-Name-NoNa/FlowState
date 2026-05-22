@@ -59,42 +59,6 @@ export class InboxDatabase {
     InboxDatabase.initPromise = InboxDatabase.doInit(context);
   }
 
-  /** 执行实际初始化：创建/打开 RDB 并建表 */
-  private static async doInit(context: Context): Promise<void> {
-    try {
-      const config: relationalStore.StoreConfig = {
-        name: INBOX_DB_STORE_NAME,
-        securityLevel: relationalStore.SecurityLevel.S1,
-      };
-      InboxDatabase.store = await relationalStore.getRdbStore(context, config);
-      await InboxDatabase.store.executeSql(CREATE_TABLE_SQL);
-      hilog.info(LOG_DOMAIN, 'InboxDatabase', '数据库初始化成功');
-    } catch (err) {
-      hilog.error(LOG_DOMAIN, 'InboxDatabase', '初始化失败：%{public}s', JSON.stringify(err));
-    }
-  }
-
-  /** 等待数据库初始化完成，保证后续操作在 store 就绪后执行 */
-  private static async ensureReady(): Promise<void> {
-    if (InboxDatabase.initPromise !== null) {
-      await InboxDatabase.initPromise;
-    }
-  }
-
-  /** 将 ResultSet 当前行映射为 InboxEntry 对象 */
-  private static rowToEntry(rs: relationalStore.ResultSet): InboxEntry {
-    return {
-      id: rs.getLong(rs.getColumnIndex(COL_ID)),
-      text: rs.getString(rs.getColumnIndex(COL_TEXT)),
-      content: rs.getString(rs.getColumnIndex(COL_CONTENT)),
-      tags: rs.getString(rs.getColumnIndex(COL_TAGS)),
-      sortOrder: rs.getLong(rs.getColumnIndex(COL_SORT_ORDER)),
-      isPinned: rs.getLong(rs.getColumnIndex(COL_IS_PINNED)),
-      createdAt: rs.getLong(rs.getColumnIndex(COL_CREATED_AT)),
-      updatedAt: rs.getLong(rs.getColumnIndex(COL_UPDATED_AT)),
-    };
-  }
-
   /**
    * 查询全部条目，置顶优先（DESC）、sortOrder 升序（ASC）。
    * @returns 排序后的条目数组
@@ -240,5 +204,41 @@ export class InboxDatabase {
           '批量更新顺序失败（id=%{public}d）：%{public}s', entries[i].id, JSON.stringify(err));
       }
     }
+  }
+
+  /** 执行实际初始化：创建/打开 RDB 并建表 */
+  private static async doInit(context: Context): Promise<void> {
+    try {
+      const config: relationalStore.StoreConfig = {
+        name: INBOX_DB_STORE_NAME,
+        securityLevel: relationalStore.SecurityLevel.S1,
+      };
+      InboxDatabase.store = await relationalStore.getRdbStore(context, config);
+      await InboxDatabase.store.executeSql(CREATE_TABLE_SQL);
+      hilog.info(LOG_DOMAIN, 'InboxDatabase', '数据库初始化成功');
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'InboxDatabase', '初始化失败：%{public}s', JSON.stringify(err));
+    }
+  }
+
+  /** 等待数据库初始化完成，保证后续操作在 store 就绪后执行 */
+  private static async ensureReady(): Promise<void> {
+    if (InboxDatabase.initPromise !== null) {
+      await InboxDatabase.initPromise;
+    }
+  }
+
+  /** 将 ResultSet 当前行映射为 InboxEntry 对象 */
+  private static rowToEntry(rs: relationalStore.ResultSet): InboxEntry {
+    return {
+      id: rs.getLong(rs.getColumnIndex(COL_ID)),
+      text: rs.getString(rs.getColumnIndex(COL_TEXT)),
+      content: rs.getString(rs.getColumnIndex(COL_CONTENT)),
+      tags: rs.getString(rs.getColumnIndex(COL_TAGS)),
+      sortOrder: rs.getLong(rs.getColumnIndex(COL_SORT_ORDER)),
+      isPinned: rs.getLong(rs.getColumnIndex(COL_IS_PINNED)),
+      createdAt: rs.getLong(rs.getColumnIndex(COL_CREATED_AT)),
+      updatedAt: rs.getLong(rs.getColumnIndex(COL_UPDATED_AT)),
+    };
   }
 }

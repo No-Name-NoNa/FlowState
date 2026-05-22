@@ -140,6 +140,14 @@ export class ThemeHelper {
   }
 
   /**
+   * 获取默认的 ThemeTokens（清晨主题），供组件声明 @StorageLink 时提供默认值。
+   * @returns 默认 ThemeTokens 对象
+   */
+  static getDefault(): ThemeTokens {
+    return DEFAULT_THEME_TOKENS;
+  }
+
+  /**
    * 两色线性混合算法（RGB 分量各自加权插值）。
    * ratio=1 返回 color1 本色，ratio=0 返回 color2 本色。
    * @param color1 起始颜色（#RRGGBB）
@@ -162,13 +170,5 @@ export class ThemeHelper {
       return hex.length === 1 ? '0' + hex : hex;
     };
     return ('#' + toHex(r) + toHex(g) + toHex(b)).toUpperCase();
-  }
-
-  /**
-   * 获取默认的 ThemeTokens（清晨主题），供组件声明 @StorageLink 时提供默认值。
-   * @returns 默认 ThemeTokens 对象
-   */
-  static getDefault(): ThemeTokens {
-    return DEFAULT_THEME_TOKENS;
   }
 }

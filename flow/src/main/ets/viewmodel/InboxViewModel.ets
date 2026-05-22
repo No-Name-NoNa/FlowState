@@ -62,8 +62,6 @@ export class InboxDataSource implements IDataSource {
 
 /** 收集箱 ViewModel，所有方法为静态，供 View 层直接调用 */
 export class InboxViewModel {
-  /** 全量数据缓存（未过滤，DB 排序：置顶 DESC、sortOrder ASC） */
-  private static allEntries: InboxEntry[] = [];
   /**
    * 过滤后的条目数组（供 ForEach 直接驱动渲染）。
    * 比 dataSource 更适合用于 @State 驱动的 ForEach，可确保编辑后文本实时刷新。
@@ -71,6 +69,8 @@ export class InboxViewModel {
   static filteredEntries: InboxEntry[] = [];
   /** LazyForEach 数据源（保留兼容，applyFilter 同步更新） */
   static readonly dataSource: InboxDataSource = new InboxDataSource();
+  /** 全量数据缓存（未过滤，DB 排序：置顶 DESC、sortOrder ASC） */
+  private static allEntries: InboxEntry[] = [];
   /** 当前搜索关键词（小写） */
   private static currentKeyword: string = '';
   /** 当前激活的标签筛选，空字符串表示全部 */
@@ -94,42 +94,6 @@ export class InboxViewModel {
     InboxViewModel.currentKeyword = keyword;
     InboxViewModel.currentTag = activeTag;
     InboxViewModel.applyFilter();
-  }
-
-  /** 应用当前过滤条件，将结果写入 dataSource */
-  private static applyFilter(): void {
-    let filtered: InboxEntry[] = InboxViewModel.allEntries;
-    const kw: string = InboxViewModel.currentKeyword.trim().toLowerCase();
-
-    // 关键词过滤：匹配标题、正文或标签字段
-    if (kw !== '') {
-      const kwResult: InboxEntry[] = [];
-      for (const e of filtered) {
-        if (
-          e.text.toLowerCase().indexOf(kw) >= 0 ||
-            e.content.toLowerCase().indexOf(kw) >= 0 ||
-            e.tags.toLowerCase().indexOf(kw) >= 0
-        ) {
-          kwResult.push(e);
-        }
-      }
-      filtered = kwResult;
-    }
-
-    // 标签过滤：条目标签数组中包含目标标签
-    if (InboxViewModel.currentTag !== '') {
-      const tag: string = InboxViewModel.currentTag;
-      const tagResult: InboxEntry[] = [];
-      for (const e of filtered) {
-        if (parseTags(e.tags).indexOf(tag) >= 0) {
-          tagResult.push(e);
-        }
-      }
-      filtered = tagResult;
-    }
-
-    InboxViewModel.filteredEntries = filtered;
-    InboxViewModel.dataSource.replaceAll(filtered);
   }
 
   /**
@@ -323,5 +287,41 @@ export class InboxViewModel {
     };
     await InboxDatabase.update(updated);
     await InboxViewModel.load();
+  }
+
+  /** 应用当前过滤条件，将结果写入 dataSource */
+  private static applyFilter(): void {
+    let filtered: InboxEntry[] = InboxViewModel.allEntries;
+    const kw: string = InboxViewModel.currentKeyword.trim().toLowerCase();
+
+    // 关键词过滤：匹配标题、正文或标签字段
+    if (kw !== '') {
+      const kwResult: InboxEntry[] = [];
+      for (const e of filtered) {
+        if (
+          e.text.toLowerCase().indexOf(kw) >= 0 ||
+            e.content.toLowerCase().indexOf(kw) >= 0 ||
+            e.tags.toLowerCase().indexOf(kw) >= 0
+        ) {
+          kwResult.push(e);
+        }
+      }
+      filtered = kwResult;
+    }
+
+    // 标签过滤：条目标签数组中包含目标标签
+    if (InboxViewModel.currentTag !== '') {
+      const tag: string = InboxViewModel.currentTag;
+      const tagResult: InboxEntry[] = [];
+      for (const e of filtered) {
+        if (parseTags(e.tags).indexOf(tag) >= 0) {
+          tagResult.push(e);
+        }
+      }
+      filtered = tagResult;
+    }
+
+    InboxViewModel.filteredEntries = filtered;
+    InboxViewModel.dataSource.replaceAll(filtered);
   }
 }

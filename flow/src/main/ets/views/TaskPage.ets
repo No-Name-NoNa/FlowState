@@ -62,84 +62,6 @@ export struct TaskPage {
     this.loadData();
   }
 
-  /** 从 DB 加载数据，刷新所有列表状态 */
-  private loadData(): void {
-    TaskViewModel.load().then(() => {
-      // 冷启动归档处理：FlowAbility.onCreate 发现通知归档参数时
-      // 将任务 ID 暂存到 AppStorage，此处 DB 就绪后执行实际归档
-      const pendingId: number = AppStorage.get<number>(KEY_PENDING_ARCHIVE_TASK_ID) ?? 0;
-      if (pendingId > 0) {
-        AppStorage.setOrCreate<number>(KEY_PENDING_ARCHIVE_TASK_ID, 0);
-        TaskViewModel.archive(pendingId).then(() => {
-          TaskViewModel.load().then(() => {
-            this.refreshTasks();
-          });
-        });
-      } else {
-        this.refreshTasks();
-      }
-    });
-  }
-
-  /** 将 ViewModel 过滤结果同步到视图状态 */
-  private refreshTasks(): void {
-    this.tasks = TaskViewModel.filteredTasks.slice();
-    this.tagList = TaskViewModel.getAllTags();
-    this.tasksIsEmpty = this.tasks.length === 0;
-  }
-
-  /** 跨页刷新信号回调：TaskEditorPage 保存后触发，需重新从 DB 加载以包含新建/编辑的任务 */
-  private onTaskRefreshChanged(): void {
-    if (this.taskNeedsRefresh) {
-      AppStorage.set<boolean>(KEY_TASK_NEEDS_REFRESH, false);
-      this.loadData();
-    }
-  }
-
-  /** 切换搜索栏展开/收起（附带 250ms EaseOut 高度动画） */
-  private toggleSearch(): void {
-    animateTo({ duration: 250, curve: Curve.EaseOut }, () => {
-      this.showSearch = !this.showSearch;
-      this.searchBarHeight = this.showSearch ? 48 : 0;
-      if (!this.showSearch) {
-        this.searchKeyword = '';
-        TaskViewModel.filter('', -1, this.activeTag);
-        this.refreshTasks();
-      }
-    });
-  }
-
-  /** 切换标签筛选区展开/收起（附带 250ms EaseOut 高度动画） */
-  private toggleTagFilter(): void {
-    animateTo({ duration: 250, curve: Curve.EaseOut }, () => {
-      this.showTagFilter = !this.showTagFilter;
-      this.tagFilterHeight = this.showTagFilter ? 40 : 0;
-      if (!this.showTagFilter) {
-        this.activeTag = '';
-        TaskViewModel.filter(this.searchKeyword, -1, '');
-        this.refreshTasks();
-      }
-    });
-  }
-
-  /** 触发「+ 新建任务」按钮横向扩散特效 */
-  private triggerNewBtnSpread(touchX: number): void {
-    SpreadEffectHelper.trigger(
-      (idx: number) => {
-        this.newBtnPressedIndex = idx;
-      },
-      (scale: number, opacity: number) => {
-        this.newBtnSpreadScale = scale;
-        this.newBtnSpreadOpacity = opacity;
-      },
-      (x: number) => {
-        this.newBtnCenterX = x;
-      },
-      0,
-      touchX,
-    );
-  }
-
   build() {
     Column() {
       // ── 顶部 Header ──────────────────────────────────────────────────────
@@ -171,6 +93,16 @@ export struct TaskPage {
           .margin({ right: $r('app.float.spacing_md') })
           .onClick(() => {
             this.toggleTagFilter();
+          })
+
+        // 多任务计时器入口图标
+        Image($r('app.media.ic_stopwatch'))
+          .width($r('app.float.icon_size_md'))
+          .height($r('app.float.icon_size_md'))
+          .fillColor(this.themeTokens.colorTextSecondary)
+          .margin({ right: $r('app.float.spacing_md') })
+          .onClick(() => {
+            router.pushUrl({ url: 'pages/TimerPage' });
           })
 
         // 设置入口图标
@@ -336,5 +268,83 @@ export struct TaskPage {
     .width('100%')
     .height('100%')
     .backgroundColor(this.themeTokens.colorBackground)
+  }
+
+  /** 从 DB 加载数据，刷新所有列表状态 */
+  private loadData(): void {
+    TaskViewModel.load().then(() => {
+      // 冷启动归档处理：FlowAbility.onCreate 发现通知归档参数时
+      // 将任务 ID 暂存到 AppStorage，此处 DB 就绪后执行实际归档
+      const pendingId: number = AppStorage.get<number>(KEY_PENDING_ARCHIVE_TASK_ID) ?? 0;
+      if (pendingId > 0) {
+        AppStorage.setOrCreate<number>(KEY_PENDING_ARCHIVE_TASK_ID, 0);
+        TaskViewModel.archive(pendingId).then(() => {
+          TaskViewModel.load().then(() => {
+            this.refreshTasks();
+          });
+        });
+      } else {
+        this.refreshTasks();
+      }
+    });
+  }
+
+  /** 将 ViewModel 过滤结果同步到视图状态 */
+  private refreshTasks(): void {
+    this.tasks = TaskViewModel.filteredTasks.slice();
+    this.tagList = TaskViewModel.getAllTags();
+    this.tasksIsEmpty = this.tasks.length === 0;
+  }
+
+  /** 跨页刷新信号回调：TaskEditorPage 保存后触发，需重新从 DB 加载以包含新建/编辑的任务 */
+  private onTaskRefreshChanged(): void {
+    if (this.taskNeedsRefresh) {
+      AppStorage.set<boolean>(KEY_TASK_NEEDS_REFRESH, false);
+      this.loadData();
+    }
+  }
+
+  /** 切换搜索栏展开/收起（附带 250ms EaseOut 高度动画） */
+  private toggleSearch(): void {
+    animateTo({ duration: 250, curve: Curve.EaseOut }, () => {
+      this.showSearch = !this.showSearch;
+      this.searchBarHeight = this.showSearch ? 48 : 0;
+      if (!this.showSearch) {
+        this.searchKeyword = '';
+        TaskViewModel.filter('', -1, this.activeTag);
+        this.refreshTasks();
+      }
+    });
+  }
+
+  /** 切换标签筛选区展开/收起（附带 250ms EaseOut 高度动画） */
+  private toggleTagFilter(): void {
+    animateTo({ duration: 250, curve: Curve.EaseOut }, () => {
+      this.showTagFilter = !this.showTagFilter;
+      this.tagFilterHeight = this.showTagFilter ? 40 : 0;
+      if (!this.showTagFilter) {
+        this.activeTag = '';
+        TaskViewModel.filter(this.searchKeyword, -1, '');
+        this.refreshTasks();
+      }
+    });
+  }
+
+  /** 触发「+ 新建任务」按钮横向扩散特效 */
+  private triggerNewBtnSpread(touchX: number): void {
+    SpreadEffectHelper.trigger(
+      (idx: number) => {
+        this.newBtnPressedIndex = idx;
+      },
+      (scale: number, opacity: number) => {
+        this.newBtnSpreadScale = scale;
+        this.newBtnSpreadOpacity = opacity;
+      },
+      (x: number) => {
+        this.newBtnCenterX = x;
+      },
+      0,
+      touchX,
+    );
   }
 }

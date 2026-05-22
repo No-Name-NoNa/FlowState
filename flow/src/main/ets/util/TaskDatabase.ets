@@ -128,91 +128,6 @@ export class TaskDatabase {
     TaskDatabase.initPromise = TaskDatabase.doInit(context);
   }
 
-  /** 执行实际初始化：创建/打开 RDB 并建表，同时执行旧库列迁移 */
-  private static async doInit(context: Context): Promise<void> {
-    try {
-      const config: relationalStore.StoreConfig = {
-        name: TASK_DB_STORE_NAME,
-        securityLevel: relationalStore.SecurityLevel.S1,
-      };
-      TaskDatabase.store = await relationalStore.getRdbStore(context, config);
-      await TaskDatabase.store.executeSql(CREATE_TABLE_SQL);
-      // 旧库迁移：添加 is_pinned 列；若列已存在则 SQLite 会报错，用 try/catch 静默忽略
-      try {
-        await TaskDatabase.store.executeSql(ALTER_ADD_IS_PINNED_SQL);
-      } catch {
-        // 列已存在时忽略错误
-      }
-      // 旧库迁移：添加 reminder_id 列
-      try {
-        await TaskDatabase.store.executeSql(ALTER_ADD_REMINDER_ID_SQL);
-      } catch {
-        // 列已存在时忽略错误
-      }
-      // 旧库迁移：添加 start_reminder_type 列（区间任务开始提醒）
-      try {
-        await TaskDatabase.store.executeSql(ALTER_ADD_START_REMINDER_TYPE_SQL);
-      } catch {
-        // 列已存在时忽略错误
-      }
-      // 旧库迁移：添加 start_reminder_message 列（区间任务开始提醒）
-      try {
-        await TaskDatabase.store.executeSql(ALTER_ADD_START_REMINDER_MESSAGE_SQL);
-      } catch {
-        // 列已存在时忽略错误
-      }
-      // 旧库迁移：添加 start_reminder_id 列（区间任务开始提醒）
-      try {
-        await TaskDatabase.store.executeSql(ALTER_ADD_START_REMINDER_ID_SQL);
-      } catch {
-        // 列已存在时忽略错误
-      }
-      hilog.info(LOG_DOMAIN, 'TaskDatabase', '数据库初始化成功');
-    } catch (err) {
-      hilog.error(LOG_DOMAIN, 'TaskDatabase', '初始化失败：%{public}s', JSON.stringify(err));
-    }
-  }
-
-  /** 等待数据库初始化完成，保证后续操作在 store 就绪后执行 */
-  private static async ensureReady(): Promise<void> {
-    if (TaskDatabase.initPromise !== null) {
-      await TaskDatabase.initPromise;
-    }
-  }
-
-  /** 将 ResultSet 当前行映射为 TaskEntry 对象 */
-  private static rowToEntry(rs: relationalStore.ResultSet): TaskEntry {
-    return {
-      id: rs.getLong(rs.getColumnIndex(COL_ID)),
-      title: rs.getString(rs.getColumnIndex(COL_TITLE)),
-      content: rs.getString(rs.getColumnIndex(COL_CONTENT)),
-      tags: rs.getString(rs.getColumnIndex(COL_TAGS)),
-      priority: rs.getLong(rs.getColumnIndex(COL_PRIORITY)),
-      status: rs.getLong(rs.getColumnIndex(COL_STATUS)),
-      scheduleType: rs.getLong(rs.getColumnIndex(COL_SCHEDULE_TYPE)),
-      timeNodes: rs.getString(rs.getColumnIndex(COL_TIME_NODES)),
-      currentNodeIndex: rs.getLong(rs.getColumnIndex(COL_CURRENT_NODE_INDEX)),
-      recurringRule: rs.getString(rs.getColumnIndex(COL_RECURRING_RULE)),
-      targetDuration: rs.getLong(rs.getColumnIndex(COL_TARGET_DURATION)),
-      accumulatedDuration: rs.getLong(rs.getColumnIndex(COL_ACCUMULATED_DURATION)),
-      reminderType: rs.getLong(rs.getColumnIndex(COL_REMINDER_TYPE)),
-      reminderOffset: rs.getLong(rs.getColumnIndex(COL_REMINDER_OFFSET)),
-      reminderSound: rs.getString(rs.getColumnIndex(COL_REMINDER_SOUND)),
-      reminderMessage: rs.getString(rs.getColumnIndex(COL_REMINDER_MESSAGE)),
-      completionType: rs.getLong(rs.getColumnIndex(COL_COMPLETION_TYPE)),
-      completedAt: rs.getLong(rs.getColumnIndex(COL_COMPLETED_AT)),
-      sourceInboxId: rs.getLong(rs.getColumnIndex(COL_SOURCE_INBOX_ID)),
-      isPinned: rs.getLong(rs.getColumnIndex(COL_IS_PINNED)),
-      sortOrder: rs.getLong(rs.getColumnIndex(COL_SORT_ORDER)),
-      createdAt: rs.getLong(rs.getColumnIndex(COL_CREATED_AT)),
-      updatedAt: rs.getLong(rs.getColumnIndex(COL_UPDATED_AT)),
-      reminderId: rs.getLong(rs.getColumnIndex(COL_REMINDER_ID)),
-      startReminderType: rs.getLong(rs.getColumnIndex(COL_START_REMINDER_TYPE)),
-      startReminderMessage: rs.getString(rs.getColumnIndex(COL_START_REMINDER_MESSAGE)),
-      startReminderId: rs.getLong(rs.getColumnIndex(COL_START_REMINDER_ID)),
-    };
-  }
-
   /**
    * 查询全部未归档任务，按 sortOrder 升序排列。
    * ViewModel 层负责按动态权重二次排序。
@@ -424,5 +339,162 @@ export class TaskDatabase {
       hilog.error(LOG_DOMAIN, 'TaskDatabase', 'delete 失败（id=%{public}d）：%{public}s',
         id, JSON.stringify(err));
     }
+  }
+
+  /**
+   * 批量删除多条任务（用于批量清理历史归档任务）。
+   * @param ids 任务主键数组
+   */
+  static async deleteByIds(ids: number[]): Promise<void> {
+    if (ids.length === 0) {
+      return;
+    }
+    await TaskDatabase.ensureReady();
+    if (TaskDatabase.store === null) {
+      return;
+    }
+    try {
+      const predicates: relationalStore.RdbPredicates = new relationalStore.RdbPredicates(TABLE_NAME);
+      predicates.in(COL_ID, ids);
+      await TaskDatabase.store.delete(predicates);
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'TaskDatabase', 'deleteByIds 失败：%{public}s', JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 查询在指定时间点之前归档的任务 ID 列表（用于批量清理）。
+   * 条件：status=ARCHIVED AND updatedAt < beforeMs
+   * @param beforeMs 截止时间戳（ms），仅返回 updatedAt < beforeMs 的任务
+   * @returns 符合条件的任务 ID 数组
+   */
+  static async queryArchivedIdsBefore(beforeMs: number): Promise<number[]> {
+    await TaskDatabase.ensureReady();
+    if (TaskDatabase.store === null) {
+      return [];
+    }
+    const ids: number[] = [];
+    try {
+      const predicates: relationalStore.RdbPredicates = new relationalStore.RdbPredicates(TABLE_NAME);
+      predicates.equalTo(COL_STATUS, TaskStatus.ARCHIVED).lessThan(COL_UPDATED_AT, beforeMs);
+      const rs: relationalStore.ResultSet = await TaskDatabase.store.query(predicates, [COL_ID]);
+      while (rs.goToNextRow()) {
+        ids.push(rs.getLong(rs.getColumnIndex(COL_ID)));
+      }
+      rs.close();
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'TaskDatabase',
+        'queryArchivedIdsBefore 失败：%{public}s', JSON.stringify(err));
+    }
+    return ids;
+  }
+
+  /**
+   * 查询所有已归档任务的 ID 列表（用于全量清理）。
+   * @returns 所有 ARCHIVED 任务的 ID 数组
+   */
+  static async queryAllArchivedIds(): Promise<number[]> {
+    await TaskDatabase.ensureReady();
+    if (TaskDatabase.store === null) {
+      return [];
+    }
+    const ids: number[] = [];
+    try {
+      const predicates: relationalStore.RdbPredicates = new relationalStore.RdbPredicates(TABLE_NAME);
+      predicates.equalTo(COL_STATUS, TaskStatus.ARCHIVED);
+      const rs: relationalStore.ResultSet = await TaskDatabase.store.query(predicates, [COL_ID]);
+      while (rs.goToNextRow()) {
+        ids.push(rs.getLong(rs.getColumnIndex(COL_ID)));
+      }
+      rs.close();
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'TaskDatabase', 'queryAllArchivedIds 失败：%{public}s', JSON.stringify(err));
+    }
+    return ids;
+  }
+
+  /** 执行实际初始化：创建/打开 RDB 并建表，同时执行旧库列迁移 */
+  private static async doInit(context: Context): Promise<void> {
+    try {
+      const config: relationalStore.StoreConfig = {
+        name: TASK_DB_STORE_NAME,
+        securityLevel: relationalStore.SecurityLevel.S1,
+      };
+      TaskDatabase.store = await relationalStore.getRdbStore(context, config);
+      await TaskDatabase.store.executeSql(CREATE_TABLE_SQL);
+      // 旧库迁移：添加 is_pinned 列；若列已存在则 SQLite 会报错，用 try/catch 静默忽略
+      try {
+        await TaskDatabase.store.executeSql(ALTER_ADD_IS_PINNED_SQL);
+      } catch {
+        // 列已存在时忽略错误
+      }
+      // 旧库迁移：添加 reminder_id 列
+      try {
+        await TaskDatabase.store.executeSql(ALTER_ADD_REMINDER_ID_SQL);
+      } catch {
+        // 列已存在时忽略错误
+      }
+      // 旧库迁移：添加 start_reminder_type 列（区间任务开始提醒）
+      try {
+        await TaskDatabase.store.executeSql(ALTER_ADD_START_REMINDER_TYPE_SQL);
+      } catch {
+        // 列已存在时忽略错误
+      }
+      // 旧库迁移：添加 start_reminder_message 列（区间任务开始提醒）
+      try {
+        await TaskDatabase.store.executeSql(ALTER_ADD_START_REMINDER_MESSAGE_SQL);
+      } catch {
+        // 列已存在时忽略错误
+      }
+      // 旧库迁移：添加 start_reminder_id 列（区间任务开始提醒）
+      try {
+        await TaskDatabase.store.executeSql(ALTER_ADD_START_REMINDER_ID_SQL);
+      } catch {
+        // 列已存在时忽略错误
+      }
+      hilog.info(LOG_DOMAIN, 'TaskDatabase', '数据库初始化成功');
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'TaskDatabase', '初始化失败：%{public}s', JSON.stringify(err));
+    }
+  }
+
+  /** 等待数据库初始化完成，保证后续操作在 store 就绪后执行 */
+  private static async ensureReady(): Promise<void> {
+    if (TaskDatabase.initPromise !== null) {
+      await TaskDatabase.initPromise;
+    }
+  }
+
+  /** 将 ResultSet 当前行映射为 TaskEntry 对象 */
+  private static rowToEntry(rs: relationalStore.ResultSet): TaskEntry {
+    return {
+      id: rs.getLong(rs.getColumnIndex(COL_ID)),
+      title: rs.getString(rs.getColumnIndex(COL_TITLE)),
+      content: rs.getString(rs.getColumnIndex(COL_CONTENT)),
+      tags: rs.getString(rs.getColumnIndex(COL_TAGS)),
+      priority: rs.getLong(rs.getColumnIndex(COL_PRIORITY)),
+      status: rs.getLong(rs.getColumnIndex(COL_STATUS)),
+      scheduleType: rs.getLong(rs.getColumnIndex(COL_SCHEDULE_TYPE)),
+      timeNodes: rs.getString(rs.getColumnIndex(COL_TIME_NODES)),
+      currentNodeIndex: rs.getLong(rs.getColumnIndex(COL_CURRENT_NODE_INDEX)),
+      recurringRule: rs.getString(rs.getColumnIndex(COL_RECURRING_RULE)),
+      targetDuration: rs.getLong(rs.getColumnIndex(COL_TARGET_DURATION)),
+      accumulatedDuration: rs.getLong(rs.getColumnIndex(COL_ACCUMULATED_DURATION)),
+      reminderType: rs.getLong(rs.getColumnIndex(COL_REMINDER_TYPE)),
+      reminderOffset: rs.getLong(rs.getColumnIndex(COL_REMINDER_OFFSET)),
+      reminderSound: rs.getString(rs.getColumnIndex(COL_REMINDER_SOUND)),
+      reminderMessage: rs.getString(rs.getColumnIndex(COL_REMINDER_MESSAGE)),
+      completionType: rs.getLong(rs.getColumnIndex(COL_COMPLETION_TYPE)),
+      completedAt: rs.getLong(rs.getColumnIndex(COL_COMPLETED_AT)),
+      sourceInboxId: rs.getLong(rs.getColumnIndex(COL_SOURCE_INBOX_ID)),
+      isPinned: rs.getLong(rs.getColumnIndex(COL_IS_PINNED)),
+      sortOrder: rs.getLong(rs.getColumnIndex(COL_SORT_ORDER)),
+      createdAt: rs.getLong(rs.getColumnIndex(COL_CREATED_AT)),
+      updatedAt: rs.getLong(rs.getColumnIndex(COL_UPDATED_AT)),
+      reminderId: rs.getLong(rs.getColumnIndex(COL_REMINDER_ID)),
+      startReminderType: rs.getLong(rs.getColumnIndex(COL_START_REMINDER_TYPE)),
+      startReminderMessage: rs.getString(rs.getColumnIndex(COL_START_REMINDER_MESSAGE)),
+      startReminderId: rs.getLong(rs.getColumnIndex(COL_START_REMINDER_ID)),
+    };
   }
 }

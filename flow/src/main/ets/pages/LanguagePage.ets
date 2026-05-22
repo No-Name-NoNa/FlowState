@@ -42,28 +42,6 @@ struct LanguagePage {
   @State spreadCenterX: number = 0;
 
   /**
-   * 触发指定行的横向矩形扩散特效。
-   * @param rowIndex 被点击的行索引
-   * @param touchX   触摸点相对于行元素的 X 坐标（vp）
-   */
-  private triggerRowSpread(rowIndex: number, touchX: number): void {
-    SpreadEffectHelper.trigger(
-      (idx) => {
-        this.pressedRowIndex = idx;
-      },
-      (scale, opacity) => {
-        this.rowSpreadScale = scale;
-        this.rowSpreadOpacity = opacity;
-      },
-      (x) => {
-        this.spreadCenterX = x;
-      },
-      rowIndex,
-      touchX,
-    );
-  }
-
-  /**
    * 单个语言选项行。
    * 选中项以强调色文字 + 右侧勾选图标标识，未选中项以次要色显示。
    * @param langCode    语言标识代码
@@ -172,5 +150,27 @@ struct LanguagePage {
     .width('100%')
     .height('100%')
     .backgroundColor(this.themeTokens.colorBackground)
+  }
+
+  /**
+   * 触发指定行的横向矩形扩散特效。
+   * @param rowIndex 被点击的行索引
+   * @param touchX   触摸点相对于行元素的 X 坐标（vp）
+   */
+  private triggerRowSpread(rowIndex: number, touchX: number): void {
+    SpreadEffectHelper.trigger(
+      (idx) => {
+        this.pressedRowIndex = idx;
+      },
+      (scale, opacity) => {
+        this.rowSpreadScale = scale;
+        this.rowSpreadOpacity = opacity;
+      },
+      (x) => {
+        this.spreadCenterX = x;
+      },
+      rowIndex,
+      touchX,
+    );
   }
 }

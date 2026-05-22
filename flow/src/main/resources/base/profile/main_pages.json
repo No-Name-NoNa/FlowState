@@ -8,6 +8,9 @@
     "pages/InboxEditorPage",
     "pages/TaskEditorPage",
     "pages/TaskDetailPage",
-    "pages/FontSizePage"
+    "pages/FontSizePage",
+    "pages/TimerPage",
+    "pages/ArchivedTaskDetailPage",
+    "pages/MonthArchivePage"
   ]
 }

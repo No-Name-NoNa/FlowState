@@ -39,14 +39,16 @@ export const enum TaskStatus {
 export const enum TaskScheduleType {
   /** 无时间安排 */
   NONE = 0,
-  /** 单次截止时间 */
+  /** 单次截止时间，timeNodes = number[]（1 个元素） */
   SINGLE = 1,
-  /** 多节点自定义日期（如 1/10、2/5 等不规则日期） */
+  /** 多节点自定义日期（如 1/10、2/5 等不规则日期），timeNodes = number[]（多个元素） */
   MULTI_NODE = 2,
-  /** 规则循环（绝对/相对） */
+  /** 规则循环（绝对/相对），timeNodes = number[]（1 个元素，表示当前周期触发时刻） */
   RECURRING = 3,
-  /** 区间任务：有开始时间和截止时间，timeNodes=[startTs, endTs] */
+  /** 单次区间：有开始时间和截止时间，timeNodes = IntervalNode[]（1 个元素） */
   INTERVAL = 4,
+  /** 多节点区间：多个 [开始, 结束] 对，timeNodes = IntervalNode[]（多个元素） */
+  MULTI_NODE_INTERVAL = 5,
 }
 
 /** 任务完成方式 */
@@ -82,6 +84,18 @@ export const enum RecurringType {
 }
 
 // ── 接口定义 ──────────────────────────────────────────────────────────────────
+
+/**
+ * 区间节点对象。
+ * 用于 INTERVAL / MULTI_NODE_INTERVAL 类型任务，序列化为 JSON 数组存入 TaskEntry.timeNodes。
+ */
+export interface IntervalNode {
+  /** 区间开始时间戳（ms） */
+  start: number;
+
+  /** 区间结束时间戳（ms） */
+  end: number;
+}
 
 /**
  * 循环规则对象。
@@ -300,12 +314,46 @@ export function serializeRecurringRule(rule: RecurringRule): string {
   return JSON.stringify(rule);
 }
 
+/**
+ * 从 JSON 字符串解析区间节点数组。
+ * 用于 INTERVAL / MULTI_NODE_INTERVAL 类型任务。
+ * @param json 区间节点 JSON 字符串
+ * @returns IntervalNode 数组，解析失败或为空时返回空数组
+ */
+export function parseIntervalNodes(json: string): IntervalNode[] {
+  if (json === '') {
+    return [];
+  }
+  try {
+    return JSON.parse(json) as IntervalNode[];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 将区间节点数组序列化为 JSON 字符串。
+ * @param nodes 区间节点数组
+ * @returns JSON 字符串，无节点时返回空字符串
+ */
+export function serializeIntervalNodes(nodes: IntervalNode[]): string {
+  if (nodes.length === 0) {
+    return '';
+  }
+  return JSON.stringify(nodes);
+}
+
 // ── 调度逻辑工具函数 ──────────────────────────────────────────────────────────
 
 /**
  * 获取任务的下一个截止时间戳。
  * - SINGLE：返回唯一节点时间
- * - MULTI_NODE/RECURRING：返回 currentNodeIndex 指向的节点时间
+ * - RECURRING：返回 currentNodeIndex 指向的节点时间
+ * - INTERVAL：返回单个区间节点的结束时间
+ * - MULTI_NODE：遍历节点，返回第一个尚未到来（> now）的节点时间；
+ *   若所有节点均已过期则返回最后节点时间（令 formatTaskDeadline 显示"已过期"）
+ * - MULTI_NODE_INTERVAL：遍历区间节点，返回第一个尚未结束（end > now）的区间 end；
+ *   若所有区间均已结束则返回最后区间的 end
  * - NONE 或节点数组为空：返回 0
  * @param entry 任务条目
  * @returns 下一个截止时间戳（ms），0 表示无截止时间
@@ -314,71 +362,151 @@ export function getNextDeadline(entry: TaskEntry): number {
   if (entry.scheduleType === TaskScheduleType.NONE) {
     return 0;
   }
+  if (entry.scheduleType === TaskScheduleType.INTERVAL) {
+    // 区间任务：读取 IntervalNode，截止时间取 end
+    const intervalNodes: IntervalNode[] = parseIntervalNodes(entry.timeNodes);
+    if (intervalNodes.length === 0) {
+      return 0;
+    }
+    return intervalNodes[0].end;
+  }
+  if (entry.scheduleType === TaskScheduleType.MULTI_NODE_INTERVAL) {
+    // 多节点区间：动态找第一个尚未结束的区间（end > now）
+    const intervalNodes: IntervalNode[] = parseIntervalNodes(entry.timeNodes);
+    if (intervalNodes.length === 0) {
+      return 0;
+    }
+    const now: number = Date.now();
+    for (let i: number = 0; i < intervalNodes.length; i++) {
+      if (intervalNodes[i].end > now) {
+        return intervalNodes[i].end;
+      }
+    }
+    // 全部区间已过期：返回最后区间的 end
+    return intervalNodes[intervalNodes.length - 1].end;
+  }
+  // SINGLE / MULTI_NODE / RECURRING：number[] 格式
   const nodes: number[] = parseTimeNodes(entry.timeNodes);
   if (nodes.length === 0) {
     return 0;
   }
-  // 区间任务：timeNodes=[startTs, endTs]，截止时间取索引 1
-  if (entry.scheduleType === TaskScheduleType.INTERVAL) {
-    return nodes.length >= 2 ? nodes[1] : nodes[0];
+  if (entry.scheduleType === TaskScheduleType.MULTI_NODE) {
+    // 多节点：动态找第一个尚未到来的节点（> now）
+    const now: number = Date.now();
+    for (let i: number = 0; i < nodes.length; i++) {
+      if (nodes[i] > now) {
+        return nodes[i];
+      }
+    }
+    // 全部节点已过期：返回最后节点时间
+    return nodes[nodes.length - 1];
   }
+  // SINGLE / RECURRING：固定取 currentNodeIndex
   const idx: number = entry.currentNodeIndex < nodes.length ? entry.currentNodeIndex : 0;
   return nodes[idx];
 }
 
 /**
  * 获取区间任务的开始时间戳。
- * 非 INTERVAL 类型或无节点时返回 0。
+ * - INTERVAL：返回单个区间节点的 start
+ * - MULTI_NODE_INTERVAL：动态找第一个尚未结束（end > now）的区间的 start；
+ *   若全部结束则返回最后区间的 start
+ * - 非区间类型或无节点时返回 0
  * @param entry 任务条目
  * @returns 开始时间戳（ms），0 表示无开始时间
  */
 export function getStartTime(entry: TaskEntry): number {
-  if (entry.scheduleType !== TaskScheduleType.INTERVAL) {
-    return 0;
+  if (entry.scheduleType === TaskScheduleType.INTERVAL) {
+    const intervalNodes: IntervalNode[] = parseIntervalNodes(entry.timeNodes);
+    return intervalNodes.length >= 1 ? intervalNodes[0].start : 0;
   }
-  const nodes: number[] = parseTimeNodes(entry.timeNodes);
-  return nodes.length >= 1 ? nodes[0] : 0;
+  if (entry.scheduleType === TaskScheduleType.MULTI_NODE_INTERVAL) {
+    const intervalNodes: IntervalNode[] = parseIntervalNodes(entry.timeNodes);
+    if (intervalNodes.length === 0) {
+      return 0;
+    }
+    const now: number = Date.now();
+    for (let i: number = 0; i < intervalNodes.length; i++) {
+      if (intervalNodes[i].end > now) {
+        return intervalNodes[i].start;
+      }
+    }
+    // 全部结束：返回最后区间的 start
+    return intervalNodes[intervalNodes.length - 1].start;
+  }
+  return 0;
 }
 
 /**
- * 将两位数字补零为两位字符串（内部工具，避免与下方 padTwo 重复定义）。
+ * 将毫秒差值格式化为简洁时长字符串（内部工具）。
+ * - ≥1天：Xd Xh（小时为 0 时省略）
+ * - ≥1小时：Xh Xm（分钟为 0 时省略）
+ * - ≥1分钟：Xm
+ * - <1分钟：< 1m
  */
-function padTwoDigits(n: number): string {
-  return n < 10 ? '0' + n.toString() : n.toString();
+function timeDiffStr(diffMs: number): string {
+  const ONE_MIN_MS: number = 60000;
+  const ONE_HOUR_MS: number = 3600000;
+  const ONE_DAY_MS: number = 86400000;
+  if (diffMs >= ONE_DAY_MS) {
+    const days: number = Math.floor(diffMs / ONE_DAY_MS);
+    const hours: number = Math.floor((diffMs % ONE_DAY_MS) / ONE_HOUR_MS);
+    if (hours > 0) {
+      return days.toString() + 'd ' + hours.toString() + 'h';
+    }
+    return days.toString() + 'd';
+  }
+  if (diffMs >= ONE_HOUR_MS) {
+    const hours: number = Math.floor(diffMs / ONE_HOUR_MS);
+    const minutes: number = Math.floor((diffMs % ONE_HOUR_MS) / ONE_MIN_MS);
+    if (minutes > 0) {
+      return hours.toString() + 'h ' + minutes.toString() + 'm';
+    }
+    return hours.toString() + 'h';
+  }
+  const minutes: number = Math.floor(diffMs / ONE_MIN_MS);
+  if (minutes >= 1) {
+    return minutes.toString() + 'm';
+  }
+  return '< 1m';
 }
 
 /**
- * 将区间任务的开始/截止时间格式化为简洁区间字符串。
- * 格式：「M/D HH:mm → M/D HH:mm」（跨天时显示日期，同天简写截止侧）
+ * 将区间任务的开始/截止时间格式化为简洁状态文本。
+ * - 已结束（end ≤ now）：zh="已过期" / en="Overdue"
+ * - 未开始（start > now）：zh="距开始 Xd Xh" / en="Starts in Xd Xh"
+ * - 进行中（start ≤ now < end）：zh="距结束 Xh Xm" / en="Ends in Xh Xm"
  * @param startTs 开始时间戳（ms）
  * @param endTs   截止时间戳（ms）
  * @param lang    当前语言标识
- * @returns 格式化区间字符串
+ * @returns 格式化状态字符串
  */
 export function formatTaskInterval(startTs: number, endTs: number, lang: string): string {
   if (startTs <= 0 || endTs <= 0) {
     return '';
   }
-  const s: Date = new Date(startTs);
-  const e: Date = new Date(endTs);
-  const sStr: string = (s.getMonth() + 1).toString() + '/' + s.getDate().toString()
-    + ' ' + padTwoDigits(s.getHours()) + ':' + padTwoDigits(s.getMinutes());
-  const eStr: string = (e.getMonth() + 1).toString() + '/' + e.getDate().toString()
-    + ' ' + padTwoDigits(e.getHours()) + ':' + padTwoDigits(e.getMinutes());
-  return sStr + ' → ' + eStr;
-}
-
-function padTwo(n: number) {
-  return n < 10 ? '0' + n.toString() : n.toString();
+  const isZh: boolean = lang.startsWith('zh');
+  const now: number = Date.now();
+  if (endTs <= now) {
+    return isZh ? '已过期' : 'Overdue';
+  }
+  if (startTs > now) {
+    const diff: string = timeDiffStr(startTs - now);
+    return isZh ? ('距开始 ' + diff) : ('Starts in ' + diff);
+  }
+  // 进行中
+  const diff: string = timeDiffStr(endTs - now);
+  return isZh ? ('距结束 ' + diff) : ('Ends in ' + diff);
 }
 
 /**
- * 将截止时间戳格式化为列表行中的简洁显示文本。
- * - 逾期超 1 天：zh="逾期Nd" / en="Nd overdue"
- * - 逾期当天：zh="今日逾期" / en="Overdue"
- * - 今天内：zh="今天 HH:mm" / en="Today HH:mm"
- * - 明天：zh="明天 HH:mm" / en="Tomorrow HH:mm"
- * - 其他：zh/en="M/D HH:mm"
+ * 将截止时间戳格式化为列表行中的简洁时间距离文本。
+ * - 已逾期：zh="已过期" / en="Overdue"
+ * - 未逾期：显示剩余时长，单位自动适配，无汉字描述（d/h/m 通用）
+ *   - ≥1天：Xd Xh（小时为 0 时省略）
+ *   - ≥1小时：Xh Xm（分钟为 0 时省略）
+ *   - ≥1分钟：Xm
+ *   - <1分钟：< 1m
  * @param deadline 截止时间戳（ms），0 表示无截止时间
  * @param lang 当前语言标识
  * @returns 格式化字符串，deadline=0 时返回空字符串
@@ -389,41 +517,95 @@ export function formatTaskDeadline(deadline: number, lang: string): string {
   }
   const isZh: boolean = lang.startsWith('zh');
   const now: number = Date.now();
+  if (deadline <= now) {
+    return isZh ? '已过期' : 'Overdue';
+  }
+  const diff: string = timeDiffStr(deadline - now);
+  return isZh ? ('距结束 ' + diff) : ('Ends in ' + diff);
+}
+
+/**
+ * 根据循环规则计算下一次触发时间戳。
+ *
+ * RELATIVE：completedAt + intervalDays 天
+ * DAILY：currentTriggerTs 向后推 1 天（保持相同时分）
+ * WEEKLY：从 currentTriggerTs + 1 天起，找下一个匹配 daysOfWeek 的日期（保持相同时分）
+ * MONTHLY：从 currentTriggerTs 所在月 + 1 月起，找下一个 dayOfMonth（保持相同时分）
+ *
+ * @param rule             循环规则对象
+ * @param currentTriggerTs 当前触发时间戳（ms），RECURRING 任务的 timeNodes[0]
+ * @param completedAt      任务完成时间戳（ms），仅 RELATIVE 模式使用
+ * @returns 下一次触发时间戳（ms），无法计算时返回 0
+ */
+export function computeNextRecurringDate(
+  rule: RecurringRule,
+  currentTriggerTs: number,
+  completedAt: number,
+): number {
   const ONE_DAY_MS: number = 86400000;
 
-  // 计算当天 0 点（本地时区）
-  const todayDate: Date = new Date();
-  todayDate.setHours(0, 0, 0, 0);
-  const todayStart: number = todayDate.getTime();
-
-  const d: Date = new Date(deadline);
-  const timeStr: string = padTwo(d.getHours()) + ':' + padTwo(d.getMinutes());
-
-  if (deadline < now) {
-    // 逾期
-    const diffMs: number = now - deadline;
-    const days: number = Math.floor(diffMs / ONE_DAY_MS);
-    if (days < 1) {
-      return isZh ? '今日逾期' : 'Overdue';
+  if (rule.type === RecurringType.RELATIVE) {
+    // 相对循环：基于完成时间推 intervalDays 天
+    if (rule.intervalDays <= 0) {
+      return 0;
     }
-    return isZh ? ('逾期' + days.toString() + 'd') : (days.toString() + 'd overdue');
+    return completedAt + rule.intervalDays * ONE_DAY_MS;
   }
 
-  // 计算截止时间所在日 0 点
-  const deadlineDayDate: Date = new Date(deadline);
-  deadlineDayDate.setHours(0, 0, 0, 0);
-  const calDayDiff: number = Math.round((deadlineDayDate.getTime() - todayStart) / ONE_DAY_MS);
+  if (rule.type === RecurringType.DAILY) {
+    // 每天：在当前触发时间基础上 +1 天
+    return currentTriggerTs + ONE_DAY_MS;
+  }
 
-  if (calDayDiff === 0) {
-    return isZh ? ('今天 ' + timeStr) : ('Today ' + timeStr);
+  if (rule.type === RecurringType.WEEKLY) {
+    if (rule.daysOfWeek.length === 0) {
+      return 0;
+    }
+    // 从明天开始向前最多搜索 7 天，找到下一个匹配的星期几
+    const base: Date = new Date(currentTriggerTs);
+    const timeOfDayMs: number = base.getHours() * 3600000 + base.getMinutes() * 60000;
+    for (let i: number = 1; i <= 7; i++) {
+      const candidate: Date = new Date(currentTriggerTs + i * ONE_DAY_MS);
+      candidate.setHours(0, 0, 0, 0);
+      const dayOfWeek: number = candidate.getDay();
+      if (rule.daysOfWeek.indexOf(dayOfWeek) >= 0) {
+        return candidate.getTime() + timeOfDayMs;
+      }
+    }
+    return 0;
   }
-  if (calDayDiff === 1) {
-    return isZh ? ('明天 ' + timeStr) : ('Tomorrow ' + timeStr);
+
+  if (rule.type === RecurringType.MONTHLY) {
+    if (rule.dayOfMonth <= 0 || rule.dayOfMonth > 31) {
+      return 0;
+    }
+    const base: Date = new Date(currentTriggerTs);
+    const timeOfDayMs: number = base.getHours() * 3600000 + base.getMinutes() * 60000;
+    // 尝试下个月同日
+    let targetYear: number = base.getFullYear();
+    let targetMonth: number = base.getMonth() + 1; // 推进到下一个月
+    if (targetMonth > 11) {
+      targetMonth = 0;
+      targetYear += 1;
+    }
+    // 最多尝试 12 个月，处理月份天数不一致（如 2 月没有 31 日）
+    for (let m: number = 0; m < 12; m++) {
+      const candidate: Date = new Date(targetYear, targetMonth, rule.dayOfMonth, 0, 0, 0, 0);
+      // 验证日期有效（getDate() 与目标相符表示没有溢出到下一个月）
+      if (candidate.getDate() === rule.dayOfMonth) {
+        return candidate.getTime() + timeOfDayMs;
+      }
+      // 当月没有该日期，继续尝试下一个月
+      targetMonth++;
+      if (targetMonth > 11) {
+        targetMonth = 0;
+        targetYear += 1;
+      }
+    }
+    return 0;
   }
-  const month: string = (d.getMonth() + 1).toString();
-  const day: string = d.getDate().toString();
-  // 2 天以上：显示剩余天数（与"逾期Nd"风格对称）
-  return isZh ? ('还有' + calDayDiff.toString() + 'd') : (calDayDiff.toString() + 'd left');
+
+  return 0;
 }
 
 /**

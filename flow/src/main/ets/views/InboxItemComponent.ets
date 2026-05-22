@@ -48,9 +48,6 @@ export struct InboxItemComponent {
   @Prop entryIndex: number = 0;
   /** 是否处于拖拽排序模式（过滤期间为 false） */
   @Prop isEditMode: boolean = false;
-  /** 数据变化回调：增删改置顶后通知父组件刷新 */
-  onDataChanged: () => void = () => {
-  };
   @StorageLink(KEY_APP_LANGUAGE) private lang: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) private themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
   @StorageLink(KEY_FONT_TOKENS) private fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
@@ -59,22 +56,9 @@ export struct InboxItemComponent {
   @State private spreadOpacity: number = 0;
   @State private spreadCenterX: number = 0;
 
-  /** 触发横向扩散特效（Rect 始终挂载，用 opacity 控制可见性，无需 pressedIndex） */
-  private triggerSpread(touchX: number): void {
-    SpreadEffectHelper.trigger(
-      (idx: number) => { /* Rect 始终挂载，无需 pressedIndex 控制 */
-      },
-      (scale: number, opacity: number) => {
-        this.spreadScale = scale;
-        this.spreadOpacity = opacity;
-      },
-      (x: number) => {
-        this.spreadCenterX = x;
-      },
-      0,
-      touchX,
-    );
-  }
+  /** 数据变化回调：增删改置顶后通知父组件刷新 */
+  onDataChanged: () => void = () => {
+  };
 
   /** 三点菜单内容（bindMenu @Builder，点击三点按钮时展示） */
   @Builder
@@ -120,7 +104,6 @@ export struct InboxItemComponent {
             message: I18nHelper.t(I18nKeys.DIALOG_DELETE_MSG, this.lang),
             primaryButton: {
               value: I18nHelper.t(I18nKeys.DIALOG_CONFIRM, this.lang),
-              fontColor: this.themeTokens.colorTextPrimary,
               action: () => {
                 InboxViewModel.delete(this.entryId).then(() => {
                   this.onDataChanged();
@@ -263,5 +246,22 @@ export struct InboxItemComponent {
       left: this.entryIsPinned === 1 ? this.themeTokens.colorAccent : Color.Transparent,
     })
     .borderStyle({ left: BorderStyle.Solid })
+  }
+
+  /** 触发横向扩散特效（Rect 始终挂载，用 opacity 控制可见性，无需 pressedIndex） */
+  private triggerSpread(touchX: number): void {
+    SpreadEffectHelper.trigger(
+      (idx: number) => { /* Rect 始终挂载，无需 pressedIndex 控制 */
+      },
+      (scale: number, opacity: number) => {
+        this.spreadScale = scale;
+        this.spreadOpacity = opacity;
+      },
+      (x: number) => {
+        this.spreadCenterX = x;
+      },
+      0,
+      touchX,
+    );
   }
 }

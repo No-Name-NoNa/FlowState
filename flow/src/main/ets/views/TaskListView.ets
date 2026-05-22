@@ -21,7 +21,14 @@ import {
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
 import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { TaskViewModel } from '../viewmodel/TaskViewModel';
-import { getNextDeadline, getStartTime, TaskEntry } from '../model/TaskEntry';
+import {
+  getNextDeadline,
+  getStartTime,
+  parseIntervalNodes,
+  parseTimeNodes,
+  TaskEntry,
+  TaskScheduleType
+} from '../model/TaskEntry';
 import { TaskItemComponent } from './TaskItemComponent';
 
 /** 任务列表组件 */
@@ -29,14 +36,15 @@ import { TaskItemComponent } from './TaskItemComponent';
 export struct TaskListView {
   /** 当前要渲染的任务数组（@Link 直接绑定父组件 @State，保证动态刷新） */
   @Link tasks: TaskEntry[];
-  /** 数据变化回调：完成/删除操作完成后，通知父组件刷新 */
-  onDataChanged: () => void = () => {
-  };
   /** 是否显示空状态提示（由父组件根据数据源长度决定） */
   @Prop showEmptyHint: boolean = false;
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
   @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
+
+  /** 数据变化回调：完成/删除操作完成后，通知父组件刷新 */
+  onDataChanged: () => void = () => {
+  };
 
   /** 左滑显示的红色删除按钮 */
   @Builder
@@ -57,7 +65,6 @@ export struct TaskListView {
         message: I18nHelper.t(I18nKeys.DIALOG_DELETE_MSG, this.currentLanguage),
         primaryButton: {
           value: I18nHelper.t(I18nKeys.DIALOG_CONFIRM, this.currentLanguage),
-          fontColor: this.themeTokens.colorTextPrimary,
           action: () => {
             TaskViewModel.remove(taskId).then(() => {
               this.onDataChanged();
@@ -94,6 +101,8 @@ export struct TaskListView {
               entryCompletionType: task.completionType,
               entryAccumulatedDuration: task.accumulatedDuration,
               entryTargetDuration: task.targetDuration,
+              entryTotalNodes: this.getTotalNodes(task),
+              entryCurrentNodeIndex: task.currentNodeIndex,
               onDataChanged: this.onDataChanged,
             })
           }
@@ -126,5 +135,16 @@ export struct TaskListView {
     }
     .width('100%')
     .layoutWeight(1)
+  }
+
+  /** 获取任务的总节点数（多节点/多节点区间类型有效，其他返回 0） */
+  private getTotalNodes(task: TaskEntry): number {
+    if (task.scheduleType === TaskScheduleType.MULTI_NODE) {
+      return parseTimeNodes(task.timeNodes).length;
+    }
+    if (task.scheduleType === TaskScheduleType.MULTI_NODE_INTERVAL) {
+      return parseIntervalNodes(task.timeNodes).length;
+    }
+    return 0;
   }
 }

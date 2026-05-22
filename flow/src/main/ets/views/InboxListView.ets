@@ -29,9 +29,6 @@ import { InboxItemComponent } from './InboxItemComponent';
 export struct InboxListView {
   /** 当前要渲染的条目数组（@Link 直接绑定父组件 @State，保证动态刷新） */
   @Link entries: InboxEntry[];
-  /** 数据变化回调：删除、置顶等操作完成后，通知父组件刷新 */
-  onDataChanged: () => void = () => {
-  };
   /** 是否处于过滤状态（搜索或标签筛选激活时为 true），过滤期间禁用拖拽排序 */
   @Prop isFiltered: boolean = false;
   /** 是否显示空状态提示（由父组件根据数据源长度决定） */
@@ -39,6 +36,10 @@ export struct InboxListView {
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
   @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
+
+  /** 数据变化回调：删除、置顶等操作完成后，通知父组件刷新 */
+  onDataChanged: () => void = () => {
+  };
 
   /** 左滑显示的红色删除按钮 */
   @Builder
@@ -59,7 +60,6 @@ export struct InboxListView {
         message: I18nHelper.t(I18nKeys.DIALOG_DELETE_MSG, this.currentLanguage),
         primaryButton: {
           value: I18nHelper.t(I18nKeys.DIALOG_CONFIRM, this.currentLanguage),
-          fontColor: this.themeTokens.colorTextPrimary,
           action: () => {
             InboxViewModel.delete(entryId).then(() => {
               this.onDataChanged();

@@ -47,28 +47,6 @@ struct SettingsPage {
   @State spreadCenterX: number = 0;
 
   /**
-   * 触发指定行的横向矩形扩散特效。
-   * @param rowIndex 被点击的行索引
-   * @param touchX   触摸点相对于行元素的 X 坐标（vp）
-   */
-  private triggerRowSpread(rowIndex: number, touchX: number): void {
-    SpreadEffectHelper.trigger(
-      (idx) => {
-        this.pressedRowIndex = idx;
-      },
-      (scale, opacity) => {
-        this.rowSpreadScale = scale;
-        this.rowSpreadOpacity = opacity;
-      },
-      (x) => {
-        this.spreadCenterX = x;
-      },
-      rowIndex,
-      touchX,
-    );
-  }
-
-  /**
    * 语言导航行。
    * 直接在渲染树中读取 this.currentLanguage 以建立 ArkUI 响应式依赖，
    * 确保语言切换后右侧副文字即时刷新，无需重启。
@@ -358,5 +336,27 @@ struct SettingsPage {
     .width('100%')
     .height('100%')
     .backgroundColor(this.themeTokens.colorBackground)
+  }
+
+  /**
+   * 触发指定行的横向矩形扩散特效。
+   * @param rowIndex 被点击的行索引
+   * @param touchX   触摸点相对于行元素的 X 坐标（vp）
+   */
+  private triggerRowSpread(rowIndex: number, touchX: number): void {
+    SpreadEffectHelper.trigger(
+      (idx) => {
+        this.pressedRowIndex = idx;
+      },
+      (scale, opacity) => {
+        this.rowSpreadScale = scale;
+        this.rowSpreadOpacity = opacity;
+      },
+      (x) => {
+        this.spreadCenterX = x;
+      },
+      rowIndex,
+      touchX,
+    );
   }
 }

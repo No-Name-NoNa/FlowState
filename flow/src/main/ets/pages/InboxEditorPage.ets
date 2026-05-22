@@ -91,99 +91,6 @@ struct InboxEditorPage {
     }
   }
 
-  /** 触发保存按钮横向扩散特效 */
-  private triggerSaveSpread(touchX: number): void {
-    SpreadEffectHelper.trigger(
-      (idx: number) => {
-        this.savePressedIndex = idx;
-      },
-      (scale: number, opacity: number) => {
-        this.saveSpreadScale = scale;
-        this.saveSpreadOpacity = opacity;
-      },
-      (x: number) => {
-        this.saveCenterX = x;
-      },
-      0,
-      touchX,
-    );
-  }
-
-  /** 触发返回按钮横向扩散特效 */
-  private triggerBackSpread(touchX: number): void {
-    SpreadEffectHelper.trigger(
-      (idx: number) => {
-        this.backPressedIndex = idx;
-      },
-      (scale: number, opacity: number) => {
-        this.backSpreadScale = scale;
-        this.backSpreadOpacity = opacity;
-      },
-      (x: number) => {
-        this.backCenterX = x;
-      },
-      0,
-      touchX,
-    );
-  }
-
-  /**
-   * 确认添加标签输入框中的内容为新标签。
-   * 自动 trim，忽略空内容及重复标签。
-   */
-  private addTag(): void {
-    // 移除中英文逗号、首尾空格
-    const trimmed: string = this.tagInput.trim().replace(/，/g, '').replace(/,/g, '');
-    if (trimmed === '' || this.tags.indexOf(trimmed) >= 0) {
-      this.tagInput = '';
-      return;
-    }
-    const newTags: string[] = [];
-    for (const t of this.tags) {
-      newTags.push(t);
-    }
-    newTags.push(trimmed);
-    this.tags = newTags;
-    this.tagInput = '';
-  }
-
-  /** 移除指定索引的标签 */
-  private removeTag(index: number): void {
-    const newTags: string[] = [];
-    for (let i: number = 0; i < this.tags.length; i++) {
-      if (i !== index) {
-        newTags.push(this.tags[i]);
-      }
-    }
-    this.tags = newTags;
-  }
-
-  /** 验证并保存，成功后发送跨页刷新信号并返回上一页 */
-  private async doSave(): Promise<void> {
-    const trimmedText: string = this.text.trim();
-    if (trimmedText === '') {
-      return;
-    }
-    if (this.isEditMode) {
-      const updated: InboxEntry = {
-        id: this.originalEntry.id,
-        text: trimmedText,
-        content: this.content.trim(),
-        tags: serializeTags(this.tags),
-        sortOrder: this.originalEntry.sortOrder,
-        isPinned: this.originalEntry.isPinned,
-        createdAt: this.originalEntry.createdAt,
-        updatedAt: this.originalEntry.updatedAt,
-      };
-      await InboxViewModel.update(updated);
-    } else {
-      await InboxViewModel.create(trimmedText, this.content.trim(), this.tags);
-    }
-    // 通知首页刷新列表
-    AppStorage.set<boolean>(KEY_INBOX_NEEDS_REFRESH, true);
-    router.back();
-  }
-
   /** 单个已添加标签的 chip（含移除按钮） */
   @Builder
   tagChip(tag: string, index: number): void {
@@ -478,5 +385,98 @@ struct InboxEditorPage {
     .width('100%')
     .height('100%')
     .backgroundColor(this.themeTokens.colorBackground)
+  }
+
+  /** 触发保存按钮横向扩散特效 */
+  private triggerSaveSpread(touchX: number): void {
+    SpreadEffectHelper.trigger(
+      (idx: number) => {
+        this.savePressedIndex = idx;
+      },
+      (scale: number, opacity: number) => {
+        this.saveSpreadScale = scale;
+        this.saveSpreadOpacity = opacity;
+      },
+      (x: number) => {
+        this.saveCenterX = x;
+      },
+      0,
+      touchX,
+    );
+  }
+
+  /** 触发返回按钮横向扩散特效 */
+  private triggerBackSpread(touchX: number): void {
+    SpreadEffectHelper.trigger(
+      (idx: number) => {
+        this.backPressedIndex = idx;
+      },
+      (scale: number, opacity: number) => {
+        this.backSpreadScale = scale;
+        this.backSpreadOpacity = opacity;
+      },
+      (x: number) => {
+        this.backCenterX = x;
+      },
+      0,
+      touchX,
+    );
+  }
+
+  /**
+   * 确认添加标签输入框中的内容为新标签。
+   * 自动 trim，忽略空内容及重复标签。
+   */
+  private addTag(): void {
+    // 移除中英文逗号、首尾空格
+    const trimmed: string = this.tagInput.trim().replace(/，/g, '').replace(/,/g, '');
+    if (trimmed === '' || this.tags.indexOf(trimmed) >= 0) {
+      this.tagInput = '';
+      return;
+    }
+    const newTags: string[] = [];
+    for (const t of this.tags) {
+      newTags.push(t);
+    }
+    newTags.push(trimmed);
+    this.tags = newTags;
+    this.tagInput = '';
+  }
+
+  /** 移除指定索引的标签 */
+  private removeTag(index: number): void {
+    const newTags: string[] = [];
+    for (let i: number = 0; i < this.tags.length; i++) {
+      if (i !== index) {
+        newTags.push(this.tags[i]);
+      }
+    }
+    this.tags = newTags;
+  }
+
+  /** 验证并保存，成功后发送跨页刷新信号并返回上一页 */
+  private async doSave(): Promise<void> {
+    const trimmedText: string = this.text.trim();
+    if (trimmedText === '') {
+      return;
+    }
+    if (this.isEditMode) {
+      const updated: InboxEntry = {
+        id: this.originalEntry.id,
+        text: trimmedText,
+        content: this.content.trim(),
+        tags: serializeTags(this.tags),
+        sortOrder: this.originalEntry.sortOrder,
+        isPinned: this.originalEntry.isPinned,
+        createdAt: this.originalEntry.createdAt,
+        updatedAt: this.originalEntry.updatedAt,
+      };
+      await InboxViewModel.update(updated);
+    } else {
+      await InboxViewModel.create(trimmedText, this.content.trim(), this.tags);
+    }
+    // 通知首页刷新列表
+    AppStorage.set<boolean>(KEY_INBOX_NEEDS_REFRESH, true);
+    router.back();
   }
 }

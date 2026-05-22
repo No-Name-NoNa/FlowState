@@ -6,7 +6,15 @@
  */
 import { TaskDatabase } from '../util/TaskDatabase';
 import {
+  computeNextRecurringDate,
   computeTaskWeight,
+  IntervalNode,
+  parseIntervalNodes,
+  parseRecurringRule,
+  parseTimeNodes,
+  RecurringRule,
+  serializeIntervalNodes,
+  serializeTimeNodes,
   TaskCompletionType,
   TaskEntry,
   TaskPriority,
@@ -16,8 +24,9 @@ import {
 } from '../model/TaskEntry';
 import { InboxEntry, parseTags } from '../model/InboxEntry';
 import { NotificationHelper } from '../util/NotificationHelper';
+import { TimerSessionDatabase } from '../util/TimerSessionDatabase';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { LOG_DOMAIN } from '../constants/AppConstants';
+import { KEY_HISTORY_NEEDS_REFRESH, LOG_DOMAIN } from '../constants/AppConstants';
 
 /** 任务 ViewModel，所有方法均为静态 */
 export class TaskViewModel {
@@ -82,57 +91,6 @@ export class TaskViewModel {
     TaskViewModel.currentStatus = status;
     TaskViewModel.currentTag = tag;
     TaskViewModel.applyFilter();
-  }
-
-  /** 内部：将当前过滤条件应用到 allTasks，生成 filteredTasks */
-  private static applyFilter(): void {
-    let result: TaskEntry[] = TaskViewModel.allTasks;
-
-    // 状态过滤（-1 = 所有非归档；>= 0 = 精确匹配指定状态）
-    if (TaskViewModel.currentStatus >= 0) {
-      result = result.filter((t: TaskEntry) => t.status === TaskViewModel.currentStatus);
-    } else {
-      // 默认排除已归档任务
-      result = result.filter((t: TaskEntry) => t.status !== TaskStatus.ARCHIVED);
-    }
-
-    // 关键词过滤（标题/正文/标签任意命中即可）
-    const kw: string = TaskViewModel.currentKeyword.trim().toLowerCase();
-    if (kw !== '') {
-      result = result.filter((t: TaskEntry) => {
-        if (t.title.toLowerCase().includes(kw)) {
-          return true;
-        }
-        if (t.content.toLowerCase().includes(kw)) {
-          return true;
-        }
-        // 标签匹配：直接在 JSON 字符串中搜索（避免每次反序列化）
-        if (t.tags.toLowerCase().includes(kw)) {
-          return true;
-        }
-        return false;
-      });
-    }
-
-    // 标签精确过滤
-    if (TaskViewModel.currentTag !== '') {
-      result = result.filter((t: TaskEntry) => {
-        if (t.tags === '') {
-          return false;
-        }
-        try {
-          const tags: string[] = parseTags(t.tags);
-          return tags.indexOf(TaskViewModel.currentTag) >= 0;
-        } catch {
-          return false;
-        }
-      });
-    }
-
-    // 已完成任务始终沉底：将 COMPLETED 条目分离至末尾
-    const active: TaskEntry[] = result.filter((t: TaskEntry) => t.status !== TaskStatus.COMPLETED);
-    const completed: TaskEntry[] = result.filter((t: TaskEntry) => t.status === TaskStatus.COMPLETED);
-    TaskViewModel.filteredTasks = active.concat(completed);
   }
 
   /**
@@ -297,7 +255,7 @@ export class TaskViewModel {
   }
 
   /**
-   * 删除任务：先取消提醒，再删 DB 并刷新内存缓存。
+   * 删除任务：先取消提醒，再删 DB、清理计时分段记录，并刷新内存缓存。
    * @param id 任务主键
    */
   static async remove(id: number): Promise<void> {
@@ -306,6 +264,8 @@ export class TaskViewModel {
       await NotificationHelper.cancelReminder(entry.reminderId);
       await NotificationHelper.cancelReminder(entry.startReminderId);
     }
+    // 同步删除该任务的所有计时分段记录
+    await TimerSessionDatabase.deleteByTaskId(id);
     await TaskDatabase.delete(id);
     await TaskViewModel.load();
   }
@@ -407,6 +367,12 @@ export class TaskViewModel {
 
   /**
    * 将指定任务标记为已完成，取消截止提醒，并刷新内存缓存。
+   *
+   * 特殊行为：
+   * - RECURRING：将当前实例标为完成，并自动创建携带下一次触发时间的新任务（进入待办）。
+   * - MULTI_NODE / MULTI_NODE_INTERVAL：若还有下一节点，推进 currentNodeIndex，保持 PENDING；
+   *   若已是最后节点，才标记为 COMPLETED。
+   *
    * @param id 任务主键
    */
   static async complete(id: number): Promise<void> {
@@ -414,10 +380,234 @@ export class TaskViewModel {
     if (entry === null) {
       return;
     }
-    // 任务完成，取消截止提醒和开始提醒
     await NotificationHelper.cancelReminder(entry.reminderId);
     await NotificationHelper.cancelReminder(entry.startReminderId);
     const now: number = Date.now();
+
+    // ── RECURRING：完成当前实例 + 自动创建下一实例 ──────────────────────────
+    if (entry.scheduleType === TaskScheduleType.RECURRING) {
+      // 将当前实例标为完成
+      const completedEntry: TaskEntry = {
+        id: entry.id,
+        title: entry.title,
+        content: entry.content,
+        tags: entry.tags,
+        priority: entry.priority,
+        status: TaskStatus.COMPLETED,
+        scheduleType: entry.scheduleType,
+        timeNodes: entry.timeNodes,
+        currentNodeIndex: entry.currentNodeIndex,
+        recurringRule: entry.recurringRule,
+        targetDuration: entry.targetDuration,
+        accumulatedDuration: entry.accumulatedDuration,
+        reminderType: entry.reminderType,
+        reminderOffset: entry.reminderOffset,
+        reminderSound: entry.reminderSound,
+        reminderMessage: entry.reminderMessage,
+        completionType: entry.completionType,
+        completedAt: now,
+        sourceInboxId: entry.sourceInboxId,
+        isPinned: entry.isPinned,
+        sortOrder: entry.sortOrder,
+        createdAt: entry.createdAt,
+        updatedAt: now,
+        reminderId: 0,
+        startReminderType: entry.startReminderType,
+        startReminderMessage: entry.startReminderMessage,
+        startReminderId: 0,
+      };
+      await TaskDatabase.update(completedEntry);
+
+      // 计算下一次触发时间并创建新任务实例
+      const rule: RecurringRule | null = parseRecurringRule(entry.recurringRule);
+      if (rule !== null) {
+        const currentNodes: number[] = parseTimeNodes(entry.timeNodes);
+        const currentTriggerTs: number = currentNodes.length > 0 ? currentNodes[0] : now;
+        const nextTs: number = computeNextRecurringDate(rule, currentTriggerTs, now);
+        if (nextTs > 0) {
+          const nextEntry: TaskEntry = {
+            id: 0,
+            title: entry.title,
+            content: entry.content,
+            tags: entry.tags,
+            priority: entry.priority,
+            status: TaskStatus.PENDING,
+            scheduleType: TaskScheduleType.RECURRING,
+            timeNodes: serializeTimeNodes([nextTs]),
+            currentNodeIndex: 0,
+            recurringRule: entry.recurringRule,
+            targetDuration: entry.targetDuration,
+            accumulatedDuration: 0,
+            reminderType: entry.reminderType,
+            reminderOffset: entry.reminderOffset,
+            reminderSound: entry.reminderSound,
+            reminderMessage: entry.reminderMessage,
+            completionType: entry.completionType,
+            completedAt: 0,
+            sourceInboxId: 0,
+            isPinned: 0,
+            sortOrder: entry.sortOrder,
+            createdAt: now,
+            updatedAt: now,
+            reminderId: 0,
+            startReminderType: 0,
+            startReminderMessage: '',
+            startReminderId: 0,
+          };
+          await TaskViewModel.create(nextEntry);
+          return; // create() 内部已调用 load()，直接返回
+        }
+      }
+      await TaskViewModel.load();
+      return;
+    }
+
+    // ── MULTI_NODE：推进节点索引，最后节点完成后才标为 COMPLETED ───────────
+    if (entry.scheduleType === TaskScheduleType.MULTI_NODE) {
+      const nodes: number[] = parseTimeNodes(entry.timeNodes);
+      const nextIndex: number = entry.currentNodeIndex + 1;
+      if (nextIndex < nodes.length) {
+        // 还有下一节点：推进索引，保持 PENDING 状态
+        const advanced: TaskEntry = {
+          id: entry.id,
+          title: entry.title,
+          content: entry.content,
+          tags: entry.tags,
+          priority: entry.priority,
+          status: TaskStatus.PENDING,
+          scheduleType: entry.scheduleType,
+          timeNodes: entry.timeNodes,
+          currentNodeIndex: nextIndex,
+          recurringRule: entry.recurringRule,
+          targetDuration: entry.targetDuration,
+          accumulatedDuration: 0,
+          reminderType: entry.reminderType,
+          reminderOffset: entry.reminderOffset,
+          reminderSound: entry.reminderSound,
+          reminderMessage: entry.reminderMessage,
+          completionType: entry.completionType,
+          completedAt: 0,
+          sourceInboxId: entry.sourceInboxId,
+          isPinned: entry.isPinned,
+          sortOrder: entry.sortOrder,
+          createdAt: entry.createdAt,
+          updatedAt: now,
+          reminderId: 0,
+          startReminderType: entry.startReminderType,
+          startReminderMessage: entry.startReminderMessage,
+          startReminderId: 0,
+        };
+        const newReminderId: number = await NotificationHelper.scheduleDeadlineReminder(advanced);
+        const withReminder: TaskEntry = {
+          id: advanced.id,
+          title: advanced.title,
+          content: advanced.content,
+          tags: advanced.tags,
+          priority: advanced.priority,
+          status: advanced.status,
+          scheduleType: advanced.scheduleType,
+          timeNodes: advanced.timeNodes,
+          currentNodeIndex: advanced.currentNodeIndex,
+          recurringRule: advanced.recurringRule,
+          targetDuration: advanced.targetDuration,
+          accumulatedDuration: advanced.accumulatedDuration,
+          reminderType: advanced.reminderType,
+          reminderOffset: advanced.reminderOffset,
+          reminderSound: advanced.reminderSound,
+          reminderMessage: advanced.reminderMessage,
+          completionType: advanced.completionType,
+          completedAt: advanced.completedAt,
+          sourceInboxId: advanced.sourceInboxId,
+          isPinned: advanced.isPinned,
+          sortOrder: advanced.sortOrder,
+          createdAt: advanced.createdAt,
+          updatedAt: advanced.updatedAt,
+          reminderId: newReminderId,
+          startReminderType: advanced.startReminderType,
+          startReminderMessage: advanced.startReminderMessage,
+          startReminderId: 0,
+        };
+        await TaskDatabase.update(withReminder);
+        await TaskViewModel.load();
+        return;
+      }
+      // 已是最后节点：正常标完成
+    }
+
+    // ── MULTI_NODE_INTERVAL：推进节点索引，最后节点完成后才标为 COMPLETED ──
+    if (entry.scheduleType === TaskScheduleType.MULTI_NODE_INTERVAL) {
+      const intervalNodes: IntervalNode[] = parseIntervalNodes(entry.timeNodes);
+      const nextIndex: number = entry.currentNodeIndex + 1;
+      if (nextIndex < intervalNodes.length) {
+        // 还有下一区间节点：推进索引，保持 PENDING
+        const advanced: TaskEntry = {
+          id: entry.id,
+          title: entry.title,
+          content: entry.content,
+          tags: entry.tags,
+          priority: entry.priority,
+          status: TaskStatus.PENDING,
+          scheduleType: entry.scheduleType,
+          timeNodes: entry.timeNodes,
+          currentNodeIndex: nextIndex,
+          recurringRule: entry.recurringRule,
+          targetDuration: entry.targetDuration,
+          accumulatedDuration: 0,
+          reminderType: entry.reminderType,
+          reminderOffset: entry.reminderOffset,
+          reminderSound: entry.reminderSound,
+          reminderMessage: entry.reminderMessage,
+          completionType: entry.completionType,
+          completedAt: 0,
+          sourceInboxId: entry.sourceInboxId,
+          isPinned: entry.isPinned,
+          sortOrder: entry.sortOrder,
+          createdAt: entry.createdAt,
+          updatedAt: now,
+          reminderId: 0,
+          startReminderType: entry.startReminderType,
+          startReminderMessage: entry.startReminderMessage,
+          startReminderId: 0,
+        };
+        const newReminderId: number = await NotificationHelper.scheduleDeadlineReminder(advanced);
+        const newStartReminderId: number = await NotificationHelper.scheduleStartReminder(advanced);
+        const withReminder: TaskEntry = {
+          id: advanced.id,
+          title: advanced.title,
+          content: advanced.content,
+          tags: advanced.tags,
+          priority: advanced.priority,
+          status: advanced.status,
+          scheduleType: advanced.scheduleType,
+          timeNodes: advanced.timeNodes,
+          currentNodeIndex: advanced.currentNodeIndex,
+          recurringRule: advanced.recurringRule,
+          targetDuration: advanced.targetDuration,
+          accumulatedDuration: advanced.accumulatedDuration,
+          reminderType: advanced.reminderType,
+          reminderOffset: advanced.reminderOffset,
+          reminderSound: advanced.reminderSound,
+          reminderMessage: advanced.reminderMessage,
+          completionType: advanced.completionType,
+          completedAt: advanced.completedAt,
+          sourceInboxId: advanced.sourceInboxId,
+          isPinned: advanced.isPinned,
+          sortOrder: advanced.sortOrder,
+          createdAt: advanced.createdAt,
+          updatedAt: advanced.updatedAt,
+          reminderId: newReminderId,
+          startReminderType: advanced.startReminderType,
+          startReminderMessage: advanced.startReminderMessage,
+          startReminderId: newStartReminderId,
+        };
+        await TaskDatabase.update(withReminder);
+        await TaskViewModel.load();
+        return;
+      }
+      // 已是最后节点：正常标完成
+    }
+
+    // ── 通用完成逻辑（SINGLE / INTERVAL / 最后节点） ────────────────────────
     const updated: TaskEntry = {
       id: entry.id,
       title: entry.title,
@@ -449,6 +639,8 @@ export class TaskViewModel {
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
+    // 归档后通知历史页刷新
+    AppStorage.setOrCreate(KEY_HISTORY_NEEDS_REFRESH, true);
   }
 
   /**
@@ -538,6 +730,8 @@ export class TaskViewModel {
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
+    // 归档后通知历史页刷新
+    AppStorage.setOrCreate(KEY_HISTORY_NEEDS_REFRESH, true);
   }
 
   /**
@@ -627,5 +821,56 @@ export class TaskViewModel {
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
+  }
+
+  /** 内部：将当前过滤条件应用到 allTasks，生成 filteredTasks */
+  private static applyFilter(): void {
+    let result: TaskEntry[] = TaskViewModel.allTasks;
+
+    // 状态过滤（-1 = 所有非归档；>= 0 = 精确匹配指定状态）
+    if (TaskViewModel.currentStatus >= 0) {
+      result = result.filter((t: TaskEntry) => t.status === TaskViewModel.currentStatus);
+    } else {
+      // 默认排除已归档任务
+      result = result.filter((t: TaskEntry) => t.status !== TaskStatus.ARCHIVED);
+    }
+
+    // 关键词过滤（标题/正文/标签任意命中即可）
+    const kw: string = TaskViewModel.currentKeyword.trim().toLowerCase();
+    if (kw !== '') {
+      result = result.filter((t: TaskEntry) => {
+        if (t.title.toLowerCase().includes(kw)) {
+          return true;
+        }
+        if (t.content.toLowerCase().includes(kw)) {
+          return true;
+        }
+        // 标签匹配：直接在 JSON 字符串中搜索（避免每次反序列化）
+        if (t.tags.toLowerCase().includes(kw)) {
+          return true;
+        }
+        return false;
+      });
+    }
+
+    // 标签精确过滤
+    if (TaskViewModel.currentTag !== '') {
+      result = result.filter((t: TaskEntry) => {
+        if (t.tags === '') {
+          return false;
+        }
+        try {
+          const tags: string[] = parseTags(t.tags);
+          return tags.indexOf(TaskViewModel.currentTag) >= 0;
+        } catch {
+          return false;
+        }
+      });
+    }
+
+    // 已完成任务始终沉底：将 COMPLETED 条目分离至末尾
+    const active: TaskEntry[] = result.filter((t: TaskEntry) => t.status !== TaskStatus.COMPLETED);
+    const completed: TaskEntry[] = result.filter((t: TaskEntry) => t.status === TaskStatus.COMPLETED);
+    TaskViewModel.filteredTasks = active.concat(completed);
   }
 }

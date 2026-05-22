@@ -77,37 +77,6 @@ struct ThemePage {
     this.accentHexInput = savedTokens.colorAccent;
   }
 
-  /** 使用当前编辑器三色立即应用并保存自定义主题 */
-  private applyCustomColors(): void {
-    ThemeViewModel.setCustomTheme(
-      this.customBgColor,
-      this.customTextColor,
-      this.customAccentColor,
-    );
-  }
-
-  /**
-   * 触发指定行的横向矩形扩散特效。
-   * @param rowIndex 被点击的行索引
-   * @param touchX   触摸点相对于行元素的 X 坐标（vp）
-   */
-  private triggerRowSpread(rowIndex: number, touchX: number): void {
-    SpreadEffectHelper.trigger(
-      (idx) => {
-        this.pressedRowIndex = idx;
-      },
-      (scale, opacity) => {
-        this.rowSpreadScale = scale;
-        this.rowSpreadOpacity = opacity;
-      },
-      (x) => {
-        this.spreadCenterX = x;
-      },
-      rowIndex,
-      touchX,
-    );
-  }
-
   /**
    * 单个主题选项行（文字 + 选中勾）。
    * @param themeId   主题标识
@@ -485,5 +454,36 @@ struct ThemePage {
     .height('100%')
     .justifyContent(FlexAlign.Start)
     .backgroundColor(this.themeTokens.colorBackground)
+  }
+
+  /** 使用当前编辑器三色立即应用并保存自定义主题 */
+  private applyCustomColors(): void {
+    ThemeViewModel.setCustomTheme(
+      this.customBgColor,
+      this.customTextColor,
+      this.customAccentColor,
+    );
+  }
+
+  /**
+   * 触发指定行的横向矩形扩散特效。
+   * @param rowIndex 被点击的行索引
+   * @param touchX   触摸点相对于行元素的 X 坐标（vp）
+   */
+  private triggerRowSpread(rowIndex: number, touchX: number): void {
+    SpreadEffectHelper.trigger(
+      (idx) => {
+        this.pressedRowIndex = idx;
+      },
+      (scale, opacity) => {
+        this.rowSpreadScale = scale;
+        this.rowSpreadOpacity = opacity;
+      },
+      (x) => {
+        this.spreadCenterX = x;
+      },
+      rowIndex,
+      touchX,
+    );
   }
 }

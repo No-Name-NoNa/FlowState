@@ -16,6 +16,7 @@ import {
 import { I18nHelper } from '../util/I18nHelper';
 import { InboxDatabase } from '../util/InboxDatabase';
 import { TaskDatabase } from '../util/TaskDatabase';
+import { TimerSessionDatabase } from '../util/TimerSessionDatabase';
 import { PreferencesHelper } from '../util/PreferencesHelper';
 import { ThemeHelper } from '../util/ThemeHelper';
 import { FontSizeHelper } from '../util/FontSizeHelper';
@@ -57,6 +58,9 @@ export default class FlowAbility extends UIAbility {
     // 初始化任务 RDB 数据库（异步，不阻塞页面加载）
     TaskDatabase.init(this.context);
 
+    // 初始化计时分段记录 RDB 数据库（异步，不阻塞页面加载）
+    TimerSessionDatabase.init(this.context);
+
     // 启动时协调提醒定时器：为全部活跃任务重新调度内存定时器（fire-and-forget）
     TaskViewModel.reconcileReminders().catch((err: Error) => {
       hilog.error(LOG_DOMAIN, 'FlowAbility', '提醒协调异常：%{public}s', JSON.stringify(err));
@@ -75,6 +79,43 @@ export default class FlowAbility extends UIAbility {
   onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onNewWant');
     this.handleWantParams(want, true);
+  }
+
+  onDestroy(): void {
+    hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onDestroy');
+  }
+
+  onWindowStageCreate(windowStage: window.WindowStage): void {
+    hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onWindowStageCreate');
+
+    // 请求通知权限（弹出系统授权对话框，用户首次使用时确认）
+    notificationManager.requestEnableNotification(this.context).catch((err: Error) => {
+      hilog.warn(LOG_DOMAIN, 'FlowAbility', '通知权限请求未通过：%{public}s', JSON.stringify(err));
+    });
+
+    windowStage.loadContent('pages/Index', (err) => {
+      if (err.code) {
+        hilog.error(LOG_DOMAIN, 'FlowAbility', '加载页面内容失败：%{public}s', JSON.stringify(err));
+        return;
+      }
+      hilog.info(LOG_DOMAIN, 'FlowAbility', '页面内容加载成功');
+    });
+  }
+
+  onWindowStageDestroy(): void {
+    hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onWindowStageDestroy');
+  }
+
+  onForeground(): void {
+    hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onForeground');
+    // 每次进入前台时限频协调提醒，补调度应用存活期间可能遗漏的定时器
+    TaskViewModel.maybeReconcile().catch((err: Error) => {
+      hilog.error(LOG_DOMAIN, 'FlowAbility', '前台提醒协调异常：%{public}s', JSON.stringify(err));
+    });
+  }
+
+  onBackground(): void {
+    hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onBackground');
   }
 
   /**
@@ -116,42 +157,5 @@ export default class FlowAbility extends UIAbility {
     if (openTaskId > 0) {
       AppStorage.setOrCreate<number>(KEY_PENDING_OPEN_TASK_ID, openTaskId);
     }
-  }
-
-  onDestroy(): void {
-    hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onDestroy');
-  }
-
-  onWindowStageCreate(windowStage: window.WindowStage): void {
-    hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onWindowStageCreate');
-
-    // 请求通知权限（弹出系统授权对话框，用户首次使用时确认）
-    notificationManager.requestEnableNotification(this.context).catch((err: Error) => {
-      hilog.warn(LOG_DOMAIN, 'FlowAbility', '通知权限请求未通过：%{public}s', JSON.stringify(err));
-    });
-
-    windowStage.loadContent('pages/Index', (err) => {
-      if (err.code) {
-        hilog.error(LOG_DOMAIN, 'FlowAbility', '加载页面内容失败：%{public}s', JSON.stringify(err));
-        return;
-      }
-      hilog.info(LOG_DOMAIN, 'FlowAbility', '页面内容加载成功');
-    });
-  }
-
-  onWindowStageDestroy(): void {
-    hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onWindowStageDestroy');
-  }
-
-  onForeground(): void {
-    hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onForeground');
-    // 每次进入前台时限频协调提醒，补调度应用存活期间可能遗漏的定时器
-    TaskViewModel.maybeReconcile().catch((err: Error) => {
-      hilog.error(LOG_DOMAIN, 'FlowAbility', '前台提醒协调异常：%{public}s', JSON.stringify(err));
-    });
-  }
-
-  onBackground(): void {
-    hilog.info(LOG_DOMAIN, 'FlowAbility', 'Ability onBackground');
   }
 }

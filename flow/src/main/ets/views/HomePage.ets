@@ -59,83 +59,6 @@ export struct HomePage {
     this.loadData();
   }
 
-  /** 从 DB 加载数据，刷新所有列表状态 */
-  private loadData(): void {
-    InboxViewModel.load().then(() => {
-      this.refreshEntries();
-    });
-  }
-
-  /** 将 ViewModel 过滤结果同步到视图状态（必须在每次数据变化后调用） */
-  private refreshEntries(): void {
-    // .slice() 生成新数组引用，确保 ArkUI @State 检测到变化并触发 ForEach 重渲染
-    this.entries = InboxViewModel.filteredEntries.slice();
-    this.tagList = InboxViewModel.getAllTags();
-    this.inboxIsEmpty = this.entries.length === 0;
-  }
-
-  /** 跨页刷新信号回调：InboxEditorPage 保存后触发 */
-  private onInboxRefreshChanged(): void {
-    if (this.inboxNeedsRefresh) {
-      // 重置信号，避免重复触发
-      AppStorage.set<boolean>(KEY_INBOX_NEEDS_REFRESH, false);
-      // InboxViewModel.update/create 内部已完成 DB 读取并更新 filteredEntries，
-      // 直接调用 refreshEntries() 同步读取即可，无需再次异步查询 DB。
-      this.refreshEntries();
-    }
-  }
-
-  /** 切换搜索栏展开/收起（附带 250ms EaseOut 高度动画） */
-  private toggleSearch(): void {
-    animateTo({ duration: 250, curve: Curve.EaseOut }, () => {
-      this.showSearch = !this.showSearch;
-      this.searchBarHeight = this.showSearch ? 48 : 0;
-      // 收起时同步清除搜索关键词并刷新列表
-      if (!this.showSearch) {
-        this.searchKeyword = '';
-        InboxViewModel.filter('', this.activeTag);
-        this.refreshEntries();
-      }
-    });
-  }
-
-  /** 切换标签筛选区展开/收起（附带 250ms EaseOut 高度动画） */
-  private toggleTagFilter(): void {
-    animateTo({ duration: 250, curve: Curve.EaseOut }, () => {
-      this.showTagFilter = !this.showTagFilter;
-      this.tagFilterHeight = this.showTagFilter ? 40 : 0;
-      // 收起时重置标签筛选
-      if (!this.showTagFilter) {
-        this.activeTag = '';
-        InboxViewModel.filter(this.searchKeyword, '');
-        this.refreshEntries();
-      }
-    });
-  }
-
-  /** 是否处于过滤状态（搜索或标签筛选激活） */
-  private isFiltered(): boolean {
-    return this.searchKeyword !== '' || this.activeTag !== '';
-  }
-
-  /** 触发「+ 新建」按钮横向扩散特效 */
-  private triggerNewBtnSpread(touchX: number): void {
-    SpreadEffectHelper.trigger(
-      (idx: number) => {
-        this.newBtnPressedIndex = idx;
-      },
-      (scale: number, opacity: number) => {
-        this.newBtnSpreadScale = scale;
-        this.newBtnSpreadOpacity = opacity;
-      },
-      (x: number) => {
-        this.newBtnCenterX = x;
-      },
-      0,
-      touchX,
-    );
-  }
-
   build() {
     Column() {
       // ── 顶部 Header ──────────────────────────────────────────────────────
@@ -330,5 +253,82 @@ export struct HomePage {
     .width('100%')
     .height('100%')
     .backgroundColor(this.themeTokens.colorBackground)
+  }
+
+  /** 从 DB 加载数据，刷新所有列表状态 */
+  private loadData(): void {
+    InboxViewModel.load().then(() => {
+      this.refreshEntries();
+    });
+  }
+
+  /** 将 ViewModel 过滤结果同步到视图状态（必须在每次数据变化后调用） */
+  private refreshEntries(): void {
+    // .slice() 生成新数组引用，确保 ArkUI @State 检测到变化并触发 ForEach 重渲染
+    this.entries = InboxViewModel.filteredEntries.slice();
+    this.tagList = InboxViewModel.getAllTags();
+    this.inboxIsEmpty = this.entries.length === 0;
+  }
+
+  /** 跨页刷新信号回调：InboxEditorPage 保存后触发 */
+  private onInboxRefreshChanged(): void {
+    if (this.inboxNeedsRefresh) {
+      // 重置信号，避免重复触发
+      AppStorage.set<boolean>(KEY_INBOX_NEEDS_REFRESH, false);
+      // InboxViewModel.update/create 内部已完成 DB 读取并更新 filteredEntries，
+      // 直接调用 refreshEntries() 同步读取即可，无需再次异步查询 DB。
+      this.refreshEntries();
+    }
+  }
+
+  /** 切换搜索栏展开/收起（附带 250ms EaseOut 高度动画） */
+  private toggleSearch(): void {
+    animateTo({ duration: 250, curve: Curve.EaseOut }, () => {
+      this.showSearch = !this.showSearch;
+      this.searchBarHeight = this.showSearch ? 48 : 0;
+      // 收起时同步清除搜索关键词并刷新列表
+      if (!this.showSearch) {
+        this.searchKeyword = '';
+        InboxViewModel.filter('', this.activeTag);
+        this.refreshEntries();
+      }
+    });
+  }
+
+  /** 切换标签筛选区展开/收起（附带 250ms EaseOut 高度动画） */
+  private toggleTagFilter(): void {
+    animateTo({ duration: 250, curve: Curve.EaseOut }, () => {
+      this.showTagFilter = !this.showTagFilter;
+      this.tagFilterHeight = this.showTagFilter ? 40 : 0;
+      // 收起时重置标签筛选
+      if (!this.showTagFilter) {
+        this.activeTag = '';
+        InboxViewModel.filter(this.searchKeyword, '');
+        this.refreshEntries();
+      }
+    });
+  }
+
+  /** 是否处于过滤状态（搜索或标签筛选激活） */
+  private isFiltered(): boolean {
+    return this.searchKeyword !== '' || this.activeTag !== '';
+  }
+
+  /** 触发「+ 新建」按钮横向扩散特效 */
+  private triggerNewBtnSpread(touchX: number): void {
+    SpreadEffectHelper.trigger(
+      (idx: number) => {
+        this.newBtnPressedIndex = idx;
+      },
+      (scale: number, opacity: number) => {
+        this.newBtnSpreadScale = scale;
+        this.newBtnSpreadOpacity = opacity;
+      },
+      (x: number) => {
+        this.newBtnCenterX = x;
+      },
+      0,
+      touchX,
+    );
   }
 }
