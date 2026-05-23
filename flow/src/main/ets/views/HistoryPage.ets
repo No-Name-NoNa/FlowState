@@ -195,7 +195,7 @@ export struct HistoryPage {
                 },
               })
             },
-            (group: MonthGroup) => group.year.toString() + '_' + group.month.toString()
+            (group: MonthGroup) => group.year.toString() + '_' + group.month.toString() + '_' + group.count.toString()
           )
         }
         .width('100%')

@@ -52,6 +52,11 @@ export struct TaskPage {
   @State tagFilterHeight: number = 0;
   /** 列表是否为空，控制 TaskListView 的空状态提示 */
   @State tasksIsEmpty: boolean = true;
+  // ── 「+ 新建任务」按钮扩散特效状态 ────────────────────────────────────────
+  @State newBtnPressedIndex: number = -1;
+  @State newBtnSpreadScale: number = 0;
+  @State newBtnSpreadOpacity: number = 0;
+  @State newBtnCenterX: number = 0;
   /**
    * 时钟 tick，每 60s 自增。同时用于：
    * 1. 触发 TaskListView → TaskItemComponent 重渲染，刷新截止时间倒计时文字。
@@ -62,11 +67,6 @@ export struct TaskPage {
   private alignTimer: number = -1;
   /** 60s 定时器 ID，在 aboutToDisappear 时清理 */
   private tickTimer: number = -1;
-  // ── 「+ 新建任务」按钮扩散特效状态 ────────────────────────────────────────
-  @State newBtnPressedIndex: number = -1;
-  @State newBtnSpreadScale: number = 0;
-  @State newBtnSpreadOpacity: number = 0;
-  @State newBtnCenterX: number = 0;
 
   aboutToAppear(): void {
     this.loadData();

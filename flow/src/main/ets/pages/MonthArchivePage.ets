@@ -16,6 +16,7 @@ import {
   KEY_APP_LANGUAGE,
   KEY_FONT_TOKENS,
   KEY_HISTORY_NEEDS_REFRESH,
+  KEY_MONTH_ARCHIVE_NEEDS_REFRESH,
   KEY_THEME_TOKENS,
   LANG_ZH_CN,
 } from '../constants/AppConstants';
@@ -44,6 +45,9 @@ struct MonthArchivePage {
   @StorageLink(KEY_APP_LANGUAGE) private lang: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) private themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
   @StorageLink(KEY_FONT_TOKENS) private fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
+  /** ArchivedTaskDetailPage 恢复/删除后触发本页刷新的专属信号 */
+  @Watch('onMonthArchiveRefreshChanged')
+  @StorageLink(KEY_MONTH_ARCHIVE_NEEDS_REFRESH) private monthArchiveNeedsRefresh: boolean = false;
   /** 当前月份的所有归档任务（全量缓存） */
   @State private allTasks: TaskEntry[] = [];
   /** 过滤后的展示列表 */
@@ -81,10 +85,6 @@ struct MonthArchivePage {
     this.monthLabel = params.label;
     this.rangeFrom = new Date(year, month - 1, 1, 0, 0, 0, 0).getTime();
     this.rangeTo = new Date(year, month, 1, 0, 0, 0, 0).getTime();
-  }
-
-  /** 每次页面出现时加载数据（初次进入 + 从子页返回均会触发） */
-  onPageShow(): void {
     this.loadData();
   }
 
@@ -363,6 +363,14 @@ struct MonthArchivePage {
     .width('100%')
     .height('100%')
     .backgroundColor(this.themeTokens.colorBackground)
+  }
+
+  /** ArchivedTaskDetailPage 恢复/删除后的专属刷新回调 */
+  private onMonthArchiveRefreshChanged(): void {
+    if (this.monthArchiveNeedsRefresh) {
+      AppStorage.set<boolean>(KEY_MONTH_ARCHIVE_NEEDS_REFRESH, false);
+      this.loadData();
+    }
   }
 
   /** 从 DB 加载本月全量归档任务 */

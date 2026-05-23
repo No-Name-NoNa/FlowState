@@ -55,7 +55,6 @@ export struct InboxItemComponent {
   @State private spreadScale: number = 0;
   @State private spreadOpacity: number = 0;
   @State private spreadCenterX: number = 0;
-
   /** 数据变化回调：增删改置顶后通知父组件刷新 */
   onDataChanged: () => void = () => {
   };

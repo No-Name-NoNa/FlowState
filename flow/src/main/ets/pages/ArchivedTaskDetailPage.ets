@@ -14,6 +14,7 @@ import {
   KEY_APP_LANGUAGE,
   KEY_FONT_TOKENS,
   KEY_HISTORY_NEEDS_REFRESH,
+  KEY_MONTH_ARCHIVE_NEEDS_REFRESH,
   KEY_TASK_NEEDS_REFRESH,
   KEY_THEME_TOKENS,
   LANG_ZH_CN,
@@ -356,6 +357,7 @@ struct ArchivedTaskDetailPage {
           StatisticsViewModel.restoreTask(this.taskId).then(() => {
             AppStorage.setOrCreate(KEY_TASK_NEEDS_REFRESH, true);
             AppStorage.setOrCreate(KEY_HISTORY_NEEDS_REFRESH, true);
+            AppStorage.setOrCreate(KEY_MONTH_ARCHIVE_NEEDS_REFRESH, true);
             router.back();
           });
         },
@@ -379,6 +381,7 @@ struct ArchivedTaskDetailPage {
         action: () => {
           StatisticsViewModel.deleteArchivedTask(this.taskId).then(() => {
             AppStorage.setOrCreate(KEY_HISTORY_NEEDS_REFRESH, true);
+            AppStorage.setOrCreate(KEY_MONTH_ARCHIVE_NEEDS_REFRESH, true);
             router.back();
           });
         },

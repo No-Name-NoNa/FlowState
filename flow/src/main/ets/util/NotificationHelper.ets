@@ -74,44 +74,6 @@ export class NotificationHelper {
   private static readonly MAX_SAFE_TIMEOUT_MS: number = 20 * 24 * 60 * 60 * 1000;
 
   /**
-   * 防溢出截止提醒定时器：当 delayMs 超过 int32 安全上限时，分段链式调度。
-   * 每段最多等待 MAX_SAFE_TIMEOUT_MS，到期后重新计算剩余延迟并递归调度，
-   * 直至最后一段直接触发 publishDeadlineNotification。
-   */
-  private static scheduleSafeDeadlineTimeout(entry: TaskEntry, delayMs: number): number {
-    if (delayMs <= NotificationHelper.MAX_SAFE_TIMEOUT_MS) {
-      return setTimeout(() => {
-        NotificationHelper.deadlineTimers.delete(entry.id);
-        NotificationHelper.publishDeadlineNotification(entry);
-      }, delayMs);
-    }
-    // 分段：先等 MAX_SAFE_TIMEOUT_MS，再用剩余时间重新调度
-    const remaining: number = delayMs - NotificationHelper.MAX_SAFE_TIMEOUT_MS;
-    return setTimeout(() => {
-      const newHandle: number = NotificationHelper.scheduleSafeDeadlineTimeout(entry, remaining);
-      NotificationHelper.deadlineTimers.set(entry.id, newHandle);
-    }, NotificationHelper.MAX_SAFE_TIMEOUT_MS);
-  }
-
-  /**
-   * 防溢出开始提醒定时器：逻辑与 scheduleSafeDeadlineTimeout 相同，
-   * 最后一段触发 publishStartNotification。
-   */
-  private static scheduleSafeStartTimeout(entry: TaskEntry, delayMs: number): number {
-    if (delayMs <= NotificationHelper.MAX_SAFE_TIMEOUT_MS) {
-      return setTimeout(() => {
-        NotificationHelper.startTimers.delete(entry.id);
-        NotificationHelper.publishStartNotification(entry);
-      }, delayMs);
-    }
-    const remaining: number = delayMs - NotificationHelper.MAX_SAFE_TIMEOUT_MS;
-    return setTimeout(() => {
-      const newHandle: number = NotificationHelper.scheduleSafeStartTimeout(entry, remaining);
-      NotificationHelper.startTimers.set(entry.id, newHandle);
-    }, NotificationHelper.MAX_SAFE_TIMEOUT_MS);
-  }
-
-  /**
    * 任务计时完成时发即时系统通知。
    * 根据任务的 reminderType 选择对应频道：
    *  - NONE  → 跳过
@@ -377,6 +339,44 @@ export class NotificationHelper {
     } catch (err) {
       hilog.warn(LOG_DOMAIN, TAG, '清除遗留代理提醒失败（可忽略）：%{public}s', JSON.stringify(err));
     }
+  }
+
+  /**
+   * 防溢出截止提醒定时器：当 delayMs 超过 int32 安全上限时，分段链式调度。
+   * 每段最多等待 MAX_SAFE_TIMEOUT_MS，到期后重新计算剩余延迟并递归调度，
+   * 直至最后一段直接触发 publishDeadlineNotification。
+   */
+  private static scheduleSafeDeadlineTimeout(entry: TaskEntry, delayMs: number): number {
+    if (delayMs <= NotificationHelper.MAX_SAFE_TIMEOUT_MS) {
+      return setTimeout(() => {
+        NotificationHelper.deadlineTimers.delete(entry.id);
+        NotificationHelper.publishDeadlineNotification(entry);
+      }, delayMs);
+    }
+    // 分段：先等 MAX_SAFE_TIMEOUT_MS，再用剩余时间重新调度
+    const remaining: number = delayMs - NotificationHelper.MAX_SAFE_TIMEOUT_MS;
+    return setTimeout(() => {
+      const newHandle: number = NotificationHelper.scheduleSafeDeadlineTimeout(entry, remaining);
+      NotificationHelper.deadlineTimers.set(entry.id, newHandle);
+    }, NotificationHelper.MAX_SAFE_TIMEOUT_MS);
+  }
+
+  /**
+   * 防溢出开始提醒定时器：逻辑与 scheduleSafeDeadlineTimeout 相同，
+   * 最后一段触发 publishStartNotification。
+   */
+  private static scheduleSafeStartTimeout(entry: TaskEntry, delayMs: number): number {
+    if (delayMs <= NotificationHelper.MAX_SAFE_TIMEOUT_MS) {
+      return setTimeout(() => {
+        NotificationHelper.startTimers.delete(entry.id);
+        NotificationHelper.publishStartNotification(entry);
+      }, delayMs);
+    }
+    const remaining: number = delayMs - NotificationHelper.MAX_SAFE_TIMEOUT_MS;
+    return setTimeout(() => {
+      const newHandle: number = NotificationHelper.scheduleSafeStartTimeout(entry, remaining);
+      NotificationHelper.startTimers.set(entry.id, newHandle);
+    }, NotificationHelper.MAX_SAFE_TIMEOUT_MS);
   }
 
   /**

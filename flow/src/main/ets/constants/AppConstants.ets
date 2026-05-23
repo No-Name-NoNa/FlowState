@@ -105,3 +105,6 @@ export const TIMER_SESSION_DB_STORE_NAME: string = 'timer_sessions.db';
 
 /** AppStorage：历史页跨页刷新信号键名（归档/恢复操作后置 true，HistoryPage 检测到后刷新并置回 false） */
 export const KEY_HISTORY_NEEDS_REFRESH: string = 'historyNeedsRefresh';
+
+/** AppStorage：月份归档详情页刷新信号（ArchivedTaskDetailPage 恢复/删除后置 true，MonthArchivePage 检测后刷新并置回 false） */
+export const KEY_MONTH_ARCHIVE_NEEDS_REFRESH: string = 'monthArchiveNeedsRefresh';

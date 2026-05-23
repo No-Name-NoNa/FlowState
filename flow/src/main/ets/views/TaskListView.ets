@@ -46,7 +46,6 @@ export struct TaskListView {
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
   @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
-
   /** 数据变化回调：完成/删除操作完成后，通知父组件刷新 */
   onDataChanged: () => void = () => {
   };

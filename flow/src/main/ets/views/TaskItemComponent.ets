@@ -82,7 +82,6 @@ export struct TaskItemComponent {
   @State private spreadScale: number = 0;
   @State private spreadOpacity: number = 0;
   @State private spreadCenterX: number = 0;
-
   /** 数据变化回调：完成/删除操作后通知父组件刷新 */
   onDataChanged: () => void = () => {
   };
