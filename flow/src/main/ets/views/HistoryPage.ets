@@ -1,17 +1,3 @@
-/**
- * HistoryPage.ets
- * 历史/归档页面视图组件。
- *
- * 展示：
- *  - 今日统计摘要（今日归档数、今日专注时长）
- *  - 月份归档分组列表（按年月倒序）
- *    - 左滑显示 X 按钮，二次确认后删除该月所有归档
- *    - 点击跳转 MonthArchivePage 查看本月归档详情
- *
- * 刷新触发：
- *  - aboutToAppear() 初始加载
- *  - KEY_HISTORY_NEEDS_REFRESH 信号：归档/恢复/删除任何归档任务后由对应逻辑置 true
- */
 import { router } from '@kit.ArkUI';
 import { I18nHelper } from '../util/I18nHelper';
 import { I18nKeys } from '../constants/I18nKeys';
@@ -25,36 +11,43 @@ import {
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
 import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
-import { MonthGroup, StatisticsViewModel } from '../viewmodel/StatisticsViewModel';
+import { MonthGroup, StatisticsViewModel, StatsSummary, TimeRange } from '../viewmodel/StatisticsViewModel';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
 
-/** MonthArchivePage 路由参数 */
 interface MonthArchiveParams {
   year: number;
   month: number;
   label: string;
 }
 
-/** 历史页面视图（月份归档分组列表） */
+interface DayFocusTrend {
+  label: string;
+  focusMs: number;
+  archivedCount: number;
+  ratio: number;
+  isToday: boolean;
+}
+
 @Component
 export struct HistoryPage {
   @StorageLink(KEY_APP_LANGUAGE) private currentLanguage: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) private themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
   @StorageLink(KEY_FONT_TOKENS) private fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
-  /** 历史页刷新信号：归档/恢复/删除操作后由对应逻辑置 true */
   @Watch('onHistoryRefreshChanged')
-  @StorageLink(KEY_HISTORY_NEEDS_REFRESH) private historyNeedsRefresh: boolean = false;
-  /** 月份分组列表（最新月份在前） */
+  @StorageLink(KEY_HISTORY_NEEDS_REFRESH) private historyVersion: number = 0;
   @State private monthGroups: MonthGroup[] = [];
-  /** 今日归档数量 */
   @State private todayArchivedCount: number = 0;
-  /** 今日专注时长（ms） */
   @State private todayFocusMs: number = 0;
-  // ── 月份行点击扩散特效状态 ──────────────────────────────────────────────
+  @State private weekFocusMs: number = 0;
+  @State private weekArchivedCount: number = 0;
+  @State private activeDays: number = 0;
+  @State private weekTrends: DayFocusTrend[] = [];
   @State private pressedRowIndex: number = -1;
   @State private rowSpreadScale: number = 0;
   @State private rowSpreadOpacity: number = 0;
   @State private rowSpreadCenterX: number = 0;
+  /** loadData 调用序号，防止快速连续刷新时旧异步结果覆盖新数据 */
+  private loadSeq: number = 0;
 
   aboutToAppear(): void {
     this.loadData();
@@ -62,13 +55,20 @@ export struct HistoryPage {
 
   build() {
     Column() {
-      // ── 顶部 Header ──────────────────────────────────────────────────────
       Row() {
         Text(I18nHelper.t(I18nKeys.TAB_HISTORY, this.currentLanguage))
           .fontSize(this.fontTokens.headerTitle)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.themeTokens.colorTextPrimary)
           .layoutWeight(1)
+
+        Image($r('app.media.ic_settings'))
+          .width($r('app.float.icon_size_md'))
+          .height($r('app.float.icon_size_md'))
+          .fillColor(this.themeTokens.colorTextSecondary)
+          .onClick(() => {
+            router.pushUrl({ url: 'pages/SettingsPage' });
+          })
       }
       .width('100%')
       .height($r('app.float.header_height'))
@@ -80,174 +80,381 @@ export struct HistoryPage {
         .color(this.themeTokens.colorDivider)
         .width('100%')
 
-      // ── 今日统计摘要 ─────────────────────────────────────────────────────
-      Row() {
-        // 今日归档数
-        Column({ space: 4 }) {
-          Text(this.todayArchivedCount.toString())
-            .fontSize(this.fontTokens.titleLarge)
-            .fontWeight(FontWeight.Bold)
-            .fontColor(this.themeTokens.colorTextPrimary)
-          Text(I18nHelper.t(I18nKeys.HISTORY_TODAY_ARCHIVED, this.currentLanguage))
-            .fontSize(this.fontTokens.caption)
-            .fontColor(this.themeTokens.colorTextSecondary)
+      List({ space: 8 }) {
+        ListItem() {
+          Column({ space: 10 }) {
+            this.FocusOverviewCard()
+            this.WeeklyTrendCard()
+            this.MonthSectionHeader()
+          }
+          .width('100%')
+          .padding({
+            left: $r('app.float.spacing_lg'),
+            right: $r('app.float.spacing_lg'),
+            top: 12,
+            bottom: 0,
+          })
         }
-        .layoutWeight(1)
-        .alignItems(HorizontalAlign.Center)
-        .padding({ top: 16, bottom: 16 })
 
-        // 竖向分割线
-        Column()
-          .width(0.5)
-          .height(36)
-          .backgroundColor(this.themeTokens.colorDivider)
+        ForEach(
+          this.monthGroups,
+          (group: MonthGroup, index: number) => {
+            ListItem() {
+              Stack({ alignContent: Alignment.Center }) {
+                Rect()
+                  .width('100%')
+                  .height(this.fontTokens.inboxItemMinHeight)
+                  .fill(this.themeTokens.colorTextPrimary)
+                  .opacity(this.pressedRowIndex === index ? this.rowSpreadOpacity : 0)
+                  .scale({
+                    x: this.pressedRowIndex === index ? this.rowSpreadScale : 0,
+                    y: 1.0,
+                    centerX: this.rowSpreadCenterX,
+                  })
+                  .hitTestBehavior(HitTestMode.None)
 
-        // 今日专注时长
-        Column({ space: 4 }) {
-          Text(StatisticsViewModel.formatDuration(this.todayFocusMs))
-            .fontSize(this.fontTokens.titleLarge)
-            .fontWeight(FontWeight.Bold)
-            .fontColor(this.themeTokens.colorTextPrimary)
-          Text(I18nHelper.t(I18nKeys.HISTORY_TODAY_FOCUS, this.currentLanguage))
-            .fontSize(this.fontTokens.caption)
-            .fontColor(this.themeTokens.colorTextSecondary)
-        }
-        .layoutWeight(1)
-        .alignItems(HorizontalAlign.Center)
-        .padding({ top: 16, bottom: 16 })
-      }
-      .width('100%')
-
-      Divider()
-        .strokeWidth(DIVIDER_STROKE_WIDTH)
-        .color(this.themeTokens.colorDivider)
-        .width('100%')
-
-      // ── 月份归档列表 ─────────────────────────────────────────────────────
-      Stack({ alignContent: Alignment.Center }) {
-        List() {
-          ForEach(
-            this.monthGroups,
-            (group: MonthGroup, index: number) => {
-              ListItem() {
-                Stack({ alignContent: Alignment.Center }) {
-                  // 点击扩散特效矩形
-                  Rect()
-                    .width('100%')
-                    .height(this.fontTokens.inboxItemMinHeight)
-                    .fill(this.themeTokens.colorTextPrimary)
-                    .opacity(this.pressedRowIndex === index ? this.rowSpreadOpacity : 0)
-                    .scale({
-                      x: this.pressedRowIndex === index ? this.rowSpreadScale : 0,
-                      y: 1.0,
-                      centerX: this.rowSpreadCenterX,
-                    })
-                    .hitTestBehavior(HitTestMode.None)
-
-                  Row() {
-                    // 月份标签
+                Row() {
+                  Column() {
                     Text(group.label)
                       .fontSize(this.fontTokens.body)
                       .fontWeight(FontWeight.Medium)
                       .fontColor(this.themeTokens.colorTextPrimary)
-                      .layoutWeight(1)
-                    // 条数
-                    Text(group.count.toString()
-                      + I18nHelper.t(I18nKeys.HISTORY_MONTH_ITEMS, this.currentLanguage))
-                      .fontSize(this.fontTokens.caption)
-                      .fontColor(this.themeTokens.colorTextSecondary)
-                      .margin({ right: 4 })
-                    // 向右箭头
-                    Image($r('sys.media.ohos_ic_public_arrow_right'))
-                      .width(16)
-                      .height(16)
-                      .fillColor(this.themeTokens.colorTextSecondary)
                   }
-                  .width('100%')
-                  .constraintSize({ minHeight: this.fontTokens.inboxItemMinHeight })
-                  .padding({
-                    left: $r('app.float.spacing_lg'),
-                    right: $r('app.float.spacing_lg'),
-                    top: 14,
-                    bottom: 14,
-                  })
-                  .alignItems(VerticalAlign.Center)
-                  .onClick(() => {
-                    const params: MonthArchiveParams = {
-                      year: group.year,
-                      month: group.month,
-                      label: group.label,
-                    };
-                    router.pushUrl({ url: 'pages/MonthArchivePage', params: params });
-                  })
+                  .layoutWeight(1)
+
+                  Text(group.count.toString()
+                    + I18nHelper.t(I18nKeys.HISTORY_MONTH_ITEMS, this.currentLanguage))
+                    .fontSize(this.fontTokens.caption)
+                    .fontColor(this.themeTokens.colorTextSecondary)
+                    .margin({ right: 8 })
+
+                  Image($r('sys.media.ohos_ic_public_arrow_right'))
+                    .width(16)
+                    .height(16)
+                    .fillColor(this.themeTokens.colorTextSecondary)
                 }
                 .width('100%')
-                .clip(true)
-                .onTouch((e: TouchEvent) => {
-                  if (e.type === TouchType.Down) {
-                    this.triggerRowSpread(index, e.touches[0].x);
-                  }
+                .constraintSize({ minHeight: this.fontTokens.inboxItemMinHeight })
+                .padding({
+                  left: $r('app.float.spacing_lg'),
+                  right: $r('app.float.spacing_lg'),
+                  top: 14,
+                  bottom: 14,
+                })
+                .alignItems(VerticalAlign.Center)
+                .onClick(() => {
+                  const params: MonthArchiveParams = {
+                    year: group.year,
+                    month: group.month,
+                    label: group.label,
+                  };
+                  router.pushUrl({ url: 'pages/MonthArchivePage', params: params });
                 })
               }
-              .swipeAction({
-                end: (): void => {
-                  this.deleteMonthButton(group);
-                },
+              .width('100%')
+              .clip(true)
+              .padding({ left: $r('app.float.spacing_lg'), right: $r('app.float.spacing_lg') })
+              .onTouch((e: TouchEvent) => {
+                if (e.type === TouchType.Down) {
+                  this.triggerRowSpread(index, e.touches[0].x);
+                }
               })
-            },
-            (group: MonthGroup) => group.year.toString() + '_' + group.month.toString() + '_' + group.count.toString()
-          )
-        }
-        .width('100%')
-        .height('100%')
-        .divider({ strokeWidth: DIVIDER_STROKE_WIDTH, color: this.themeTokens.colorDivider })
-        .scrollBar(BarState.Off)
-        .edgeEffect(EdgeEffect.Spring)
+            }
+            .swipeAction({
+              end: (): void => {
+                this.deleteMonthButton(group);
+              },
+            })
+          },
+          (group: MonthGroup) => group.year.toString() + '_' + group.month.toString() + '_' + group.count.toString()
+        )
 
-        // 空状态提示
         if (this.monthGroups.length === 0) {
-          Column() {
-            Text(I18nHelper.t(I18nKeys.HISTORY_MONTHS_EMPTY, this.currentLanguage))
-              .fontSize(this.fontTokens.caption)
-              .fontColor(this.themeTokens.colorTextSecondary)
+          ListItem() {
+            Column() {
+              Text(I18nHelper.t(I18nKeys.HISTORY_MONTHS_EMPTY, this.currentLanguage))
+                .fontSize(this.fontTokens.bodySmall)
+                .fontColor(this.themeTokens.colorTextPrimary)
+            }
+            .width('100%')
+            .padding({ top: 28, bottom: 28 })
+            .alignItems(HorizontalAlign.Center)
+            .margin({ left: $r('app.float.spacing_lg'), right: $r('app.float.spacing_lg') })
           }
-          .width('100%')
-          .height('100%')
-          .justifyContent(FlexAlign.Center)
-          .alignItems(HorizontalAlign.Center)
-          .hitTestBehavior(HitTestMode.None)
         }
       }
       .width('100%')
       .layoutWeight(1)
-      .align(Alignment.TopStart)
+      .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring)
     }
     .width('100%')
     .height('100%')
     .backgroundColor(this.themeTokens.colorBackground)
   }
 
-  /** 刷新信号回调：收到任何归档变化后重新加载 */
-  private onHistoryRefreshChanged(): void {
-    if (this.historyNeedsRefresh) {
-      AppStorage.set<boolean>(KEY_HISTORY_NEEDS_REFRESH, false);
-      this.loadData();
+  @Builder
+  private FocusOverviewCard(): void {
+    Column({ space: 12 }) {
+      Row() {
+        Text('专注概览')
+          .fontSize(this.fontTokens.body)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(this.themeTokens.colorTextPrimary)
+          .layoutWeight(1)
+
+        Text('近 7 天')
+          .fontSize(this.fontTokens.caption)
+          .fontColor(this.themeTokens.colorTextSecondary)
+      }
+      .width('100%')
+      .alignItems(VerticalAlign.Center)
+
+      Row({ space: 0 }) {
+        this.MetricTile('今日专注', StatisticsViewModel.formatDuration(this.todayFocusMs), true)
+        this.MetricTile('今日归档', this.todayArchivedCount.toString() + ' 条', false)
+        this.MetricTile('本周专注', StatisticsViewModel.formatDuration(this.weekFocusMs), false)
+        this.MetricTile('活跃天数', this.activeDays.toString() + ' 天', false)
+      }
+      .width('100%')
     }
+    .width('100%')
+    .padding({ left: 0, right: 0, top: 4, bottom: 4 })
   }
 
-  /** 加载今日统计 + 月份分组 */
+  @Builder
+  private MetricTile(label: string, value: string, highlighted: boolean): void {
+    Column({ space: 4 }) {
+      Text(value)
+        .fontSize(highlighted ? this.fontTokens.titleLarge : this.fontTokens.body)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(highlighted ? this.themeTokens.colorAccent : this.themeTokens.colorTextPrimary)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+      Text(label)
+        .fontSize(this.fontTokens.label)
+        .fontColor(this.themeTokens.colorTextSecondary)
+    }
+    .layoutWeight(1)
+    .alignItems(HorizontalAlign.Center)
+    .padding({ left: 4, right: 4, top: 6, bottom: 6 })
+  }
+
+  @Builder
+  private WeeklyTrendCard(): void {
+    Column({ space: 12 }) {
+      Row() {
+        Text('专注时间变化')
+          .fontSize(this.fontTokens.body)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(this.themeTokens.colorTextPrimary)
+          .layoutWeight(1)
+      }
+      .width('100%')
+
+      Row({ space: 6 }) {
+        ForEach(
+          this.weekTrends,
+          (item: DayFocusTrend) => {
+            Column({ space: 6 }) {
+              Text(this.getCompactDuration(item.focusMs))
+                .fontSize(this.fontTokens.label)
+                .fontWeight(item.focusMs > 0 ? FontWeight.Medium : FontWeight.Regular)
+                .fontColor(item.focusMs > 0 ? this.themeTokens.colorTextPrimary : this.themeTokens.colorTextSecondary)
+                .maxLines(1)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+              Stack({ alignContent: Alignment.Bottom }) {
+                if (item.focusMs > 0) {
+                  Rect()
+                    .width(10)
+                    .height(this.getBarHeight(item))
+                    .fill(item.isToday ? this.themeTokens.colorAccent : this.getBarColor())
+                    .borderRadius(5)
+                } else {
+                  Rect()
+                    .width(10)
+                    .height(2)
+                    .fill(this.getBarTrackColor())
+                    .borderRadius(1)
+                }
+              }
+              .width('100%')
+              .height(64)
+
+              Text(item.label)
+                .fontSize(this.fontTokens.label)
+                .fontColor(item.isToday ? this.themeTokens.colorAccent : this.themeTokens.colorTextSecondary)
+                .maxLines(1)
+            }
+            .layoutWeight(1)
+            .alignItems(HorizontalAlign.Center)
+          },
+          (item: DayFocusTrend) => item.label + item.focusMs.toString()
+        )
+      }
+      .width('100%')
+
+      Row({ space: 10 }) {
+        Text('平均 ' + StatisticsViewModel.formatDuration(this.getAverageDailyFocusMs()))
+          .fontSize(this.fontTokens.caption)
+          .fontColor(this.themeTokens.colorTextSecondary)
+          .layoutWeight(1)
+        Text('完成 ' + this.weekArchivedCount.toString() + ' 条')
+          .fontSize(this.fontTokens.caption)
+          .fontColor(this.themeTokens.colorTextSecondary)
+      }
+      .width('100%')
+    }
+    .width('100%')
+    .padding({ left: 0, right: 0, top: 12, bottom: 12 })
+  }
+
+  @Builder
+  private MonthSectionHeader(): void {
+    Row() {
+      Text('月度归档')
+        .fontSize(this.fontTokens.body)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(this.themeTokens.colorTextPrimary)
+        .layoutWeight(1)
+      Text(this.monthGroups.length.toString() + ' 个月')
+        .fontSize(this.fontTokens.caption)
+        .fontColor(this.themeTokens.colorTextSecondary)
+    }
+    .width('100%')
+    .alignItems(VerticalAlign.Center)
+    .padding({ top: 6, bottom: 4 })
+  }
+
+  private onHistoryRefreshChanged(): void {
+    // 计数器每次递增都会触发此回调，无需判断具体值，直接重新加载
+    this.loadData();
+  }
+
   private loadData(): void {
-    const todayRange = StatisticsViewModel.getTodayRange();
-    StatisticsViewModel.getStats(todayRange).then((summary) => {
+    // 递增序号，确保只有最新一次 loadData 的结果才会被应用
+    const seq: number = ++this.loadSeq;
+    const todayRange: TimeRange = StatisticsViewModel.getTodayRange();
+    StatisticsViewModel.getStats(todayRange).then((summary: StatsSummary) => {
+      if (seq !== this.loadSeq) {
+        return;
+      }
       this.todayArchivedCount = summary.archivedCount;
       this.todayFocusMs = summary.focusTimeMs;
     });
+    StatisticsViewModel.getStats(StatisticsViewModel.getWeekRange()).then((summary: StatsSummary) => {
+      if (seq !== this.loadSeq) {
+        return;
+      }
+      this.weekArchivedCount = summary.archivedCount;
+      this.weekFocusMs = summary.focusTimeMs;
+    });
     StatisticsViewModel.loadMonthGroups().then((groups: MonthGroup[]) => {
+      if (seq !== this.loadSeq) {
+        return;
+      }
       this.monthGroups = groups;
     });
+    this.loadWeekTrend(seq);
   }
 
-  /** 触发月份行的横向扩散特效 */
+  private loadWeekTrend(seq: number): void {
+    const now: Date = new Date();
+    const ranges: TimeRange[] = [];
+    const labels: string[] = [];
+    for (let offset: number = 6; offset >= 0; offset--) {
+      const d: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset, 0, 0, 0, 0);
+      const to: Date = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+      ranges.push({ from: d.getTime(), to: to.getTime() + 1 });
+      labels.push(offset === 0 ? '今' : this.formatWeekday(d));
+    }
+
+    Promise.all(ranges.map((range: TimeRange) => StatisticsViewModel.getStats(range)))
+      .then((stats: StatsSummary[]) => {
+        if (seq !== this.loadSeq) {
+          return;
+        }
+        let maxFocusMs: number = 0;
+        let activeDays: number = 0;
+        for (const item of stats) {
+          if (item.focusTimeMs > maxFocusMs) {
+            maxFocusMs = item.focusTimeMs;
+          }
+          if (item.focusTimeMs > 0 || item.archivedCount > 0) {
+            activeDays++;
+          }
+        }
+
+        const chartMaxFocusMs: number = Math.max(maxFocusMs, 30 * 60 * 1000);
+        const trends: DayFocusTrend[] = [];
+        for (let i: number = 0; i < stats.length; i++) {
+          const ratio: number = stats[i].focusTimeMs > 0 ? stats[i].focusTimeMs / chartMaxFocusMs : 0;
+          trends.push({
+            label: labels[i],
+            focusMs: stats[i].focusTimeMs,
+            archivedCount: stats[i].archivedCount,
+            ratio,
+            isToday: i === stats.length - 1,
+          });
+        }
+        this.activeDays = activeDays;
+        this.weekTrends = trends;
+      });
+  }
+
+  private formatWeekday(date: Date): string {
+    const day: number = date.getDay();
+    const labels: string[] = ['日', '一', '二', '三', '四', '五', '六'];
+    return labels[day];
+  }
+
+  private getAverageDailyFocusMs(): number {
+    if (this.weekTrends.length === 0) {
+      return 0;
+    }
+    return Math.floor(this.weekFocusMs / this.weekTrends.length);
+  }
+
+  private getBarHeight(item: DayFocusTrend): number {
+    if (item.ratio <= 0) {
+      return 0;
+    }
+    return Math.max(4, Math.round(item.ratio * 64));
+  }
+
+  private getCompactDuration(ms: number): string {
+    if (ms <= 0) {
+      return '0';
+    }
+    const totalMin: number = Math.floor(ms / 60000);
+    if (totalMin < 1) {
+      return '<1m';
+    }
+    if (totalMin < 60) {
+      return totalMin.toString() + 'm';
+    }
+    const hours: number = Math.floor(totalMin / 60);
+    const mins: number = totalMin % 60;
+    if (mins === 0) {
+      return hours.toString() + 'h';
+    }
+    return hours.toString() + 'h' + mins.toString() + 'm';
+  }
+
+  private getBarTrackColor(): string {
+    return this.isDarkTheme() ? '#252C34' : '#EDF1F2';
+  }
+
+  private getBarColor(): string {
+    return this.isDarkTheme() ? '#8DB8C8' : '#8BBAC5';
+  }
+
+  private isDarkTheme(): boolean {
+    const bg: string = this.themeTokens.colorBackground.toLowerCase();
+    return bg === '#000000' || bg === '#1a1a18' || bg === '#1a0a1e' || bg === '#282c34' || bg === '#2b2b2b';
+  }
+
   private triggerRowSpread(index: number, touchX: number): void {
     SpreadEffectHelper.trigger(
       (idx: number) => {
@@ -265,7 +472,6 @@ export struct HistoryPage {
     );
   }
 
-  /** 月份行左滑删除按钮 */
   @Builder
   private deleteMonthButton(group: MonthGroup): void {
     Row() {

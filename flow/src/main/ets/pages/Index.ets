@@ -26,6 +26,7 @@ import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
 import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { HistoryRefreshSignal } from '../util/HistoryRefreshSignal';
 
 /** 应用主框架：承载底部双 Tab 导航 */
 @Entry
@@ -153,6 +154,10 @@ struct MainPage {
     // Tab 切换监听，同步更新 currentTabIndex 以刷新自定义 TabBar 选中样式
     .onChange((index: number) => {
       this.currentTabIndex = index;
+      // 切换到历史 Tab 时递增计数器，强制触发 HistoryPage 重新加载数据
+      if (index === 2) {
+        HistoryRefreshSignal.bump();
+      }
     })
     // 300ms 平滑切换动画，符合 PRD "Smooth & Snappy" 要求
     .animationDuration(300)

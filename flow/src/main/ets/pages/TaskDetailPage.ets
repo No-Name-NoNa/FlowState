@@ -72,6 +72,8 @@ struct TaskDetailPage {
   private timerId: number = -1;
   /** 当前计时分段在 DB 中的 session ID，0 表示无活跃分段 */
   private currentTimerSessionId: number = 0;
+  /** 显式完成持久化并返回时，跳过 aboutToDisappear 的兜底保存 */
+  private skipAutoSaveOnDisappear: boolean = false;
 
   aboutToAppear(): void {
     const params = router.getParams() as DetailRouterParams;
@@ -85,6 +87,9 @@ struct TaskDetailPage {
   }
 
   aboutToDisappear(): void {
+    if (this.skipAutoSaveOnDisappear) {
+      return;
+    }
     // 关闭未结束的计时分段
     if (this.currentTimerSessionId > 0) {
       TimerSessionDatabase.closeSession(this.currentTimerSessionId, Date.now());
@@ -644,9 +649,13 @@ struct TaskDetailPage {
   }
 
   /** 直接执行归档 */
-  private executeArchive(): void {
+  private async executeArchive(): Promise<void> {
     this.stopTimer();
     this.currentStatus = TaskStatus.ARCHIVED;
+    this.skipAutoSaveOnDisappear = true;
+    await TaskViewModel.updateProgress(this.taskId, this.totalAccumulatedMs(), TaskStatus.ARCHIVED, 0);
+    await TaskViewModel.archive(this.taskId);
+    AppStorage.setOrCreate(KEY_TASK_NEEDS_REFRESH, true);
     router.back();
   }
 

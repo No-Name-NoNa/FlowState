@@ -27,7 +27,8 @@ import { InboxEntry, parseTags } from '../model/InboxEntry';
 import { NotificationHelper } from '../util/NotificationHelper';
 import { TimerSessionDatabase } from '../util/TimerSessionDatabase';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { KEY_HISTORY_NEEDS_REFRESH, LOG_DOMAIN } from '../constants/AppConstants';
+import { LOG_DOMAIN } from '../constants/AppConstants';
+import { HistoryRefreshSignal } from '../util/HistoryRefreshSignal';
 
 /** 任务 ViewModel，所有方法均为静态 */
 export class TaskViewModel {
@@ -640,8 +641,8 @@ export class TaskViewModel {
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
-    // 归档后通知历史页刷新
-    AppStorage.setOrCreate(KEY_HISTORY_NEEDS_REFRESH, true);
+    // 递增历史刷新计数器，通知 HistoryPage 重新加载数据
+    HistoryRefreshSignal.bump();
   }
 
   /**
@@ -731,8 +732,8 @@ export class TaskViewModel {
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
-    // 归档后通知历史页刷新
-    AppStorage.setOrCreate(KEY_HISTORY_NEEDS_REFRESH, true);
+    // 递增历史刷新计数器，通知 HistoryPage 重新加载数据
+    HistoryRefreshSignal.bump();
   }
 
   /**

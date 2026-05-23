@@ -9,8 +9,9 @@
 import { relationalStore } from '@kit.ArkData';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Context } from '@kit.AbilityKit';
-import { LOG_DOMAIN, KEY_HISTORY_NEEDS_REFRESH, TIMER_SESSION_DB_STORE_NAME } from '../constants/AppConstants';
+import { LOG_DOMAIN, TIMER_SESSION_DB_STORE_NAME } from '../constants/AppConstants';
 import { TimerSessionEntry } from '../model/TimerSessionEntry';
+import { HistoryRefreshSignal } from './HistoryRefreshSignal';
 
 /** RDB 表名 */
 const TABLE_NAME: string = 'timer_sessions';
@@ -89,8 +90,8 @@ export class TimerSessionDatabase {
       const predicates: relationalStore.RdbPredicates = new relationalStore.RdbPredicates(TABLE_NAME);
       predicates.equalTo(COL_ID, sessionId);
       await TimerSessionDatabase.store.update(bucket, predicates);
-      // 专注时段关闭后通知历史页刷新今日专注时长
-      AppStorage.setOrCreate(KEY_HISTORY_NEEDS_REFRESH, true);
+      // 专注时段关闭后递增历史刷新计数器
+      HistoryRefreshSignal.bump();
     } catch (err) {
       hilog.error(LOG_DOMAIN, 'TimerSessionDatabase',
         'closeSession 失败（sessionId=%{public}d）：%{public}s', sessionId, JSON.stringify(err));

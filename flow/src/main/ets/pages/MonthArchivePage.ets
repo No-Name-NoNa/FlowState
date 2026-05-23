@@ -15,7 +15,6 @@ import {
   DIVIDER_STROKE_WIDTH,
   KEY_APP_LANGUAGE,
   KEY_FONT_TOKENS,
-  KEY_HISTORY_NEEDS_REFRESH,
   KEY_MONTH_ARCHIVE_NEEDS_REFRESH,
   KEY_THEME_TOKENS,
   LANG_ZH_CN,
@@ -26,6 +25,7 @@ import { StatisticsViewModel } from '../viewmodel/StatisticsViewModel';
 import { TaskEntry, TaskPriority } from '../model/TaskEntry';
 import { parseTags } from '../model/InboxEntry';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
+import { HistoryRefreshSignal } from '../util/HistoryRefreshSignal';
 
 /** 路由参数结构 */
 interface MonthArchiveRouterParams {
@@ -511,7 +511,7 @@ struct MonthArchivePage {
             StatisticsViewModel.deleteArchivedTask(taskId).then(() => {
               this.loadData();
               // 通知 HistoryPage 刷新今日统计和月份分组计数
-              AppStorage.set<boolean>(KEY_HISTORY_NEEDS_REFRESH, true);
+              HistoryRefreshSignal.bump();
             });
           },
         },

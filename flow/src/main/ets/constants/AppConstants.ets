@@ -103,7 +103,7 @@ export const KEY_PENDING_OPEN_TASK_ID: string = 'pendingOpenTaskId';
 /** 计时分段记录 RDB 数据库文件名 */
 export const TIMER_SESSION_DB_STORE_NAME: string = 'timer_sessions.db';
 
-/** AppStorage：历史页跨页刷新信号键名（归档/恢复操作后置 true，HistoryPage 检测到后刷新并置回 false） */
+/** AppStorage：历史页刷新计数器键名（归档/恢复/完成/计时结束时递增，HistoryPage 检测到变化后重新加载数据） */
 export const KEY_HISTORY_NEEDS_REFRESH: string = 'historyNeedsRefresh';
 
 /** AppStorage：月份归档详情页刷新信号（ArchivedTaskDetailPage 恢复/删除后置 true，MonthArchivePage 检测后刷新并置回 false） */

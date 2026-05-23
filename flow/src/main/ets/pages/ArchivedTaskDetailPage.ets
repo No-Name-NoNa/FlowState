@@ -13,7 +13,6 @@ import {
   DIVIDER_STROKE_WIDTH,
   KEY_APP_LANGUAGE,
   KEY_FONT_TOKENS,
-  KEY_HISTORY_NEEDS_REFRESH,
   KEY_MONTH_ARCHIVE_NEEDS_REFRESH,
   KEY_TASK_NEEDS_REFRESH,
   KEY_THEME_TOKENS,
@@ -33,6 +32,7 @@ import {
 } from '../model/TaskEntry';
 import { TimerSessionEntry } from '../model/TimerSessionEntry';
 import { parseTags } from '../model/InboxEntry';
+import { HistoryRefreshSignal } from '../util/HistoryRefreshSignal';
 
 /** 路由参数结构 */
 interface ArchiveDetailRouterParams {
@@ -356,7 +356,7 @@ struct ArchivedTaskDetailPage {
         action: () => {
           StatisticsViewModel.restoreTask(this.taskId).then(() => {
             AppStorage.setOrCreate(KEY_TASK_NEEDS_REFRESH, true);
-            AppStorage.setOrCreate(KEY_HISTORY_NEEDS_REFRESH, true);
+            HistoryRefreshSignal.bump();
             AppStorage.setOrCreate(KEY_MONTH_ARCHIVE_NEEDS_REFRESH, true);
             router.back();
           });
@@ -380,7 +380,7 @@ struct ArchivedTaskDetailPage {
         value: I18nHelper.t(I18nKeys.DIALOG_CONFIRM, this.lang),
         action: () => {
           StatisticsViewModel.deleteArchivedTask(this.taskId).then(() => {
-            AppStorage.setOrCreate(KEY_HISTORY_NEEDS_REFRESH, true);
+            HistoryRefreshSignal.bump();
             AppStorage.setOrCreate(KEY_MONTH_ARCHIVE_NEEDS_REFRESH, true);
             router.back();
           });
