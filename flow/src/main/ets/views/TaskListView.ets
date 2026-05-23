@@ -38,6 +38,11 @@ export struct TaskListView {
   @Link tasks: TaskEntry[];
   /** 是否显示空状态提示（由父组件根据数据源长度决定） */
   @Prop showEmptyHint: boolean = false;
+  /**
+   * 时钟 tick（由 TaskPage 每 60s 递增传入）。
+   * 透传给每条 TaskItemComponent 的 entryNowMs，触发截止时间文字重渲染。
+   */
+  @Prop clockTick: number = 0;
   @StorageLink(KEY_APP_LANGUAGE) currentLanguage: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
   @StorageLink(KEY_FONT_TOKENS) fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
@@ -103,6 +108,7 @@ export struct TaskListView {
               entryTargetDuration: task.targetDuration,
               entryTotalNodes: this.getTotalNodes(task),
               entryCurrentNodeIndex: task.currentNodeIndex,
+              entryNowMs: this.clockTick,
               onDataChanged: this.onDataChanged,
             })
           }

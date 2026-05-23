@@ -52,6 +52,16 @@ export struct TaskPage {
   @State tagFilterHeight: number = 0;
   /** 列表是否为空，控制 TaskListView 的空状态提示 */
   @State tasksIsEmpty: boolean = true;
+  /**
+   * 时钟 tick，每 60s 自增。同时用于：
+   * 1. 触发 TaskListView → TaskItemComponent 重渲染，刷新截止时间倒计时文字。
+   * 2. 驱动 autoCompleteOverdue 定时检查并自动完成逾期任务。
+   */
+  @State private clockTick: number = 0;
+  /** 对齐到整分钟时刻的 setTimeout ID */
+  private alignTimer: number = -1;
+  /** 60s 定时器 ID，在 aboutToDisappear 时清理 */
+  private tickTimer: number = -1;
   // ── 「+ 新建任务」按钮扩散特效状态 ────────────────────────────────────────
   @State newBtnPressedIndex: number = -1;
   @State newBtnSpreadScale: number = 0;
@@ -60,6 +70,20 @@ export struct TaskPage {
 
   aboutToAppear(): void {
     this.loadData();
+    // 先等到下一个整分钟时刻，再以 60s 为周期精准触发
+    // 保证「剩余 1 分钟 → 逾期」等卡点转换在真实时刻立即刷新
+    const msUntilNextMinute: number = 60000 - (Date.now() % 60000);
+    this.alignTimer = setTimeout(() => {
+      this.onClockTick();
+      this.tickTimer = setInterval(() => {
+        this.onClockTick();
+      }, 60000);
+    }, msUntilNextMinute);
+  }
+
+  aboutToDisappear(): void {
+    clearTimeout(this.alignTimer);
+    clearInterval(this.tickTimer);
   }
 
   build() {
@@ -223,6 +247,7 @@ export struct TaskPage {
       TaskListView({
         tasks: $tasks,
         showEmptyHint: this.tasksIsEmpty,
+        clockTick: this.clockTick,
         onDataChanged: () => {
           this.loadData();
         },
@@ -289,8 +314,21 @@ export struct TaskPage {
     });
   }
 
-  /** 将 ViewModel 过滤结果同步到视图状态 */
+  /** 整分钟回调：检查逾期任务并刷新倒计时显示 */
+  private onClockTick(): void {
+    TaskViewModel.autoCompleteOverdue().then((changed: boolean) => {
+      if (changed) {
+        this.loadData();
+      } else {
+        this.refreshTasks();
+      }
+    });
+  }
+
+  /** 将 ViewModel 过滤结果同步到视图状态，同时刷新倒计时显示 */
   private refreshTasks(): void {
+    // 每次数据刷新时同步更新倒计时，确保创建/编辑/返回页面后立即显示精准剩余时间
+    this.clockTick++;
     this.tasks = TaskViewModel.filteredTasks.slice();
     this.tagList = TaskViewModel.getAllTags();
     this.tasksIsEmpty = this.tasks.length === 0;

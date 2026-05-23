@@ -8,6 +8,7 @@ import { TaskDatabase } from '../util/TaskDatabase';
 import {
   computeNextRecurringDate,
   computeTaskWeight,
+  getNextDeadline,
   IntervalNode,
   parseIntervalNodes,
   parseRecurringRule,
@@ -821,6 +822,75 @@ export class TaskViewModel {
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
+  }
+
+  /**
+   * 检查并自动完成所有已逾期的待办任务（PENDING 状态）。
+   * IN_PROGRESS 任务由用户自行决定，不强制完成。
+   *
+   * MULTI_NODE / MULTI_NODE_INTERVAL：必须按 currentNodeIndex 检查当前节点的截止时间，
+   * 不能用 getNextDeadline（它动态扫描第一个未来节点，导致中间节点永远不会被认为逾期）。
+   *
+   * @returns 是否有任务被自动完成（供调用方决定是否刷新视图）
+   */
+  static async autoCompleteOverdue(): Promise<boolean> {
+    const now: number = Date.now();
+    const overdueIds: number[] = [];
+    for (const task of TaskViewModel.allTasks) {
+      if (task.status !== TaskStatus.PENDING) {
+        continue;
+      }
+      let deadline: number = 0;
+      if (task.scheduleType === TaskScheduleType.MULTI_NODE) {
+        // 多节点：检查当前节点（currentNodeIndex）是否已过期
+        const nodes: number[] = parseTimeNodes(task.timeNodes);
+        if (task.currentNodeIndex < nodes.length) {
+          deadline = nodes[task.currentNodeIndex];
+        }
+      } else if (task.scheduleType === TaskScheduleType.MULTI_NODE_INTERVAL) {
+        // 多区间节点：检查当前区间（currentNodeIndex）的结束时间是否已过期
+        const intervalNodes: IntervalNode[] = parseIntervalNodes(task.timeNodes);
+        if (task.currentNodeIndex < intervalNodes.length) {
+          deadline = intervalNodes[task.currentNodeIndex].end;
+        }
+      } else {
+        deadline = getNextDeadline(task);
+      }
+      if (deadline > 0 && deadline <= now) {
+        overdueIds.push(task.id);
+      }
+    }
+    if (overdueIds.length === 0) {
+      return false;
+    }
+    for (const id of overdueIds) {
+      // 对多节点任务连续推进，直到当前节点尚未到期（处理 app 离线期间积压的多个逾期节点）
+      let keepGoing: boolean = true;
+      while (keepGoing) {
+        await TaskViewModel.complete(id);
+        // complete() 内部调用 load()，重新取最新任务状态
+        const matched: TaskEntry[] = TaskViewModel.allTasks.filter((t: TaskEntry) => t.id === id);
+        const updated: TaskEntry | null = matched.length > 0 ? matched[0] : null;
+        if (updated === null || updated.status !== TaskStatus.PENDING) {
+          keepGoing = false;
+          continue;
+        }
+        if (updated.scheduleType === TaskScheduleType.MULTI_NODE) {
+          const nodes: number[] = parseTimeNodes(updated.timeNodes);
+          const nodeDeadline: number =
+            updated.currentNodeIndex < nodes.length ? nodes[updated.currentNodeIndex] : 0;
+          keepGoing = nodeDeadline > 0 && nodeDeadline <= now;
+        } else if (updated.scheduleType === TaskScheduleType.MULTI_NODE_INTERVAL) {
+          const iNodes: IntervalNode[] = parseIntervalNodes(updated.timeNodes);
+          const nodeDeadline: number =
+            updated.currentNodeIndex < iNodes.length ? iNodes[updated.currentNodeIndex].end : 0;
+          keepGoing = nodeDeadline > 0 && nodeDeadline <= now;
+        } else {
+          keepGoing = false;
+        }
+      }
+    }
+    return true;
   }
 
   /** 内部：将当前过滤条件应用到 allTasks，生成 filteredTasks */

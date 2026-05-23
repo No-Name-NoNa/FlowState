@@ -69,6 +69,12 @@ export struct TaskItemComponent {
   @Prop entryTotalNodes: number = 0;
   /** 当前活跃节点索引（MULTI_NODE / MULTI_NODE_INTERVAL 类型有效） */
   @Prop entryCurrentNodeIndex: number = 0;
+  /**
+   * 时钟 tick（由 TaskPage 每 60s 递增后透传）。
+   * 本身不参与任何渲染逻辑，仅作为 ArkUI 重渲染触发器，
+   * 确保 formatTaskDeadline / formatTaskInterval 每分钟重算一次 Date.now()。
+   */
+  @Prop entryNowMs: number = 0;
   @StorageLink(KEY_APP_LANGUAGE) private lang: string = LANG_ZH_CN;
   @StorageLink(KEY_THEME_TOKENS) private themeTokens: ThemeTokens = DEFAULT_THEME_TOKENS;
   @StorageLink(KEY_FONT_TOKENS) private fontTokens: FontSizeTokens = DEFAULT_FONT_TOKENS;
