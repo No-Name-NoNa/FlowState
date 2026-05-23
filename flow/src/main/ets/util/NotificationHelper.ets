@@ -66,6 +66,50 @@ export class NotificationHelper {
    * 超出此窗口的过期提醒则直接跳过，不再打扰用户。
    */
   private static readonly MISSED_WINDOW_MS: number = 5 * 60 * 1000;
+  /**
+   * setTimeout 最大安全延迟（毫秒）。
+   * HarmonyOS/JS 引擎内部将延迟转换为 int32，超出 2^31-1 (≈24.8天) 会溢出并立即触发。
+   * 此处保守取 20天，分段链式调度以规避该问题。
+   */
+  private static readonly MAX_SAFE_TIMEOUT_MS: number = 20 * 24 * 60 * 60 * 1000;
+
+  /**
+   * 防溢出截止提醒定时器：当 delayMs 超过 int32 安全上限时，分段链式调度。
+   * 每段最多等待 MAX_SAFE_TIMEOUT_MS，到期后重新计算剩余延迟并递归调度，
+   * 直至最后一段直接触发 publishDeadlineNotification。
+   */
+  private static scheduleSafeDeadlineTimeout(entry: TaskEntry, delayMs: number): number {
+    if (delayMs <= NotificationHelper.MAX_SAFE_TIMEOUT_MS) {
+      return setTimeout(() => {
+        NotificationHelper.deadlineTimers.delete(entry.id);
+        NotificationHelper.publishDeadlineNotification(entry);
+      }, delayMs);
+    }
+    // 分段：先等 MAX_SAFE_TIMEOUT_MS，再用剩余时间重新调度
+    const remaining: number = delayMs - NotificationHelper.MAX_SAFE_TIMEOUT_MS;
+    return setTimeout(() => {
+      const newHandle: number = NotificationHelper.scheduleSafeDeadlineTimeout(entry, remaining);
+      NotificationHelper.deadlineTimers.set(entry.id, newHandle);
+    }, NotificationHelper.MAX_SAFE_TIMEOUT_MS);
+  }
+
+  /**
+   * 防溢出开始提醒定时器：逻辑与 scheduleSafeDeadlineTimeout 相同，
+   * 最后一段触发 publishStartNotification。
+   */
+  private static scheduleSafeStartTimeout(entry: TaskEntry, delayMs: number): number {
+    if (delayMs <= NotificationHelper.MAX_SAFE_TIMEOUT_MS) {
+      return setTimeout(() => {
+        NotificationHelper.startTimers.delete(entry.id);
+        NotificationHelper.publishStartNotification(entry);
+      }, delayMs);
+    }
+    const remaining: number = delayMs - NotificationHelper.MAX_SAFE_TIMEOUT_MS;
+    return setTimeout(() => {
+      const newHandle: number = NotificationHelper.scheduleSafeStartTimeout(entry, remaining);
+      NotificationHelper.startTimers.set(entry.id, newHandle);
+    }, NotificationHelper.MAX_SAFE_TIMEOUT_MS);
+  }
 
   /**
    * 任务计时完成时发即时系统通知。
@@ -209,12 +253,9 @@ export class NotificationHelper {
     }
 
     // delay <= 0 但在容忍窗口内时立即触发（delay > 0 时按正常延迟触发）
+    // 使用 scheduleSafeDeadlineTimeout 以避免 delay > 2^31-1 时的 int32 溢出立即触发问题
     const effectiveDelay: number = delay > 0 ? delay : 0;
-    const taskRef: TaskEntry = task;
-    const handle: number = setTimeout(() => {
-      NotificationHelper.deadlineTimers.delete(taskRef.id);
-      NotificationHelper.publishDeadlineNotification(taskRef);
-    }, effectiveDelay);
+    const handle: number = NotificationHelper.scheduleSafeDeadlineTimeout(task, effectiveDelay);
     NotificationHelper.deadlineTimers.set(task.id, handle);
 
     hilog.info(LOG_DOMAIN, TAG, '截止提醒已计划（taskId=%{public}d, 延迟=%{public}d秒）',
@@ -267,11 +308,7 @@ export class NotificationHelper {
     }
 
     const effectiveDelay: number = delay > 0 ? delay : 0;
-    const taskRef: TaskEntry = task;
-    const handle: number = setTimeout(() => {
-      NotificationHelper.startTimers.delete(taskRef.id);
-      NotificationHelper.publishStartNotification(taskRef);
-    }, effectiveDelay);
+    const handle: number = NotificationHelper.scheduleSafeStartTimeout(task, effectiveDelay);
     NotificationHelper.startTimers.set(task.id, handle);
 
     hilog.info(LOG_DOMAIN, TAG, '开始提醒已计划（taskId=%{public}d, 延迟=%{public}d秒）',

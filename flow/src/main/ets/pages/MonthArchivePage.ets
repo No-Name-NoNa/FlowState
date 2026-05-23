@@ -62,9 +62,6 @@ struct MonthArchivePage {
   @State private showTagFilter: boolean = false;
   /** 标签筛选区动画高度（0=收起，40=展开） */
   @State private tagFilterHeight: number = 0;
-  /** 历史页刷新信号：ArchivedTaskDetailPage 恢复/删除后置 true */
-  @Watch('onHistoryRefreshChanged')
-  @StorageLink(KEY_HISTORY_NEEDS_REFRESH) private historyNeedsRefresh: boolean = false;
   // ── 条目行点击扩散特效状态 ──────────────────────────────────────────────
   @State private pressedRowIndex: number = -1;
   @State private rowSpreadScale: number = 0;
@@ -84,6 +81,10 @@ struct MonthArchivePage {
     this.monthLabel = params.label;
     this.rangeFrom = new Date(year, month - 1, 1, 0, 0, 0, 0).getTime();
     this.rangeTo = new Date(year, month, 1, 0, 0, 0, 0).getTime();
+  }
+
+  /** 每次页面出现时加载数据（初次进入 + 从子页返回均会触发） */
+  onPageShow(): void {
     this.loadData();
   }
 
@@ -364,14 +365,6 @@ struct MonthArchivePage {
     .backgroundColor(this.themeTokens.colorBackground)
   }
 
-  /** 刷新信号回调：ArchivedTaskDetailPage 恢复/删除任务后重新加载 */
-  private onHistoryRefreshChanged(): void {
-    if (this.historyNeedsRefresh) {
-      AppStorage.set<boolean>(KEY_HISTORY_NEEDS_REFRESH, false);
-      this.loadData();
-    }
-  }
-
   /** 从 DB 加载本月全量归档任务 */
   private loadData(): void {
     StatisticsViewModel.loadArchivedTasksInRange(this.rangeFrom, this.rangeTo).then((tasks: TaskEntry[]) => {
@@ -509,6 +502,8 @@ struct MonthArchivePage {
           action: () => {
             StatisticsViewModel.deleteArchivedTask(taskId).then(() => {
               this.loadData();
+              // 通知 HistoryPage 刷新今日统计和月份分组计数
+              AppStorage.set<boolean>(KEY_HISTORY_NEEDS_REFRESH, true);
             });
           },
         },
