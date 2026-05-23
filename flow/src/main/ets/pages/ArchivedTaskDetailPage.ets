@@ -92,19 +92,6 @@ struct ArchivedTaskDetailPage {
       Scroll() {
         Column() {
           if (this.taskEntry !== null) {
-            // 任务标题（大标题展示）
-            Text(this.taskEntry.title)
-              .fontSize(this.fontTokens.titleLarge)
-              .fontWeight(FontWeight.Medium)
-              .fontColor(this.themeTokens.colorTextPrimary)
-              .width('100%')
-              .padding({
-                left: $r('app.float.spacing_lg'),
-                right: $r('app.float.spacing_lg'),
-                top: 16,
-                bottom: 8,
-              })
-
             // 标签行（若有）
             if (parseTags(this.taskEntry.tags).length > 0) {
               Row({ space: 6 }) {
@@ -254,6 +241,7 @@ struct ArchivedTaskDetailPage {
         }
         .width('100%')
       }
+      .align(Alignment.TopStart)
       .width('100%')
       .layoutWeight(1)
       .scrollBar(BarState.Auto)

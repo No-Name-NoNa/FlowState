@@ -269,6 +269,8 @@ export class TaskViewModel {
     // 同步删除该任务的所有计时分段记录
     await TimerSessionDatabase.deleteByTaskId(id);
     await TaskDatabase.delete(id);
+    // 删除计时分段后，专注时长统计发生变化，通知历史页刷新
+    HistoryRefreshSignal.bump();
     await TaskViewModel.load();
   }
 

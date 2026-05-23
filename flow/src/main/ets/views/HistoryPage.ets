@@ -21,7 +21,7 @@ interface MonthArchiveParams {
 }
 
 interface DayFocusTrend {
-  label: string;
+  dayOfWeek: number;
   focusMs: number;
   archivedCount: number;
   ratio: number;
@@ -82,10 +82,19 @@ export struct HistoryPage {
 
       List({ space: 8 }) {
         ListItem() {
-          Column({ space: 10 }) {
-            this.FocusOverviewCard()
+          Column({ space: 0 }) {
+            this.TodayStatsRow()
+            Divider()
+              .strokeWidth(DIVIDER_STROKE_WIDTH)
+              .color(this.themeTokens.colorDivider)
             this.WeeklyTrendCard()
+            Divider()
+              .strokeWidth(DIVIDER_STROKE_WIDTH)
+              .color(this.themeTokens.colorDivider)
             this.MonthSectionHeader()
+            Divider()
+              .strokeWidth(DIVIDER_STROKE_WIDTH)
+              .color(this.themeTokens.colorDivider)
           }
           .width('100%')
           .padding({
@@ -114,13 +123,12 @@ export struct HistoryPage {
                   .hitTestBehavior(HitTestMode.None)
 
                 Row() {
-                  Column() {
-                    Text(group.label)
-                      .fontSize(this.fontTokens.body)
-                      .fontWeight(FontWeight.Medium)
-                      .fontColor(this.themeTokens.colorTextPrimary)
-                  }
-                  .layoutWeight(1)
+                  Text(this.buildMonthLabel(group.year, group.month))
+                    .fontSize(this.fontTokens.body)
+                    .fontWeight(FontWeight.Medium)
+                    .fontColor(this.themeTokens.colorTextPrimary)
+                    .layoutWeight(1)
+                    .textAlign(TextAlign.Start)
 
                   Text(group.count.toString()
                     + I18nHelper.t(I18nKeys.HISTORY_MONTH_ITEMS, this.currentLanguage))
@@ -146,14 +154,13 @@ export struct HistoryPage {
                   const params: MonthArchiveParams = {
                     year: group.year,
                     month: group.month,
-                    label: group.label,
+                    label: this.buildMonthLabel(group.year, group.month),
                   };
                   router.pushUrl({ url: 'pages/MonthArchivePage', params: params });
                 })
               }
               .width('100%')
               .clip(true)
-              .padding({ left: $r('app.float.spacing_lg'), right: $r('app.float.spacing_lg') })
               .onTouch((e: TouchEvent) => {
                 if (e.type === TouchType.Down) {
                   this.triggerRowSpread(index, e.touches[0].x);
@@ -193,96 +200,78 @@ export struct HistoryPage {
     .backgroundColor(this.themeTokens.colorBackground)
   }
 
+  /** 今日专注统计：大号强调时长 + 归档任务数，直接读取 @State 变量确保响应式更新 */
   @Builder
-  private FocusOverviewCard(): void {
-    Column({ space: 12 }) {
+  private TodayStatsRow(): void {
+    Column({ space: 6 }) {
+      Text(I18nHelper.t(I18nKeys.HISTORY_TODAY_FOCUS, this.currentLanguage))
+        .fontSize(this.fontTokens.caption)
+        .fontColor(this.themeTokens.colorTextSecondary)
+
+      Text(StatisticsViewModel.formatDuration(this.todayFocusMs))
+        .fontSize(Math.round(this.fontTokens.timerDigit * 0.65))
+        .fontWeight(FontWeight.Bold)
+        .fontColor(this.themeTokens.colorAccent)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+      Text(I18nHelper.t(I18nKeys.HISTORY_TREND_DONE, this.currentLanguage)
+        .replace('{count}', this.todayArchivedCount.toString()))
+        .fontSize(this.fontTokens.caption)
+        .fontColor(this.themeTokens.colorTextSecondary)
+    }
+    .width('100%')
+    .alignItems(HorizontalAlign.Start)
+    .padding({ top: 20, bottom: 16 })
+  }
+
+  /** 本周专注趋势：标题行右侧显示本周汇总，柱状图仅保留色柱和日期标签 */
+  @Builder
+  private WeeklyTrendCard(): void {
+    Column({ space: 14 }) {
       Row() {
-        Text('专注概览')
+        Text(I18nHelper.t(I18nKeys.HISTORY_METRIC_WEEK_FOCUS, this.currentLanguage))
           .fontSize(this.fontTokens.body)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.themeTokens.colorTextPrimary)
           .layoutWeight(1)
 
-        Text('近 7 天')
+        Text(StatisticsViewModel.formatDuration(this.weekFocusMs)
+          + '  '
+          + this.activeDays.toString()
+          + I18nHelper.t(I18nKeys.HISTORY_METRIC_DAYS_UNIT, this.currentLanguage))
           .fontSize(this.fontTokens.caption)
           .fontColor(this.themeTokens.colorTextSecondary)
       }
       .width('100%')
       .alignItems(VerticalAlign.Center)
 
-      Row({ space: 0 }) {
-        this.MetricTile('今日专注', StatisticsViewModel.formatDuration(this.todayFocusMs), true)
-        this.MetricTile('今日归档', this.todayArchivedCount.toString() + ' 条', false)
-        this.MetricTile('本周专注', StatisticsViewModel.formatDuration(this.weekFocusMs), false)
-        this.MetricTile('活跃天数', this.activeDays.toString() + ' 天', false)
-      }
-      .width('100%')
-    }
-    .width('100%')
-    .padding({ left: 0, right: 0, top: 4, bottom: 4 })
-  }
-
-  @Builder
-  private MetricTile(label: string, value: string, highlighted: boolean): void {
-    Column({ space: 4 }) {
-      Text(value)
-        .fontSize(highlighted ? this.fontTokens.titleLarge : this.fontTokens.body)
-        .fontWeight(FontWeight.Bold)
-        .fontColor(highlighted ? this.themeTokens.colorAccent : this.themeTokens.colorTextPrimary)
-        .maxLines(1)
-        .textOverflow({ overflow: TextOverflow.Ellipsis })
-      Text(label)
-        .fontSize(this.fontTokens.label)
-        .fontColor(this.themeTokens.colorTextSecondary)
-    }
-    .layoutWeight(1)
-    .alignItems(HorizontalAlign.Center)
-    .padding({ left: 4, right: 4, top: 6, bottom: 6 })
-  }
-
-  @Builder
-  private WeeklyTrendCard(): void {
-    Column({ space: 12 }) {
-      Row() {
-        Text('专注时间变化')
-          .fontSize(this.fontTokens.body)
-          .fontWeight(FontWeight.Medium)
-          .fontColor(this.themeTokens.colorTextPrimary)
-          .layoutWeight(1)
-      }
-      .width('100%')
-
+      // 柱状图：仅色柱 + 日期标签，不显示每格时长文字
       Row({ space: 6 }) {
         ForEach(
           this.weekTrends,
           (item: DayFocusTrend) => {
-            Column({ space: 6 }) {
-              Text(this.getCompactDuration(item.focusMs))
-                .fontSize(this.fontTokens.label)
-                .fontWeight(item.focusMs > 0 ? FontWeight.Medium : FontWeight.Regular)
-                .fontColor(item.focusMs > 0 ? this.themeTokens.colorTextPrimary : this.themeTokens.colorTextSecondary)
-                .maxLines(1)
-                .textOverflow({ overflow: TextOverflow.Ellipsis })
-
+            Column({ space: 4 }) {
               Stack({ alignContent: Alignment.Bottom }) {
+                // 轨道底色，始终占满容器高度
+                Rect()
+                  .width(10)
+                  .height(72)
+                  .fill(this.getBarTrackColor())
+                  .borderRadius(5)
+                // 进度条，按比例叠加在轨道上
                 if (item.focusMs > 0) {
                   Rect()
                     .width(10)
                     .height(this.getBarHeight(item))
                     .fill(item.isToday ? this.themeTokens.colorAccent : this.getBarColor())
                     .borderRadius(5)
-                } else {
-                  Rect()
-                    .width(10)
-                    .height(2)
-                    .fill(this.getBarTrackColor())
-                    .borderRadius(1)
                 }
               }
               .width('100%')
-              .height(64)
+              .height(72)
 
-              Text(item.label)
+              Text(this.buildDayLabel(item.dayOfWeek, item.isToday))
                 .fontSize(this.fontTokens.label)
                 .fontColor(item.isToday ? this.themeTokens.colorAccent : this.themeTokens.colorTextSecondary)
                 .maxLines(1)
@@ -290,41 +279,32 @@ export struct HistoryPage {
             .layoutWeight(1)
             .alignItems(HorizontalAlign.Center)
           },
-          (item: DayFocusTrend) => item.label + item.focusMs.toString()
+          (item: DayFocusTrend) => item.dayOfWeek.toString() + item.focusMs.toString()
         )
-      }
-      .width('100%')
-
-      Row({ space: 10 }) {
-        Text('平均 ' + StatisticsViewModel.formatDuration(this.getAverageDailyFocusMs()))
-          .fontSize(this.fontTokens.caption)
-          .fontColor(this.themeTokens.colorTextSecondary)
-          .layoutWeight(1)
-        Text('完成 ' + this.weekArchivedCount.toString() + ' 条')
-          .fontSize(this.fontTokens.caption)
-          .fontColor(this.themeTokens.colorTextSecondary)
       }
       .width('100%')
     }
     .width('100%')
-    .padding({ left: 0, right: 0, top: 12, bottom: 12 })
+    .padding({ top: 4, bottom: 16 })
   }
 
   @Builder
   private MonthSectionHeader(): void {
     Row() {
-      Text('月度归档')
+      Text(I18nHelper.t(I18nKeys.HISTORY_MONTH_SECTION_TITLE, this.currentLanguage))
         .fontSize(this.fontTokens.body)
         .fontWeight(FontWeight.Medium)
         .fontColor(this.themeTokens.colorTextPrimary)
         .layoutWeight(1)
-      Text(this.monthGroups.length.toString() + ' 个月')
+      Text(this.monthGroups.length.toString()
+        + ' '
+        + I18nHelper.t(I18nKeys.HISTORY_MONTH_SECTION_UNIT, this.currentLanguage))
         .fontSize(this.fontTokens.caption)
         .fontColor(this.themeTokens.colorTextSecondary)
     }
     .width('100%')
     .alignItems(VerticalAlign.Center)
-    .padding({ top: 6, bottom: 4 })
+    .padding({ top: 10, bottom: 10 })
   }
 
   private onHistoryRefreshChanged(): void {
@@ -335,85 +315,99 @@ export struct HistoryPage {
   private loadData(): void {
     // 递增序号，确保只有最新一次 loadData 的结果才会被应用
     const seq: number = ++this.loadSeq;
+    const now: Date = new Date();
     const todayRange: TimeRange = StatisticsViewModel.getTodayRange();
-    StatisticsViewModel.getStats(todayRange).then((summary: StatsSummary) => {
+    const weekRange: TimeRange = StatisticsViewModel.getWeekRange();
+
+    // 构建过去 7 天的时间范围（含今日）
+    const dayRanges: TimeRange[] = [];
+    const dayOfWeeks: number[] = [];
+    for (let offset: number = 6; offset >= 0; offset--) {
+      const d: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset, 0, 0, 0, 0);
+      const to: Date = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+      dayRanges.push({ from: d.getTime(), to: to.getTime() + 1 });
+      dayOfWeeks.push(d.getDay());
+    }
+
+    // 将今日、本周、7日三组查询合并为一次 Promise.all，消除多异步链竞态
+    const allRanges: TimeRange[] = [todayRange, weekRange];
+    for (const r of dayRanges) {
+      allRanges.push(r);
+    }
+    const allQueries: Promise<StatsSummary>[] = allRanges.map((r: TimeRange) => StatisticsViewModel.getStats(r));
+
+    Promise.all(allQueries).then((results: StatsSummary[]) => {
       if (seq !== this.loadSeq) {
         return;
       }
-      this.todayArchivedCount = summary.archivedCount;
-      this.todayFocusMs = summary.focusTimeMs;
-    });
-    StatisticsViewModel.getStats(StatisticsViewModel.getWeekRange()).then((summary: StatsSummary) => {
-      if (seq !== this.loadSeq) {
-        return;
+      const todayStat: StatsSummary = results[0];
+      const weekStat: StatsSummary = results[1];
+      const dayStats: StatsSummary[] = results.slice(2);
+
+      this.todayFocusMs = todayStat.focusTimeMs;
+      this.todayArchivedCount = todayStat.archivedCount;
+      this.weekFocusMs = weekStat.focusTimeMs;
+      this.weekArchivedCount = weekStat.archivedCount;
+
+      let maxFocusMs: number = 0;
+      let activeDays: number = 0;
+      for (const s of dayStats) {
+        if (s.focusTimeMs > maxFocusMs) {
+          maxFocusMs = s.focusTimeMs;
+        }
+        if (s.focusTimeMs > 0 || s.archivedCount > 0) {
+          activeDays++;
+        }
       }
-      this.weekArchivedCount = summary.archivedCount;
-      this.weekFocusMs = summary.focusTimeMs;
+      this.activeDays = activeDays;
+
+      // 柱状图 7 日趋势
+      const chartMaxFocusMs: number = Math.max(maxFocusMs, 30 * 60 * 1000);
+      const trends: DayFocusTrend[] = [];
+      for (let i: number = 0; i < dayStats.length; i++) {
+        const ratio: number = dayStats[i].focusTimeMs > 0 ? dayStats[i].focusTimeMs / chartMaxFocusMs : 0;
+        trends.push({
+          dayOfWeek: dayOfWeeks[i],
+          focusMs: dayStats[i].focusTimeMs,
+          archivedCount: dayStats[i].archivedCount,
+          ratio,
+          isToday: i === dayStats.length - 1,
+        });
+      }
+      this.weekTrends = trends;
     });
+
     StatisticsViewModel.loadMonthGroups().then((groups: MonthGroup[]) => {
       if (seq !== this.loadSeq) {
         return;
       }
       this.monthGroups = groups;
     });
-    this.loadWeekTrend(seq);
   }
 
-  private loadWeekTrend(seq: number): void {
-    const now: Date = new Date();
-    const ranges: TimeRange[] = [];
-    const labels: string[] = [];
-    for (let offset: number = 6; offset >= 0; offset--) {
-      const d: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset, 0, 0, 0, 0);
-      const to: Date = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
-      ranges.push({ from: d.getTime(), to: to.getTime() + 1 });
-      labels.push(offset === 0 ? '今' : this.formatWeekday(d));
+  /** 根据当前语言生成星期标签，今日显示专属文字 */
+  private buildDayLabel(dayOfWeek: number, isToday: boolean): string {
+    if (isToday) {
+      return I18nHelper.t(I18nKeys.HISTORY_TODAY_LABEL, this.currentLanguage);
     }
-
-    Promise.all(ranges.map((range: TimeRange) => StatisticsViewModel.getStats(range)))
-      .then((stats: StatsSummary[]) => {
-        if (seq !== this.loadSeq) {
-          return;
-        }
-        let maxFocusMs: number = 0;
-        let activeDays: number = 0;
-        for (const item of stats) {
-          if (item.focusTimeMs > maxFocusMs) {
-            maxFocusMs = item.focusTimeMs;
-          }
-          if (item.focusTimeMs > 0 || item.archivedCount > 0) {
-            activeDays++;
-          }
-        }
-
-        const chartMaxFocusMs: number = Math.max(maxFocusMs, 30 * 60 * 1000);
-        const trends: DayFocusTrend[] = [];
-        for (let i: number = 0; i < stats.length; i++) {
-          const ratio: number = stats[i].focusTimeMs > 0 ? stats[i].focusTimeMs / chartMaxFocusMs : 0;
-          trends.push({
-            label: labels[i],
-            focusMs: stats[i].focusTimeMs,
-            archivedCount: stats[i].archivedCount,
-            ratio,
-            isToday: i === stats.length - 1,
-          });
-        }
-        this.activeDays = activeDays;
-        this.weekTrends = trends;
-      });
+    const weekdayKeys: I18nKeys[] = [
+      I18nKeys.TASK_RECURRING_WEEKDAY_SUN,
+      I18nKeys.TASK_RECURRING_WEEKDAY_MON,
+      I18nKeys.TASK_RECURRING_WEEKDAY_TUE,
+      I18nKeys.TASK_RECURRING_WEEKDAY_WED,
+      I18nKeys.TASK_RECURRING_WEEKDAY_THU,
+      I18nKeys.TASK_RECURRING_WEEKDAY_FRI,
+      I18nKeys.TASK_RECURRING_WEEKDAY_SAT,
+    ];
+    const key: I18nKeys = weekdayKeys[dayOfWeek];
+    return I18nHelper.t(key, this.currentLanguage);
   }
 
-  private formatWeekday(date: Date): string {
-    const day: number = date.getDay();
-    const labels: string[] = ['日', '一', '二', '三', '四', '五', '六'];
-    return labels[day];
-  }
-
-  private getAverageDailyFocusMs(): number {
-    if (this.weekTrends.length === 0) {
-      return 0;
-    }
-    return Math.floor(this.weekFocusMs / this.weekTrends.length);
+  /** 根据当前语言生成月份标签，如「2026年5月」或「5/2026」 */
+  private buildMonthLabel(year: number, month: number): string {
+    return I18nHelper.t(I18nKeys.HISTORY_MONTH_FORMAT, this.currentLanguage)
+      .replace('{year}', year.toString())
+      .replace('{month}', month.toString());
   }
 
   private getBarHeight(item: DayFocusTrend): number {
@@ -421,25 +415,6 @@ export struct HistoryPage {
       return 0;
     }
     return Math.max(4, Math.round(item.ratio * 64));
-  }
-
-  private getCompactDuration(ms: number): string {
-    if (ms <= 0) {
-      return '0';
-    }
-    const totalMin: number = Math.floor(ms / 60000);
-    if (totalMin < 1) {
-      return '<1m';
-    }
-    if (totalMin < 60) {
-      return totalMin.toString() + 'm';
-    }
-    const hours: number = Math.floor(totalMin / 60);
-    const mins: number = totalMin % 60;
-    if (mins === 0) {
-      return hours.toString() + 'h';
-    }
-    return hours.toString() + 'h' + mins.toString() + 'm';
   }
 
   private getBarTrackColor(): string {

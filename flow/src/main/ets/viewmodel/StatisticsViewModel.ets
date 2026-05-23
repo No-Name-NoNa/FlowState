@@ -11,6 +11,7 @@ import { TaskEntry, TaskStatus } from '../model/TaskEntry';
 import { NotificationHelper } from '../util/NotificationHelper';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { LOG_DOMAIN } from '../constants/AppConstants';
+import { HistoryRefreshSignal } from '../util/HistoryRefreshSignal';
 
 /** 统计数据快照 */
 export interface StatsSummary {
@@ -297,6 +298,8 @@ export class StatisticsViewModel {
       }
       await TimerSessionDatabase.deleteByTaskIds(ids);
       await TaskDatabase.deleteByIds(ids);
+      // 批量删除后归档数量与专注时长均发生变化，通知历史页刷新
+      HistoryRefreshSignal.bump();
       return ids.length;
     } catch (err) {
       hilog.error(LOG_DOMAIN, 'StatisticsViewModel',
@@ -317,6 +320,8 @@ export class StatisticsViewModel {
       }
       await TimerSessionDatabase.deleteByTaskIds(ids);
       await TaskDatabase.deleteByIds(ids);
+      // 全量删除后归档数量与专注时长均发生变化，通知历史页刷新
+      HistoryRefreshSignal.bump();
       return ids.length;
     } catch (err) {
       hilog.error(LOG_DOMAIN, 'StatisticsViewModel', 'deleteAllArchived 失败：%{public}s', JSON.stringify(err));

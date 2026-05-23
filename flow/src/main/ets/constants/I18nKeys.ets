@@ -229,4 +229,17 @@ export enum I18nKeys {
   MONTH_ARCHIVE_SEARCH = 'month_archive_search',
   MONTH_ARCHIVE_EMPTY = 'month_archive_empty',
   MONTH_ARCHIVE_TAG_ALL = 'month_archive_tag_all',
+  // 历史页动态标签（i18n 化）
+  HISTORY_FOCUS_OVERVIEW = 'history_focus_overview',
+  HISTORY_RECENT_N_DAYS = 'history_recent_n_days',
+  HISTORY_METRIC_WEEK_FOCUS = 'history_metric_week_focus',
+  HISTORY_METRIC_ACTIVE_DAYS = 'history_metric_active_days',
+  HISTORY_METRIC_DAYS_UNIT = 'history_metric_days_unit',
+  HISTORY_TREND_TITLE = 'history_trend_title',
+  HISTORY_TREND_AVG = 'history_trend_avg',
+  HISTORY_TREND_DONE = 'history_trend_done',
+  HISTORY_MONTH_SECTION_TITLE = 'history_month_section_title',
+  HISTORY_MONTH_SECTION_UNIT = 'history_month_section_unit',
+  HISTORY_TODAY_LABEL = 'history_today_label',
+  HISTORY_MONTH_FORMAT = 'history_month_format',
 }

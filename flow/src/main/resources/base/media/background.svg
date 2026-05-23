@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
     <!--
-      流刻 / Flowmark — 启动器图标背景
-      深靛蓝渐变，代表专注、沉浸、流动能量。
-      左上 #312E81（深靛蓝）→ 右下 #4F46E5（靛蓝-600）。
+      流迹 — 启动器图标背景
+      暖白宣纸质感渐变，呼应书法纸底意象。
+      中心 #FEFBF4（暖近白）→ 边缘 #F5EDD8（淡米色）
     -->
     <defs>
-        <linearGradient id="flowmark_bg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#312E81"/>
-            <stop offset="100%" stop-color="#4F46E5"/>
-        </linearGradient>
+        <radialGradient id="liuji_bg" cx="40%" cy="38%" r="70%">
+            <stop offset="0%" stop-color="#FEFBF4"/>
+            <stop offset="100%" stop-color="#F5EDD8"/>
+        </radialGradient>
     </defs>
-    <rect width="1024" height="1024" fill="url(#flowmark_bg)"/>
+    <rect width="1024" height="1024" fill="url(#liuji_bg)"/>
 </svg>

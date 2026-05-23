@@ -174,6 +174,16 @@ struct MainPage {
   }
 
   /**
+   * 页面重新进入前台时触发（从 router 子页面返回，或从后台恢复）。
+   * 若当前停留在历史 Tab，立即触发一次数据刷新，确保 FocusOverviewCard 始终显示最新统计。
+   */
+  onPageShow(): void {
+    if (this.currentTabIndex === 2) {
+      HistoryRefreshSignal.bump();
+    }
+  }
+
+  /**
    * 响应通知跳转信号：切换到指定 Tab 并消费信号（重置为 -1）。
    * 由 FlowAbility.onNewWant / onCreate 通过 AppStorage 写入信号触发。
    */

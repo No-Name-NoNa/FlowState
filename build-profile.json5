@@ -1,6 +1,20 @@
 {
   "app": {
-    "signingConfigs": [],
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "storeFile": "C:/Users/No_Name_NoNa/.harmonyKey/key.p12",
+          "storePassword": "0000001BF311823550DF089007CE45240086F8EBE8EEB008C84DA49A9351196D8B558AB2A816C82FB80489",
+          "keyAlias": "flowtrace",
+          "keyPassword": "0000001BE8E1C2DC2EEECD6E5D191004876046738F133B5BEEE4A32131F3A13E741814B4B9B5141786EFC1",
+          "signAlg": "SHA256withECDSA",
+          "profile": "C:/Users/No_Name_NoNa/.harmonyKey/流迹Release.p7b",
+          "certpath": "C:/Users/No_Name_NoNa/.harmonyKey/流迹.cer"
+        }
+      }
+    ],
     "products": [
       {
         "name": "default",
