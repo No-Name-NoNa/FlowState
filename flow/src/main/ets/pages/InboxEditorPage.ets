@@ -456,6 +456,8 @@ struct InboxEditorPage {
 
   /** 验证并保存，成功后发送跨页刷新信号并返回上一页 */
   private async doSave(): Promise<void> {
+    // 自动提交输入框中尚未按回车确认的标签
+    this.addTag();
     const trimmedText: string = this.text.trim();
     if (trimmedText === '') {
       return;

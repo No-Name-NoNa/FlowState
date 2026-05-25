@@ -2072,6 +2072,8 @@ struct TaskEditorPage {
   }
 
   private async doSave(): Promise<void> {
+    // 自动提交输入框中尚未按回车确认的标签
+    this.addTag();
     const trimmedTitle: string = this.titleText.trim();
     if (trimmedTitle === '') {
       return;
