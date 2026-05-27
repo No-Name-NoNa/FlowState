@@ -51,6 +51,8 @@ import {
   serializeIntervalNodes,
   parseRecurringRule,
   serializeRecurringRule,
+  parseNodeTargetDurations,
+  serializeNodeTargetDurations,
 } from '../model/TaskEntry';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
 
@@ -64,6 +66,19 @@ interface EditorRouterParams {
 interface TimeResult {
   hour: number;
   minute: number;
+}
+
+/** 多节点时间戳与目标时长的配对结构（用于保存时排序） */
+interface NodeWithDuration {
+  ts: number;
+  durStr: string;
+}
+
+/** 多节点区间与目标时长的配对结构（用于保存时排序） */
+interface IntervalWithDuration {
+  start: number;
+  end: number;
+  durStr: string;
 }
 
 @Entry
@@ -134,6 +149,7 @@ struct TaskEditorPage {
     startReminderType: 0,
     startReminderMessage: '',
     startReminderId: 0,
+    nodeTargetDurations: '',
   };
   // ── 区间任务专属状态 ──────────────────────────────────────────────────────
   /** 当前任务类型选择：0 = 单次截止，TaskScheduleType.INTERVAL = 区间 */
@@ -151,6 +167,8 @@ struct TaskEditorPage {
   @State multiNodes: number[] = [];
   /** 多节点区间任务的区间节点列表（MULTI_NODE_INTERVAL 类型） */
   @State multiIntervalNodes: IntervalNode[] = [];
+  /** 多节点任务各节点的目标时长输入字符串（与 multiNodes / multiIntervalNodes 索引对应） */
+  @State nodeTargetDurationStrs: string[] = [];
   /** 正在编辑的节点索引（等于数组长度时表示"新增"） */
   @State pendingMultiNodeIndex: number = -1;
   /** 多节点选择器暂存的日期部分（ms） */
@@ -209,9 +227,23 @@ struct TaskEditorPage {
         } else if (entry.scheduleType === TaskScheduleType.MULTI_NODE) {
           this.scheduleTypeSelection = TaskScheduleType.MULTI_NODE;
           this.multiNodes = parseTimeNodes(entry.timeNodes);
+          // 加载各节点目标时长
+          const perNode: number[] = parseNodeTargetDurations(entry.nodeTargetDurations);
+          const strs: string[] = [];
+          for (let i: number = 0; i < this.multiNodes.length; i++) {
+            strs.push(i < perNode.length && perNode[i] > 0 ? perNode[i].toString() : '');
+          }
+          this.nodeTargetDurationStrs = strs;
         } else if (entry.scheduleType === TaskScheduleType.MULTI_NODE_INTERVAL) {
           this.scheduleTypeSelection = TaskScheduleType.MULTI_NODE_INTERVAL;
           this.multiIntervalNodes = parseIntervalNodes(entry.timeNodes);
+          // 加载各区间节点目标时长
+          const perNode2: number[] = parseNodeTargetDurations(entry.nodeTargetDurations);
+          const strs2: string[] = [];
+          for (let i: number = 0; i < this.multiIntervalNodes.length; i++) {
+            strs2.push(i < perNode2.length && perNode2[i] > 0 ? perNode2[i].toString() : '');
+          }
+          this.nodeTargetDurationStrs = strs2;
         } else if (entry.scheduleType === TaskScheduleType.RECURRING) {
           this.scheduleTypeSelection = TaskScheduleType.RECURRING;
           const nodes: number[] = parseTimeNodes(entry.timeNodes);
@@ -717,10 +749,38 @@ struct TaskEditorPage {
                   .fontColor(ts > 0
                     ? this.themeTokens.colorAccent
                     : this.themeTokens.colorTextSecondary)
-                  .layoutWeight(1)
+                  .width(130)
+                  .flexShrink(0)
                   .onClick(() => {
                     this.showMultiNodeDatePicker(index);
                   })
+
+                // 节点目标时长输入框
+                TextInput({
+                  text: index < this.nodeTargetDurationStrs.length
+                    ? this.nodeTargetDurationStrs[index] : '',
+                  placeholder: I18nHelper.t(I18nKeys.TASK_DURATION_UNIT, this.currentLanguage),
+                })
+                  .layoutWeight(1)
+                  .height(32)
+                  .fontSize(this.fontTokens.label)
+                  .fontColor(this.themeTokens.colorTextPrimary)
+                  .placeholderColor(this.themeTokens.colorTextSecondary)
+                  .caretColor(this.themeTokens.colorAccent)
+                  .backgroundColor(Color.Transparent)
+                  .inputFilter('[0-9]')
+                  .type(InputType.Number)
+                  .padding({ left: $r('app.float.spacing_xs'), right: $r('app.float.spacing_xs') })
+                  .borderRadius(0)
+                  .onChange((val: string) => {
+                    this.updateNodeDuration(index, val);
+                  })
+
+                Text(I18nHelper.t(I18nKeys.TASK_DURATION_UNIT, this.currentLanguage))
+                  .fontSize(this.fontTokens.label)
+                  .fontColor(this.themeTokens.colorTextSecondary)
+                  .flexShrink(0)
+                  .margin({ right: $r('app.float.spacing_xs') })
 
                 Image($r('sys.media.ohos_ic_public_cancel'))
                   .width(18)
@@ -834,6 +894,48 @@ struct TaskEditorPage {
                         this.removeMultiInterval(index);
                       });
                     })
+                }
+                .width('100%')
+                .padding({
+                  left: $r('app.float.spacing_lg'),
+                  right: $r('app.float.spacing_lg'),
+                  top: $r('app.float.spacing_sm'),
+                  bottom: $r('app.float.spacing_sm'),
+                })
+                .alignItems(VerticalAlign.Center)
+
+                // 节点目标时长行
+                Row() {
+                  Text(I18nHelper.t(I18nKeys.TASK_DURATION_LABEL, this.currentLanguage))
+                    .fontSize(this.fontTokens.body)
+                    .fontColor(this.themeTokens.colorTextPrimary)
+                    .width(120)
+                    .flexShrink(0)
+
+                  TextInput({
+                    text: index < this.nodeTargetDurationStrs.length
+                      ? this.nodeTargetDurationStrs[index] : '',
+                    placeholder: '0',
+                  })
+                    .layoutWeight(1)
+                    .height(32)
+                    .fontSize(this.fontTokens.label)
+                    .fontColor(this.themeTokens.colorTextPrimary)
+                    .placeholderColor(this.themeTokens.colorTextSecondary)
+                    .caretColor(this.themeTokens.colorAccent)
+                    .backgroundColor(Color.Transparent)
+                    .inputFilter('[0-9]')
+                    .type(InputType.Number)
+                    .padding({ left: $r('app.float.spacing_xs'), right: $r('app.float.spacing_xs') })
+                    .borderRadius(0)
+                    .onChange((val: string) => {
+                      this.updateNodeDuration(index, val);
+                    })
+
+                  Text(I18nHelper.t(I18nKeys.TASK_DURATION_UNIT, this.currentLanguage))
+                    .fontSize(this.fontTokens.label)
+                    .fontColor(this.themeTokens.colorTextSecondary)
+                    .flexShrink(0)
                 }
                 .width('100%')
                 .padding({
@@ -1155,51 +1257,61 @@ struct TaskEditorPage {
               .width('100%')
           }
 
-          // ── 5. 目标时长行 ────────────────────────────────────────────────
-          Row() {
-            Text(I18nHelper.t(I18nKeys.TASK_DURATION_LABEL, this.currentLanguage))
-              .fontSize(this.fontTokens.body)
-              .fontColor(this.themeTokens.colorTextPrimary)
-              .width(80)
-              .flexShrink(0)
+          // ── 5. 目标时长行（多节点/多区间任务使用每节点时长，隐藏此行）──────
+          if (this.scheduleTypeSelection !== TaskScheduleType.MULTI_NODE
+            && this.scheduleTypeSelection !== TaskScheduleType.MULTI_NODE_INTERVAL) {
+            Row() {
+              Text(I18nHelper.t(I18nKeys.TASK_DURATION_LABEL, this.currentLanguage))
+                .fontSize(this.fontTokens.body)
+                .fontColor(this.themeTokens.colorTextPrimary)
+                .width(80)
+                .flexShrink(0)
 
-            TextInput({
-              text: this.targetDurationStr,
-              placeholder: '0',
-            })
-              .layoutWeight(1)
-              .height(36)
-              .fontSize(this.fontTokens.body)
-              .fontColor(this.themeTokens.colorTextPrimary)
-              .placeholderColor(this.themeTokens.colorTextSecondary)
-              .caretColor(this.themeTokens.colorAccent)
-              .backgroundColor(Color.Transparent)
-              .inputFilter('[0-9]')
-              .type(InputType.Number)
-              .padding({ left: $r('app.float.spacing_sm'), right: $r('app.float.spacing_sm') })
-              .borderRadius(0)
-              .onChange((val: string) => {
-                this.targetDurationStr = val;
+              TextInput({
+                text: this.targetDurationStr,
+                placeholder: '0',
               })
+                .layoutWeight(1)
+                .height(36)
+                .fontSize(this.fontTokens.body)
+                .fontColor(this.themeTokens.colorTextPrimary)
+                .placeholderColor(this.themeTokens.colorTextSecondary)
+                .caretColor(this.themeTokens.colorAccent)
+                .backgroundColor(Color.Transparent)
+                .inputFilter('[0-9]')
+                .type(InputType.Number)
+                .padding({ left: $r('app.float.spacing_sm'), right: $r('app.float.spacing_sm') })
+                .borderRadius(0)
+                .onChange((val: string) => {
+                  this.targetDurationStr = val;
+                  // 用户填入时长后，若不是多节点类型，自动切换为「时长到达」完成方式
+                  const d: number = parseInt(val.trim(), 10);
+                  if (!isNaN(d) && d > 0
+                    && this.scheduleTypeSelection !== TaskScheduleType.MULTI_NODE
+                    && this.scheduleTypeSelection !== TaskScheduleType.MULTI_NODE_INTERVAL) {
+                    this.completionType = TaskCompletionType.DURATION;
+                  }
+                })
 
-            Text(I18nHelper.t(I18nKeys.TASK_DURATION_UNIT, this.currentLanguage))
-              .fontSize(this.fontTokens.label)
-              .fontColor(this.themeTokens.colorTextSecondary)
-              .flexShrink(0)
-          }
-          .width('100%')
-          .padding({
-            left: $r('app.float.spacing_lg'),
-            right: $r('app.float.spacing_lg'),
-            top: $r('app.float.spacing_md'),
-            bottom: $r('app.float.spacing_md'),
-          })
-          .alignItems(VerticalAlign.Center)
-
-          Divider()
-            .strokeWidth(DIVIDER_STROKE_WIDTH)
-            .color(this.themeTokens.colorDivider)
+              Text(I18nHelper.t(I18nKeys.TASK_DURATION_UNIT, this.currentLanguage))
+                .fontSize(this.fontTokens.label)
+                .fontColor(this.themeTokens.colorTextSecondary)
+                .flexShrink(0)
+            }
             .width('100%')
+            .padding({
+              left: $r('app.float.spacing_lg'),
+              right: $r('app.float.spacing_lg'),
+              top: $r('app.float.spacing_md'),
+              bottom: $r('app.float.spacing_md'),
+            })
+            .alignItems(VerticalAlign.Center)
+
+            Divider()
+              .strokeWidth(DIVIDER_STROKE_WIDTH)
+              .color(this.themeTokens.colorDivider)
+              .width('100%')
+          } // if not multi-node
 
           // ── 6. 完成方式 chips ────────────────────────────────────────────
           Row({ space: $r('app.float.spacing_sm') }) {
@@ -1808,7 +1920,7 @@ struct TaskEditorPage {
 
   /**
    * 响应式更新多节点列表的指定索引。
-   * index === multiNodes.length 时追加新节点。
+   * index === multiNodes.length 时追加新节点，同步扩展 nodeTargetDurationStrs。
    */
   private updateMultiNode(index: number, ts: number): void {
     const newNodes: number[] = [];
@@ -1817,6 +1929,13 @@ struct TaskEditorPage {
     }
     if (index === this.multiNodes.length) {
       newNodes.push(ts);
+      // 同步扩展目标时长数组
+      const newDurs: string[] = [];
+      for (let i: number = 0; i < this.nodeTargetDurationStrs.length; i++) {
+        newDurs.push(this.nodeTargetDurationStrs[i]);
+      }
+      newDurs.push('');
+      this.nodeTargetDurationStrs = newDurs;
     }
     this.multiNodes = newNodes;
   }
@@ -1824,12 +1943,34 @@ struct TaskEditorPage {
   /** 移除多节点列表的指定索引 */
   private removeMultiNode(index: number): void {
     const newNodes: number[] = [];
+    const newDurs: string[] = [];
     for (let i: number = 0; i < this.multiNodes.length; i++) {
       if (i !== index) {
         newNodes.push(this.multiNodes[i]);
+        newDurs.push(i < this.nodeTargetDurationStrs.length ? this.nodeTargetDurationStrs[i] : '');
       }
     }
     this.multiNodes = newNodes;
+    this.nodeTargetDurationStrs = newDurs;
+  }
+
+  /**
+   * 响应式更新指定索引节点的目标时长字符串。
+   * ArkTS 禁止直接通过索引赋值 @State 数组，需重建整个数组。
+   */
+  private updateNodeDuration(index: number, val: string): void {
+    const len: number = this.scheduleTypeSelection === TaskScheduleType.MULTI_NODE
+      ? this.multiNodes.length
+      : this.multiIntervalNodes.length;
+    const newDurs: string[] = [];
+    for (let i: number = 0; i < len; i++) {
+      if (i === index) {
+        newDurs.push(val);
+      } else {
+        newDurs.push(i < this.nodeTargetDurationStrs.length ? this.nodeTargetDurationStrs[i] : '');
+      }
+    }
+    this.nodeTargetDurationStrs = newDurs;
   }
 
   // ── 多节点区间选择器 ──────────────────────────────────────────────────────
@@ -1885,6 +2026,13 @@ struct TaskEditorPage {
     if (index === this.multiIntervalNodes.length) {
       newNodes.push({ start: ts, end: ts + 3600000 });
       actualIdx = newNodes.length - 1;
+      // 同步扩展目标时长数组
+      const newDurs: string[] = [];
+      for (let i: number = 0; i < this.nodeTargetDurationStrs.length; i++) {
+        newDurs.push(this.nodeTargetDurationStrs[i]);
+      }
+      newDurs.push('');
+      this.nodeTargetDurationStrs = newDurs;
     }
     this.multiIntervalNodes = newNodes;
     return actualIdx;
@@ -1906,12 +2054,15 @@ struct TaskEditorPage {
   /** 移除多节点区间列表的指定索引 */
   private removeMultiInterval(index: number): void {
     const newNodes: IntervalNode[] = [];
+    const newDurs: string[] = [];
     for (let i: number = 0; i < this.multiIntervalNodes.length; i++) {
       if (i !== index) {
         newNodes.push(this.multiIntervalNodes[i]);
+        newDurs.push(i < this.nodeTargetDurationStrs.length ? this.nodeTargetDurationStrs[i] : '');
       }
     }
     this.multiIntervalNodes = newNodes;
+    this.nodeTargetDurationStrs = newDurs;
   }
 
   /** 弹出区间节点开始时间日期选择器；index === length 时为新增模式 */
@@ -2088,6 +2239,7 @@ struct TaskEditorPage {
     let scheduleType: number;
     let timeNodesStr: string;
     let recurringRuleStr: string = '';
+    let nodeTargetDurationsStr: string = '';
     if (this.scheduleTypeSelection === TaskScheduleType.INTERVAL) {
       // 区间任务：必须同时有开始时间和截止时间，且开始 < 截止
       if (this.startTs <= 0 || this.deadlineTs <= 0 || this.startTs >= this.deadlineTs) {
@@ -2101,9 +2253,24 @@ struct TaskEditorPage {
         return;
       }
       scheduleType = TaskScheduleType.MULTI_NODE;
-      // 保存前按时间升序排列，保证节点顺序与时间一致
-      const sortedNodes: number[] = this.multiNodes.slice().sort((a: number, b: number) => a - b);
-      timeNodesStr = serializeTimeNodes(sortedNodes);
+      // 将节点与目标时长配对后排序，确保排序后索引仍与目标时长对应
+      const paired: NodeWithDuration[] = [];
+      for (let i: number = 0; i < this.multiNodes.length; i++) {
+        paired.push({
+          ts: this.multiNodes[i],
+          durStr: i < this.nodeTargetDurationStrs.length ? this.nodeTargetDurationStrs[i] : '',
+        });
+      }
+      paired.sort((a: NodeWithDuration, b: NodeWithDuration) => a.ts - b.ts);
+      const sortedTs: number[] = [];
+      const sortedDurs: number[] = [];
+      for (const p of paired) {
+        sortedTs.push(p.ts);
+        const d: number = parseInt(p.durStr.trim(), 10);
+        sortedDurs.push(isNaN(d) ? 0 : d);
+      }
+      timeNodesStr = serializeTimeNodes(sortedTs);
+      nodeTargetDurationsStr = serializeNodeTargetDurations(sortedDurs);
     } else if (this.scheduleTypeSelection === TaskScheduleType.MULTI_NODE_INTERVAL) {
       // 多节点区间任务：至少需要 1 个有效区间，且每个区间 start < end
       if (this.multiIntervalNodes.length === 0) {
@@ -2115,10 +2282,25 @@ struct TaskEditorPage {
         }
       }
       scheduleType = TaskScheduleType.MULTI_NODE_INTERVAL;
-      // 保存前按起始时间升序排列
-      const sortedIntervals: IntervalNode[] = this.multiIntervalNodes.slice()
-        .sort((a: IntervalNode, b: IntervalNode) => a.start - b.start);
+      // 将区间节点与目标时长配对后排序
+      const pairedInterval: IntervalWithDuration[] = [];
+      for (let i: number = 0; i < this.multiIntervalNodes.length; i++) {
+        pairedInterval.push({
+          start: this.multiIntervalNodes[i].start,
+          end: this.multiIntervalNodes[i].end,
+          durStr: i < this.nodeTargetDurationStrs.length ? this.nodeTargetDurationStrs[i] : '',
+        });
+      }
+      pairedInterval.sort((a: IntervalWithDuration, b: IntervalWithDuration) => a.start - b.start);
+      const sortedIntervals: IntervalNode[] = [];
+      const sortedIntervalDurs: number[] = [];
+      for (const p of pairedInterval) {
+        sortedIntervals.push({ start: p.start, end: p.end });
+        const d: number = parseInt(p.durStr.trim(), 10);
+        sortedIntervalDurs.push(isNaN(d) ? 0 : d);
+      }
       timeNodesStr = serializeIntervalNodes(sortedIntervals);
+      nodeTargetDurationsStr = serializeNodeTargetDurations(sortedIntervalDurs);
     } else if (this.scheduleTypeSelection === TaskScheduleType.RECURRING) {
       // 周期性任务：需要首次触发时间
       if (this.deadlineTs <= 0) {
@@ -2173,6 +2355,7 @@ struct TaskEditorPage {
         startReminderType: this.startReminderType,
         startReminderMessage: this.startReminderMessage,
         startReminderId: this.originalEntry.startReminderId,
+        nodeTargetDurations: nodeTargetDurationsStr,
       };
       await TaskViewModel.update(updated);
     } else {
@@ -2204,6 +2387,7 @@ struct TaskEditorPage {
         startReminderType: this.startReminderType,
         startReminderMessage: this.startReminderMessage,
         startReminderId: 0,
+        nodeTargetDurations: nodeTargetDurationsStr,
       };
       await TaskViewModel.create(newEntry);
       // 从收集箱转入时，任务创建成功后删除对应收集箱条目并通知收集箱刷新

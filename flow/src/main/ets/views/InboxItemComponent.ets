@@ -179,21 +179,15 @@ export struct InboxItemComponent {
           .width('100%')
           .alignItems(VerticalAlign.Center)
 
-          // 元信息行：标签列表（左）+ 修改时间戳（右）
+          // 元信息行：标签（左，弹性宽，碰撞时省略号截断）+ 修改时间戳（右，固定宽）
           Row({ space: 6 }) {
-            if (this.entryTags !== '') {
-              ForEach(parseTags(this.entryTags).slice(0, 2), (tag: string) => {
-                Text('#' + tag)
-                  .fontSize(this.fontTokens.label)
-                  .fontColor(this.themeTokens.colorAccent)
-                  .maxLines(1)
-                  .textOverflow({ overflow: TextOverflow.Ellipsis })
-                  .constraintSize({ maxWidth: 72 })
-                  .flexShrink(0)
-              }, (tag: string) => tag)
-            }
-
-            Blank()
+            // 标签文字：最多 2 个，撑满剩余空间；与右侧碰撞时从左侧截断并显示省略号
+            Text(this.buildTagsText())
+              .fontSize(this.fontTokens.label)
+              .fontColor(this.themeTokens.colorAccent)
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .layoutWeight(1)
 
             Text(formatTimestamp(this.entryUpdatedAt, this.lang))
               .fontSize(this.fontTokens.label)
@@ -245,6 +239,22 @@ export struct InboxItemComponent {
       left: this.entryIsPinned === 1 ? this.themeTokens.colorAccent : Color.Transparent,
     })
     .borderStyle({ left: BorderStyle.Solid })
+  }
+
+  /** 将最多 2 个标签格式化为空格分隔的字符串，无标签时返回空字符串 */
+  private buildTagsText(): string {
+    if (this.entryTags === '') {
+      return '';
+    }
+    const tags: string[] = parseTags(this.entryTags).slice(0, 2);
+    let result: string = '';
+    for (let i: number = 0; i < tags.length; i++) {
+      if (i > 0) {
+        result += ' ';
+      }
+      result += '#' + tags[i];
+    }
+    return result;
   }
 
   /** 触发横向扩散特效（Rect 始终挂载，用 opacity 控制可见性，无需 pressedIndex） */

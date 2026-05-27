@@ -11,6 +11,7 @@
     "pages/FontSizePage",
     "pages/TimerPage",
     "pages/ArchivedTaskDetailPage",
-    "pages/MonthArchivePage"
+    "pages/MonthArchivePage",
+    "pages/DebugPage"
   ]
 }

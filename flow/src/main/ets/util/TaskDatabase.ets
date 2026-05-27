@@ -45,6 +45,8 @@ const COL_START_REMINDER_TYPE: string = 'start_reminder_type';
 const COL_START_REMINDER_MESSAGE: string = 'start_reminder_message';
 /** 区间任务开始提醒代理 ID */
 const COL_START_REMINDER_ID: string = 'start_reminder_id';
+/** 多节点任务各节点目标时长（JSON number[]，分钟） */
+const COL_NODE_TARGET_DURATIONS: string = 'node_target_durations';
 
 /** 查询时返回的列名列表 */
 const ALL_COLUMNS: string[] = [
@@ -58,6 +60,7 @@ const ALL_COLUMNS: string[] = [
   COL_SOURCE_INBOX_ID, COL_IS_PINNED, COL_SORT_ORDER,
   COL_CREATED_AT, COL_UPDATED_AT, COL_REMINDER_ID,
   COL_START_REMINDER_TYPE, COL_START_REMINDER_MESSAGE, COL_START_REMINDER_ID,
+  COL_NODE_TARGET_DURATIONS,
 ];
 
 /** 建表 SQL（IF NOT EXISTS 保证幂等） */
@@ -89,7 +92,8 @@ const CREATE_TABLE_SQL: string =
     `${COL_REMINDER_ID} INTEGER NOT NULL DEFAULT 0,` +
     `${COL_START_REMINDER_TYPE} INTEGER NOT NULL DEFAULT 0,` +
     `${COL_START_REMINDER_MESSAGE} TEXT NOT NULL DEFAULT '',` +
-    `${COL_START_REMINDER_ID} INTEGER NOT NULL DEFAULT 0` +
+    `${COL_START_REMINDER_ID} INTEGER NOT NULL DEFAULT 0,` +
+    `${COL_NODE_TARGET_DURATIONS} TEXT NOT NULL DEFAULT ''` +
     `)`;
 
 /** 旧库迁移 SQL：为已有数据库添加 is_pinned 列（若已存在则报错被忽略） */
@@ -111,6 +115,10 @@ const ALTER_ADD_START_REMINDER_MESSAGE_SQL: string =
 /** 旧库迁移 SQL：为已有数据库添加 start_reminder_id 列（区间任务） */
 const ALTER_ADD_START_REMINDER_ID_SQL: string =
   `ALTER TABLE ${TABLE_NAME} ADD COLUMN ${COL_START_REMINDER_ID} INTEGER NOT NULL DEFAULT 0`;
+
+/** 旧库迁移 SQL：为已有数据库添加 node_target_durations 列（多节点任务各节点目标时长） */
+const ALTER_ADD_NODE_TARGET_DURATIONS_SQL: string =
+  `ALTER TABLE ${TABLE_NAME} ADD COLUMN ${COL_NODE_TARGET_DURATIONS} TEXT NOT NULL DEFAULT ''`;
 
 /** 任务 RDB 数据库封装，所有方法均为静态 */
 export class TaskDatabase {
@@ -244,6 +252,7 @@ export class TaskDatabase {
       bucket[COL_START_REMINDER_TYPE] = entry.startReminderType;
       bucket[COL_START_REMINDER_MESSAGE] = entry.startReminderMessage;
       bucket[COL_START_REMINDER_ID] = entry.startReminderId;
+      bucket[COL_NODE_TARGET_DURATIONS] = entry.nodeTargetDurations;
       return await TaskDatabase.store.insert(TABLE_NAME, bucket);
     } catch (err) {
       hilog.error(LOG_DOMAIN, 'TaskDatabase', 'insert 失败：%{public}s', JSON.stringify(err));
@@ -288,6 +297,7 @@ export class TaskDatabase {
       bucket[COL_START_REMINDER_TYPE] = entry.startReminderType;
       bucket[COL_START_REMINDER_MESSAGE] = entry.startReminderMessage;
       bucket[COL_START_REMINDER_ID] = entry.startReminderId;
+      bucket[COL_NODE_TARGET_DURATIONS] = entry.nodeTargetDurations;
       const predicates: relationalStore.RdbPredicates = new relationalStore.RdbPredicates(TABLE_NAME);
       predicates.equalTo(COL_ID, entry.id);
       await TaskDatabase.store.update(bucket, predicates);
@@ -413,6 +423,23 @@ export class TaskDatabase {
     return ids;
   }
 
+  /**
+   * 删除全部任务（调试用途，不区分状态）。
+   */
+  static async deleteAll(): Promise<void> {
+    await TaskDatabase.ensureReady();
+    if (TaskDatabase.store === null) {
+      return;
+    }
+    try {
+      const predicates: relationalStore.RdbPredicates = new relationalStore.RdbPredicates(TABLE_NAME);
+      predicates.greaterThan(COL_ID, 0);
+      await TaskDatabase.store.delete(predicates);
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'TaskDatabase', 'deleteAll 失败：%{public}s', JSON.stringify(err));
+    }
+  }
+
   /** 执行实际初始化：创建/打开 RDB 并建表，同时执行旧库列迁移 */
   private static async doInit(context: Context): Promise<void> {
     try {
@@ -449,6 +476,12 @@ export class TaskDatabase {
       // 旧库迁移：添加 start_reminder_id 列（区间任务开始提醒）
       try {
         await TaskDatabase.store.executeSql(ALTER_ADD_START_REMINDER_ID_SQL);
+      } catch {
+        // 列已存在时忽略错误
+      }
+      // 旧库迁移：添加 node_target_durations 列（多节点任务各节点目标时长）
+      try {
+        await TaskDatabase.store.executeSql(ALTER_ADD_NODE_TARGET_DURATIONS_SQL);
       } catch {
         // 列已存在时忽略错误
       }
@@ -495,6 +528,7 @@ export class TaskDatabase {
       startReminderType: rs.getLong(rs.getColumnIndex(COL_START_REMINDER_TYPE)),
       startReminderMessage: rs.getString(rs.getColumnIndex(COL_START_REMINDER_MESSAGE)),
       startReminderId: rs.getLong(rs.getColumnIndex(COL_START_REMINDER_ID)),
+      nodeTargetDurations: rs.getString(rs.getColumnIndex(COL_NODE_TARGET_DURATIONS)),
     };
   }
 }

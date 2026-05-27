@@ -92,41 +92,46 @@ struct ArchivedTaskDetailPage {
       Scroll() {
         Column() {
           if (this.taskEntry !== null) {
+
             // 标签行（若有）
-            if (parseTags(this.taskEntry.tags).length > 0) {
-              Row({ space: 6 }) {
-                ForEach(
-                  parseTags(this.taskEntry.tags),
-                  (tag: string) => {
-                    Text(tag)
-                      .fontSize(this.fontTokens.caption)
-                      .fontColor(this.themeTokens.colorAccent)
-                      .padding({
-                        left: 6,
-                        right: 6,
-                        top: 2,
-                        bottom: 2
-                      })
-                      .border({ width: 0.5, color: this.themeTokens.colorAccent, radius: 4 })
-                  },
-                  (tag: string) => tag
-                )
+            if (this.taskEntry.tags !== '') {
+              Row({ space: 8 }) {
+                ForEach(parseTags(this.taskEntry.tags), (tag: string) => {
+                  Text('#' + tag)
+                    .fontSize(this.fontTokens.label)
+                    .fontColor(this.themeTokens.colorAccent)
+                    .padding({
+                      left: 8,
+                      right: 8,
+                      top: 3,
+                      bottom: 3
+                    })
+                    .backgroundColor(this.themeTokens.colorDivider)
+                    .borderRadius(10)
+                }, (tag: string) => tag)
               }
               .width('100%')
-              .padding({ left: $r('app.float.spacing_lg'), right: $r('app.float.spacing_lg'), bottom: 8 })
+              .padding({
+                left: 20,
+                right: 20,
+                bottom: 8,
+                top: 8
+              })
             }
 
-            // 任务内容（若有）
-            if (this.taskEntry.content.length > 0) {
+            // 正文备注（若有）
+            if (this.taskEntry.content !== '') {
               Text(this.taskEntry.content)
-                .fontSize(this.fontTokens.body)
+                .fontSize(this.fontTokens.bodySmall)
                 .fontColor(this.themeTokens.colorTextSecondary)
                 .width('100%')
                 .padding({
-                  left: $r('app.float.spacing_lg'),
-                  right: $r('app.float.spacing_lg'),
-                  bottom: 12,
+                  left: 20,
+                  right: 20,
+                  top: 4,
+                  bottom: 12
                 })
+                .lineHeight(22)
             }
 
             Divider()

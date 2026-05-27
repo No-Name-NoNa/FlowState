@@ -132,6 +132,7 @@ export class TaskViewModel {
       startReminderType: 0,
       startReminderMessage: '',
       startReminderId: 0,
+      nodeTargetDurations: '',
     };
   }
 
@@ -172,6 +173,7 @@ export class TaskViewModel {
         startReminderType: entry.startReminderType,
         startReminderMessage: entry.startReminderMessage,
         startReminderId: 0,
+        nodeTargetDurations: entry.nodeTargetDurations,
       };
       const reminderId: number = await NotificationHelper.scheduleDeadlineReminder(entryWithId);
       const startReminderId: number = await NotificationHelper.scheduleStartReminder(entryWithId);
@@ -204,6 +206,7 @@ export class TaskViewModel {
           startReminderType: entryWithId.startReminderType,
           startReminderMessage: entryWithId.startReminderMessage,
           startReminderId: startReminderId,
+          nodeTargetDurations: entryWithId.nodeTargetDurations,
         };
         await TaskDatabase.update(withReminder);
       }
@@ -251,6 +254,7 @@ export class TaskViewModel {
       startReminderType: entry.startReminderType,
       startReminderMessage: entry.startReminderMessage,
       startReminderId: startReminderId,
+      nodeTargetDurations: entry.nodeTargetDurations,
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
@@ -419,6 +423,7 @@ export class TaskViewModel {
         startReminderType: entry.startReminderType,
         startReminderMessage: entry.startReminderMessage,
         startReminderId: 0,
+        nodeTargetDurations: entry.nodeTargetDurations,
       };
       await TaskDatabase.update(completedEntry);
 
@@ -457,6 +462,7 @@ export class TaskViewModel {
             startReminderType: 0,
             startReminderMessage: '',
             startReminderId: 0,
+            nodeTargetDurations: '',
           };
           await TaskViewModel.create(nextEntry);
           return; // create() 内部已调用 load()，直接返回
@@ -500,6 +506,7 @@ export class TaskViewModel {
           startReminderType: entry.startReminderType,
           startReminderMessage: entry.startReminderMessage,
           startReminderId: 0,
+          nodeTargetDurations: entry.nodeTargetDurations,
         };
         const newReminderId: number = await NotificationHelper.scheduleDeadlineReminder(advanced);
         const withReminder: TaskEntry = {
@@ -530,6 +537,7 @@ export class TaskViewModel {
           startReminderType: advanced.startReminderType,
           startReminderMessage: advanced.startReminderMessage,
           startReminderId: 0,
+          nodeTargetDurations: advanced.nodeTargetDurations,
         };
         await TaskDatabase.update(withReminder);
         await TaskViewModel.load();
@@ -572,6 +580,7 @@ export class TaskViewModel {
           startReminderType: entry.startReminderType,
           startReminderMessage: entry.startReminderMessage,
           startReminderId: 0,
+          nodeTargetDurations: entry.nodeTargetDurations,
         };
         const newReminderId: number = await NotificationHelper.scheduleDeadlineReminder(advanced);
         const newStartReminderId: number = await NotificationHelper.scheduleStartReminder(advanced);
@@ -603,6 +612,7 @@ export class TaskViewModel {
           startReminderType: advanced.startReminderType,
           startReminderMessage: advanced.startReminderMessage,
           startReminderId: newStartReminderId,
+          nodeTargetDurations: advanced.nodeTargetDurations,
         };
         await TaskDatabase.update(withReminder);
         await TaskViewModel.load();
@@ -640,6 +650,7 @@ export class TaskViewModel {
       startReminderType: entry.startReminderType,
       startReminderMessage: entry.startReminderMessage,
       startReminderId: 0,
+      nodeTargetDurations: entry.nodeTargetDurations,
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
@@ -685,13 +696,65 @@ export class TaskViewModel {
       startReminderType: entry.startReminderType,
       startReminderMessage: entry.startReminderMessage,
       startReminderId: entry.startReminderId,
+      nodeTargetDurations: entry.nodeTargetDurations,
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
   }
 
   /**
-   * 将指定任务标记为归档，取消截止提醒，不再在任务列表显示，可在历史页查看。
+   * 多节点/多区间任务专用的逐步取消完成。
+   * - 若任务当前为 COMPLETED：恢复为 PENDING，currentNodeIndex 不变（撤销最后一次整体完成）
+   * - 若任务当前为 PENDING 且 currentNodeIndex > 0：currentNodeIndex -= 1（撤销上一次节点推进）
+   * 非多节点任务调用此方法时行为与 uncomplete 一致。
+   */
+  static async uncompleteNode(id: number): Promise<void> {
+    const entry: TaskEntry | null = await TaskDatabase.getById(id);
+    if (entry === null) {
+      return;
+    }
+    const now: number = Date.now();
+    let newIndex: number = entry.currentNodeIndex;
+    if (entry.status === TaskStatus.PENDING && entry.currentNodeIndex > 0) {
+      // PENDING 且非首节点：退回上一节点
+      newIndex = entry.currentNodeIndex - 1;
+    }
+    // COMPLETED 或首节点：仅恢复状态，索引不变
+    const updated: TaskEntry = {
+      id: entry.id,
+      title: entry.title,
+      content: entry.content,
+      tags: entry.tags,
+      priority: entry.priority,
+      status: TaskStatus.PENDING,
+      scheduleType: entry.scheduleType,
+      timeNodes: entry.timeNodes,
+      currentNodeIndex: newIndex,
+      recurringRule: entry.recurringRule,
+      targetDuration: entry.targetDuration,
+      accumulatedDuration: entry.accumulatedDuration,
+      reminderType: entry.reminderType,
+      reminderOffset: entry.reminderOffset,
+      reminderSound: entry.reminderSound,
+      reminderMessage: entry.reminderMessage,
+      completionType: entry.completionType,
+      completedAt: 0,
+      sourceInboxId: entry.sourceInboxId,
+      isPinned: entry.isPinned,
+      sortOrder: entry.sortOrder,
+      createdAt: entry.createdAt,
+      updatedAt: now,
+      reminderId: entry.reminderId,
+      startReminderType: entry.startReminderType,
+      startReminderMessage: entry.startReminderMessage,
+      startReminderId: entry.startReminderId,
+      nodeTargetDurations: entry.nodeTargetDurations,
+    };
+    await TaskDatabase.update(updated);
+    await TaskViewModel.load();
+  }
+
+  /**
    * @param id 任务主键
    */
   static async archive(id: number): Promise<void> {
@@ -731,6 +794,7 @@ export class TaskViewModel {
       startReminderType: entry.startReminderType,
       startReminderMessage: entry.startReminderMessage,
       startReminderId: 0,
+      nodeTargetDurations: entry.nodeTargetDurations,
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
@@ -780,6 +844,7 @@ export class TaskViewModel {
       startReminderType: entry.startReminderType,
       startReminderMessage: entry.startReminderMessage,
       startReminderId: entry.startReminderId,
+      nodeTargetDurations: entry.nodeTargetDurations,
     };
     await TaskDatabase.update(updated);
   }
@@ -822,6 +887,7 @@ export class TaskViewModel {
       startReminderType: entry.startReminderType,
       startReminderMessage: entry.startReminderMessage,
       startReminderId: entry.startReminderId,
+      nodeTargetDurations: entry.nodeTargetDurations,
     };
     await TaskDatabase.update(updated);
     await TaskViewModel.load();
@@ -840,7 +906,8 @@ export class TaskViewModel {
     const now: number = Date.now();
     const overdueIds: number[] = [];
     for (const task of TaskViewModel.allTasks) {
-      if (task.status !== TaskStatus.PENDING) {
+      // 只跳过已完成/已归档；其余状态（PENDING、IN_PROGRESS 等）一律检查截止时间
+      if (task.status === TaskStatus.COMPLETED || task.status === TaskStatus.ARCHIVED) {
         continue;
       }
       let deadline: number = 0;

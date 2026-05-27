@@ -266,6 +266,7 @@ export class StatisticsViewModel {
       startReminderType: entry.startReminderType,
       startReminderMessage: entry.startReminderMessage,
       startReminderId: 0,
+      nodeTargetDurations: entry.nodeTargetDurations,
     };
     await TaskDatabase.update(restored);
     // 恢复后重新注册截止提醒（若有时间节点）

@@ -264,7 +264,7 @@ export struct HistoryPage {
                   Rect()
                     .width(10)
                     .height(this.getBarHeight(item))
-                    .fill(item.isToday ? this.themeTokens.colorAccent : this.getBarColor())
+                    .fill(item.isToday ? this.themeTokens.colorAccent : this.themeTokens.colorTextSecondary)
                     .borderRadius(5)
                 }
               }

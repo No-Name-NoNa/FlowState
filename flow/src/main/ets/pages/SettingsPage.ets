@@ -267,6 +267,50 @@ struct SettingsPage {
     .height(this.fontTokens.settingsItemHeight)
   }
 
+  /**
+   * 调试工具导航行（index 4）。
+   * 无副文字，仅标题 + 右箭头。
+   */
+  @Builder
+  debugNavRow(): void {
+    Stack({ alignContent: Alignment.Center }) {
+      if (this.pressedRowIndex === 4) {
+        Rect()
+          .width('100%')
+          .height(this.fontTokens.settingsItemHeight)
+          .fill(this.themeTokens.colorTextPrimary)
+          .opacity(this.rowSpreadOpacity)
+          .scale({ x: this.rowSpreadScale, y: 1, centerX: this.spreadCenterX })
+          .hitTestBehavior(HitTestMode.None)
+      }
+      Row() {
+        Text(I18nHelper.t(I18nKeys.DEBUG_SETTINGS_LABEL, this.currentLanguage))
+          .fontSize(this.fontTokens.body)
+          .fontColor(this.themeTokens.colorTextPrimary)
+          .layoutWeight(1)
+
+        Image($r('sys.media.ohos_ic_public_arrow_right'))
+          .width($r('app.float.icon_size_sm'))
+          .height($r('app.float.icon_size_sm'))
+          .fillColor(this.themeTokens.colorTextSecondary)
+      }
+      .width('100%')
+      .height(this.fontTokens.settingsItemHeight)
+      .padding({ left: $r('app.float.spacing_lg'), right: $r('app.float.spacing_lg') })
+      .alignItems(VerticalAlign.Center)
+      .onTouch((e: TouchEvent) => {
+        if (e.type === TouchType.Down) {
+          this.triggerRowSpread(4, e.touches[0].x);
+        }
+      })
+      .onClick(() => {
+        router.pushUrl({ url: 'pages/DebugPage' });
+      })
+    }
+    .width('100%')
+    .height(this.fontTokens.settingsItemHeight)
+  }
+
   build() {
     Column() {
       // ── 顶部导航栏：返回按钮 + 页面标题 ──────────────────────────────────
@@ -329,6 +373,14 @@ struct SettingsPage {
 
         // ── 第四项：字体大小 ──────────────────────────────────────────────
         this.fontSizeNavRow()
+
+        Divider()
+          .strokeWidth(DIVIDER_STROKE_WIDTH)
+          .color(this.themeTokens.colorDivider)
+          .margin({ left: $r('app.float.spacing_lg') })
+
+        // ── 第五项：调试工具 ──────────────────────────────────────────────
+        /*this.debugNavRow()*/
       }
       .width('100%')
       .alignItems(HorizontalAlign.Start)

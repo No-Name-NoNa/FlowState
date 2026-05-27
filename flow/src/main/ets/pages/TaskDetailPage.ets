@@ -27,6 +27,7 @@ import {
   formatTaskInterval,
   getNextDeadline,
   getStartTime,
+  parseNodeTargetDurations,
   TaskCompletionType,
   TaskEntry,
   TaskScheduleType,
@@ -276,7 +277,7 @@ struct TaskDetailPage {
                       + '% · '
                       + I18nHelper.t(I18nKeys.TASK_DETAIL_TARGET, this.lang)
                       + ' '
-                      + this.taskEntry.targetDuration.toString()
+                      + this.getNodeTargetMinutes().toString()
                       + I18nHelper.t(I18nKeys.TASK_DURATION_UNIT, this.lang)
                   )
                     .fontSize(this.fontTokens.label)
@@ -592,7 +593,29 @@ struct TaskDetailPage {
     const entry: TaskEntry | null = this.taskEntry;
     return entry !== null
       && entry.completionType === TaskCompletionType.DURATION
-      && entry.targetDuration > 0;
+      && this.getNodeTargetMinutes() > 0;
+  }
+
+  /**
+   * 获取当前节点的目标时长（分钟）。
+   * 多节点任务使用 nodeTargetDurations[currentNodeIndex]；其他任务使用 targetDuration。
+   */
+  private getNodeTargetMinutes(): number {
+    const entry: TaskEntry | null = this.taskEntry;
+    if (entry === null) {
+      return 0;
+    }
+    if ((entry.scheduleType === TaskScheduleType.MULTI_NODE ||
+      entry.scheduleType === TaskScheduleType.MULTI_NODE_INTERVAL) &&
+      entry.nodeTargetDurations !== '') {
+      const perNodeDurations: number[] = parseNodeTargetDurations(entry.nodeTargetDurations);
+      const idx: number = entry.currentNodeIndex;
+      if (idx >= 0 && idx < perNodeDurations.length && perNodeDurations[idx] > 0) {
+        return perNodeDurations[idx];
+      }
+      return 0;
+    }
+    return entry.targetDuration;
   }
 
   /** 启动计时器 */
@@ -612,11 +635,18 @@ struct TaskDetailPage {
     });
     this.timerId = setInterval(() => {
       this.sessionElapsedMs += 1000;
-      // DURATION 类型：达到目标时长后自动完成
+      // DURATION 类型：达到目标时长后自动完成或推进节点
       const entry: TaskEntry | null = this.taskEntry;
-      if (entry !== null && entry.completionType === TaskCompletionType.DURATION && entry.targetDuration > 0) {
-        if (this.totalAccumulatedMs() >= entry.targetDuration * 60000) {
-          this.executeComplete();
+      if (entry !== null && entry.completionType === TaskCompletionType.DURATION
+        && this.getNodeTargetMinutes() > 0) {
+        if (this.totalAccumulatedMs() >= this.getNodeTargetMinutes() * 60000) {
+          // 多节点任务：推进节点而非直接完成
+          if (entry.scheduleType === TaskScheduleType.MULTI_NODE ||
+            entry.scheduleType === TaskScheduleType.MULTI_NODE_INTERVAL) {
+            this.executeAdvanceNode();
+          } else {
+            this.executeComplete();
+          }
         }
       }
     }, 1000);
@@ -646,6 +676,38 @@ struct TaskDetailPage {
       await NotificationHelper.publishTaskDone(entry, PreferencesHelper.getNotifMessage());
     }
     router.back();
+  }
+
+  /**
+   * 多节点任务时长到达时推进节点：
+   * 停止计时 → 调用 TaskViewModel.complete() 推进 currentNodeIndex 并重置 accumulatedDuration
+   * → 重新从 DB 加载最新任务数据 → 若已是最后节点则退出，否则重置会话计时并重新启动计时器。
+   */
+  private async executeAdvanceNode(): Promise<void> {
+    this.stopTimer();
+    // 保存本次计时进度
+    await TaskViewModel.updateProgress(
+      this.taskId, this.totalAccumulatedMs(), this.currentStatus, 0);
+    // 调用 complete() 推进节点（内部重置 accumulatedDuration = 0）
+    await TaskViewModel.complete(this.taskId);
+    // 重新加载最新任务数据
+    const updated: TaskEntry | null = await TaskViewModel.getById(this.taskId);
+    if (updated === null) {
+      router.back();
+      return;
+    }
+    // 更新页面内任务数据
+    this.taskEntry = updated;
+    this.currentStatus = updated.status;
+    if (updated.status === TaskStatus.COMPLETED) {
+      // 最后节点完成，发送通知并退出
+      await NotificationHelper.publishTaskDone(updated, PreferencesHelper.getNotifMessage());
+      router.back();
+      return;
+    }
+    // 还有下一节点：重置本次会话计时，重新启动计时器
+    this.sessionElapsedMs = 0;
+    this.startTimer();
   }
 
   /** 直接执行归档 */
@@ -755,10 +817,11 @@ struct TaskDetailPage {
   /** 计算 DURATION 类型的进度值（0 ~ 100） */
   private getDurationProgressValue(): number {
     const entry: TaskEntry | null = this.taskEntry;
-    if (entry === null || entry.targetDuration <= 0) {
+    const targetMinutes: number = this.getNodeTargetMinutes();
+    if (entry === null || targetMinutes <= 0) {
       return 0;
     }
-    const targetMs: number = entry.targetDuration * 60000;
+    const targetMs: number = targetMinutes * 60000;
     const ratio: number = this.totalAccumulatedMs() / targetMs;
     if (ratio >= 1.0) {
       return 100;

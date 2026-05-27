@@ -21,7 +21,7 @@ import {
 } from '../constants/AppConstants';
 import { DEFAULT_THEME_TOKENS, ThemeTokens } from '../constants/ThemeConstants';
 import { DEFAULT_FONT_TOKENS, FontSizeTokens } from '../constants/FontSizeConstants';
-import { StatisticsViewModel } from '../viewmodel/StatisticsViewModel';
+import { StatisticsViewModel, StatsSummary, TimeRange } from '../viewmodel/StatisticsViewModel';
 import { TaskEntry, TaskPriority } from '../model/TaskEntry';
 import { parseTags } from '../model/InboxEntry';
 import { SpreadEffectHelper } from '../util/SpreadEffectHelper';
@@ -77,6 +77,13 @@ struct MonthArchivePage {
   private rangeFrom: number = 0;
   /** 月份截止时间戳（ms，不含） */
   private rangeTo: number = 0;
+  // ── 月度统计 ─────────────────────────────────────────────────────────────
+  /** 本月总专注时长（ms） */
+  @State private monthFocusMs: number = 0;
+  /** 本月归档任务总数（全量，不受搜索/标签过滤影响） */
+  @State private monthArchivedCount: number = 0;
+  /** 本月有归档记录的天数 */
+  @State private monthActiveDays: number = 0;
 
   aboutToAppear(): void {
     const params = router.getParams() as MonthArchiveRouterParams;
@@ -231,6 +238,18 @@ struct MonthArchivePage {
       // ── 归档任务列表 ─────────────────────────────────────────────────────
       Stack({ alignContent: Alignment.Center }) {
         List() {
+          // ── 月度统计卡片 ─────────────────────────────────────────────────
+          ListItem() {
+            Column({ space: 0 }) {
+              this.MonthStatsCard()
+              Divider()
+                .strokeWidth(DIVIDER_STROKE_WIDTH)
+                .color(this.themeTokens.colorDivider)
+            }
+            .width('100%')
+            .padding({ left: $r('app.float.spacing_lg'), right: $r('app.float.spacing_lg') })
+          }
+
           ForEach(
             this.filteredTasks,
             (task: TaskEntry, index: number) => {
@@ -373,13 +392,32 @@ struct MonthArchivePage {
     }
   }
 
-  /** 从 DB 加载本月全量归档任务 */
+  /** 从 DB 加载本月全量归档任务 + 月度专注时长 */
   private loadData(): void {
     StatisticsViewModel.loadArchivedTasksInRange(this.rangeFrom, this.rangeTo).then((tasks: TaskEntry[]) => {
       this.allTasks = tasks;
+      this.monthArchivedCount = tasks.length;
+      this.monthActiveDays = this.computeActiveDays(tasks);
       this.rebuildTagList();
       this.applyFilter();
     });
+    const range: TimeRange = { from: this.rangeFrom, to: this.rangeTo };
+    StatisticsViewModel.getStats(range).then((s: StatsSummary) => {
+      this.monthFocusMs = s.focusTimeMs;
+    });
+  }
+
+  /** 统计 allTasks 中有归档记录的不重复天数 */
+  private computeActiveDays(tasks: TaskEntry[]): number {
+    const keys: number[] = [];
+    for (const t of tasks) {
+      const d: Date = new Date(t.updatedAt);
+      const k: number = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+      if (keys.indexOf(k) < 0) {
+        keys.push(k);
+      }
+    }
+    return keys.length;
   }
 
   /** 提取所有标签的并集 */
@@ -486,6 +524,49 @@ struct MonthArchivePage {
     const month: string = String(d.getMonth() + 1).padStart(2, '0');
     const day: string = String(d.getDate()).padStart(2, '0');
     return `${month}/${day}`;
+  }
+
+  /** 月度统计卡片，布局对标 HistoryPage.WeeklyTrendCard */
+  @Builder
+  private MonthStatsCard(): void {
+    Column({ space: 14 }) {
+      // 标题行：左"本月投入"，右 专注时长 + 活跃天数
+      Row() {
+        Text(I18nHelper.t(I18nKeys.MONTH_ARCHIVE_STATS_FOCUS, this.lang))
+          .fontSize(this.fontTokens.body)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(this.themeTokens.colorTextPrimary)
+          .layoutWeight(1)
+
+        Text(StatisticsViewModel.formatDuration(this.monthFocusMs)
+          + '  '
+          + this.monthActiveDays.toString()
+          + I18nHelper.t(I18nKeys.HISTORY_METRIC_DAYS_UNIT, this.lang))
+          .fontSize(this.fontTokens.caption)
+          .fontColor(this.themeTokens.colorTextSecondary)
+      }
+      .width('100%')
+      .alignItems(VerticalAlign.Center)
+
+      // 大号 accent 时长
+      Text(StatisticsViewModel.formatDuration(this.monthFocusMs))
+        .fontSize(Math.round(this.fontTokens.timerDigit * 0.65))
+        .fontWeight(FontWeight.Bold)
+        .fontColor(this.themeTokens.colorAccent)
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .width('100%')
+
+      // 小号描述：归档任务数
+      Text(I18nHelper.t(I18nKeys.HISTORY_TREND_DONE, this.lang)
+        .replace('{count}', this.monthArchivedCount.toString()))
+        .fontSize(this.fontTokens.caption)
+        .fontColor(this.themeTokens.colorTextSecondary)
+        .width('100%')
+    }
+    .width('100%')
+    .alignItems(HorizontalAlign.Start)
+    .padding({ top: 20, bottom: 16 })
   }
 
   /** 条目左滑删除按钮 */

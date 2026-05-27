@@ -257,6 +257,14 @@ export interface TaskEntry {
    * 新约定：等于 task.id + 1000000；0 = 未注册，> 0 = 已注册，可用于取消。
    */
   startReminderId: number;
+
+  /**
+   * 多节点任务各节点目标时长数组（分钟），JSON 序列化的 number[]。
+   * - MULTI_NODE / MULTI_NODE_INTERVAL 且 completionType === DURATION 时有效
+   * - 索引与节点顺序对应：nodeTargetDurations[i] 为第 i 个节点的目标时长（分钟）
+   * - 非多节点任务或无时长目标时为空字符串 ''
+   */
+  nodeTargetDurations: string;
 }
 
 // ── 序列化工具函数 ─────────────────────────────────────────────────────────────
@@ -343,6 +351,34 @@ export function serializeIntervalNodes(nodes: IntervalNode[]): string {
   return JSON.stringify(nodes);
 }
 
+/**
+ * 从 JSON 字符串解析多节点目标时长数组（分钟）。
+ * @param json 目标时长 JSON 字符串
+ * @returns number[] 数组，解析失败或为空时返回空数组
+ */
+export function parseNodeTargetDurations(json: string): number[] {
+  if (json === '') {
+    return [];
+  }
+  try {
+    return JSON.parse(json) as number[];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 将多节点目标时长数组序列化为 JSON 字符串。
+ * @param durations 目标时长数组（分钟）
+ * @returns JSON 字符串，无内容时返回空字符串
+ */
+export function serializeNodeTargetDurations(durations: number[]): string {
+  if (durations.length === 0) {
+    return '';
+  }
+  return JSON.stringify(durations);
+}
+
 // ── 调度逻辑工具函数 ──────────────────────────────────────────────────────────
 
 /**
@@ -350,10 +386,9 @@ export function serializeIntervalNodes(nodes: IntervalNode[]): string {
  * - SINGLE：返回唯一节点时间
  * - RECURRING：返回 currentNodeIndex 指向的节点时间
  * - INTERVAL：返回单个区间节点的结束时间
- * - MULTI_NODE：遍历节点，返回第一个尚未到来（> now）的节点时间；
- *   若所有节点均已过期则返回最后节点时间（令 formatTaskDeadline 显示"已过期"）
- * - MULTI_NODE_INTERVAL：遍历区间节点，返回第一个尚未结束（end > now）的区间 end；
- *   若所有区间均已结束则返回最后区间的 end
+ * - MULTI_NODE：直接返回 currentNodeIndex 指向的节点时间（由 ViewModel 维护索引推进）
+ * - MULTI_NODE_INTERVAL：从 currentNodeIndex 开始，找第一个尚未结束（end > now）的区间 end；
+ *   若当前及之后所有区间均已结束则返回最后一个区间的 end（令 format 显示"已过期"）
  * - NONE 或节点数组为空：返回 0
  * @param entry 任务条目
  * @returns 下一个截止时间戳（ms），0 表示无截止时间
@@ -371,18 +406,20 @@ export function getNextDeadline(entry: TaskEntry): number {
     return intervalNodes[0].end;
   }
   if (entry.scheduleType === TaskScheduleType.MULTI_NODE_INTERVAL) {
-    // 多节点区间：动态找第一个尚未结束的区间（end > now）
+    // 多节点区间：从 currentNodeIndex 开始，找第一个尚未结束（end > now）的区间
     const intervalNodes: IntervalNode[] = parseIntervalNodes(entry.timeNodes);
     if (intervalNodes.length === 0) {
       return 0;
     }
     const now: number = Date.now();
-    for (let i: number = 0; i < intervalNodes.length; i++) {
+    const startIdx: number = entry.currentNodeIndex < intervalNodes.length
+      ? entry.currentNodeIndex : intervalNodes.length - 1;
+    for (let i: number = startIdx; i < intervalNodes.length; i++) {
       if (intervalNodes[i].end > now) {
         return intervalNodes[i].end;
       }
     }
-    // 全部区间已过期：返回最后区间的 end
+    // 当前及后续区间均已结束：返回最后区间的 end
     return intervalNodes[intervalNodes.length - 1].end;
   }
   // SINGLE / MULTI_NODE / RECURRING：number[] 格式
@@ -391,15 +428,9 @@ export function getNextDeadline(entry: TaskEntry): number {
     return 0;
   }
   if (entry.scheduleType === TaskScheduleType.MULTI_NODE) {
-    // 多节点：动态找第一个尚未到来的节点（> now）
-    const now: number = Date.now();
-    for (let i: number = 0; i < nodes.length; i++) {
-      if (nodes[i] > now) {
-        return nodes[i];
-      }
-    }
-    // 全部节点已过期：返回最后节点时间
-    return nodes[nodes.length - 1];
+    // 多节点：直接使用 currentNodeIndex，ViewModel 负责在完成节点时推进索引
+    const idx: number = entry.currentNodeIndex < nodes.length ? entry.currentNodeIndex : nodes.length - 1;
+    return nodes[idx];
   }
   // SINGLE / RECURRING：固定取 currentNodeIndex
   const idx: number = entry.currentNodeIndex < nodes.length ? entry.currentNodeIndex : 0;
@@ -409,8 +440,8 @@ export function getNextDeadline(entry: TaskEntry): number {
 /**
  * 获取区间任务的开始时间戳。
  * - INTERVAL：返回单个区间节点的 start
- * - MULTI_NODE_INTERVAL：动态找第一个尚未结束（end > now）的区间的 start；
- *   若全部结束则返回最后区间的 start
+ * - MULTI_NODE_INTERVAL：从 currentNodeIndex 开始，找第一个尚未结束（end > now）的区间的 start；
+ *   若当前及之后所有区间均已结束则返回最后区间的 start
  * - 非区间类型或无节点时返回 0
  * @param entry 任务条目
  * @returns 开始时间戳（ms），0 表示无开始时间
@@ -426,12 +457,14 @@ export function getStartTime(entry: TaskEntry): number {
       return 0;
     }
     const now: number = Date.now();
-    for (let i: number = 0; i < intervalNodes.length; i++) {
+    const startIdx: number = entry.currentNodeIndex < intervalNodes.length
+      ? entry.currentNodeIndex : intervalNodes.length - 1;
+    for (let i: number = startIdx; i < intervalNodes.length; i++) {
       if (intervalNodes[i].end > now) {
         return intervalNodes[i].start;
       }
     }
-    // 全部结束：返回最后区间的 start
+    // 当前及后续区间均已结束：返回最后区间的 start
     return intervalNodes[intervalNodes.length - 1].start;
   }
   return 0;

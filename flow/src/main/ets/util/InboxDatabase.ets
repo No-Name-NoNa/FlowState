@@ -206,6 +206,23 @@ export class InboxDatabase {
     }
   }
 
+  /**
+   * 删除全部条目（调试用途）。
+   */
+  static async deleteAll(): Promise<void> {
+    await InboxDatabase.ensureReady();
+    if (InboxDatabase.store === null) {
+      return;
+    }
+    try {
+      const predicates: relationalStore.RdbPredicates = new relationalStore.RdbPredicates(TABLE_NAME);
+      predicates.greaterThan(COL_ID, 0);
+      await InboxDatabase.store.delete(predicates);
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'InboxDatabase', 'deleteAll 失败：%{public}s', JSON.stringify(err));
+    }
+  }
+
   /** 执行实际初始化：创建/打开 RDB 并建表 */
   private static async doInit(context: Context): Promise<void> {
     try {

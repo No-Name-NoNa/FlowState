@@ -113,20 +113,28 @@ export struct TaskItemComponent {
         })
 
       // 完成 / 取消完成
-      MenuItem({
-        content: I18nHelper.t(
-          this.entryStatus === TaskStatus.COMPLETED
-            ? I18nKeys.TASK_MENU_UNCOMPLETE
-            : I18nKeys.TASK_MENU_COMPLETE,
-          this.lang,
-        ),
-      })
-        .onClick(() => {
-          if (this.entryStatus === TaskStatus.COMPLETED) {
-            TaskViewModel.uncomplete(this.entryId).then(() => {
-              this.onDataChanged();
-            });
-          } else {
+      // 多节点任务：只要 currentNodeIndex > 0 或已完成，就显示取消完成选项
+      if (this.entryStatus === TaskStatus.COMPLETED
+        || ((this.entryScheduleType === TaskScheduleType.MULTI_NODE
+          || this.entryScheduleType === TaskScheduleType.MULTI_NODE_INTERVAL)
+          && this.entryCurrentNodeIndex > 0)) {
+        MenuItem({ content: I18nHelper.t(I18nKeys.TASK_MENU_UNCOMPLETE, this.lang) })
+          .onClick(() => {
+            if (this.entryScheduleType === TaskScheduleType.MULTI_NODE
+              || this.entryScheduleType === TaskScheduleType.MULTI_NODE_INTERVAL) {
+              TaskViewModel.uncompleteNode(this.entryId).then(() => {
+                this.onDataChanged();
+              });
+            } else {
+              TaskViewModel.uncomplete(this.entryId).then(() => {
+                this.onDataChanged();
+              });
+            }
+          })
+      }
+      if (this.entryStatus !== TaskStatus.COMPLETED) {
+        MenuItem({ content: I18nHelper.t(I18nKeys.TASK_MENU_COMPLETE, this.lang) })
+          .onClick(() => {
             AlertDialog.show({
               title: I18nHelper.t(I18nKeys.TASK_MENU_COMPLETE, this.lang),
               message: I18nHelper.t(I18nKeys.DIALOG_COMPLETE_MSG, this.lang),
@@ -145,8 +153,8 @@ export struct TaskItemComponent {
               },
               autoCancel: true,
             });
-          }
-        })
+          })
+      }
 
       // 归档
       MenuItem({ content: I18nHelper.t(I18nKeys.TASK_MENU_ARCHIVE, this.lang) })
@@ -290,37 +298,20 @@ export struct TaskItemComponent {
           .width('100%')
           .alignItems(VerticalAlign.Center)
 
-          // 元信息行：标签列表 + 截止剩余时间 + 进度（仅有内容时渲染）
+          // 元信息行：标签（左，弹性宽，碰撞时省略号截断）+ 截止剩余时间 + 进度（仅有内容时渲染）
           if (this.entryTags !== ''
             || this.entryDeadline > 0
             || this.entryStartTime > 0
             || (this.entryCompletionType === TaskCompletionType.DURATION && this.entryTargetDuration > 0)
             || this.entryStatus === TaskStatus.IN_PROGRESS) {
             Row({ space: 6 }) {
-              // 标签列表（最多显示 2 个，overflow 截断）
-              if (this.entryTags !== '') {
-                ForEach(parseTags(this.entryTags).slice(0, 2), (tag: string) => {
-                  Text('#' + tag)
-                    .fontSize(this.fontTokens.label)
-                    .fontColor(this.themeTokens.colorAccent)
-                    .maxLines(1)
-                    .textOverflow({ overflow: TextOverflow.Ellipsis })
-                    .constraintSize({ maxWidth: 72 })
-                    .flexShrink(0)
-                }, (tag: string) => tag)
-              }
-
-              // 弹性占位，将右侧信息推到最右
-              Blank()
-
-              // 计时中标签（IN_PROGRESS 时显示，与截止时间并列，互不遮盖）
-              if (this.entryStatus === TaskStatus.IN_PROGRESS) {
-                Text(I18nHelper.t(I18nKeys.TASK_STATUS_IN_PROGRESS, this.lang))
-                  .fontSize(this.fontTokens.label)
-                  .fontColor(this.themeTokens.colorAccent)
-                  .maxLines(1)
-                  .flexShrink(0)
-              }
+              // 标签文字：最多 2 个，撑满剩余空间；与右侧碰撞时从左侧截断并显示省略号
+              Text(this.buildTagsText())
+                .fontSize(this.fontTokens.label)
+                .fontColor(this.themeTokens.colorAccent)
+                .maxLines(1)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+                .layoutWeight(1)
 
               // 截止剩余时间 / 区间时间范围（有截止时间时始终显示，不受 IN_PROGRESS 影响）
               if (this.entryDeadline > 0) {
@@ -409,6 +400,22 @@ export struct TaskItemComponent {
   }
 
   /** 触发横向扩散特效（Rect 始终挂载） */
+  /** 将最多 2 个标签格式化为空格分隔的字符串，无标签时返回空字符串 */
+  private buildTagsText(): string {
+    if (this.entryTags === '') {
+      return '';
+    }
+    const tags: string[] = parseTags(this.entryTags).slice(0, 2);
+    let result: string = '';
+    for (let i: number = 0; i < tags.length; i++) {
+      if (i > 0) {
+        result += ' ';
+      }
+      result += '#' + tags[i];
+    }
+    return result;
+  }
+
   private triggerSpread(touchX: number): void {
     SpreadEffectHelper.trigger(
       (_idx: number) => {

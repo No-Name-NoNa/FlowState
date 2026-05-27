@@ -204,6 +204,48 @@ export class TimerSessionDatabase {
     }
   }
 
+  /**
+   * 插入一条已完成的计时段记录（调试用途，startAt 与 endAt 同时写入）。
+   * @param taskId  关联任务 ID
+   * @param startAt 计时段开始时间戳（ms）
+   * @param endAt   计时段结束时间戳（ms）
+   * @returns 新行 ID，失败返回 -1
+   */
+  static async insertCompletedSession(taskId: number, startAt: number, endAt: number): Promise<number> {
+    await TimerSessionDatabase.ensureReady();
+    if (TimerSessionDatabase.store === null) {
+      return -1;
+    }
+    try {
+      const bucket: relationalStore.ValuesBucket = {};
+      bucket[COL_TASK_ID] = taskId;
+      bucket[COL_START_AT] = startAt;
+      bucket[COL_END_AT] = endAt;
+      return await TimerSessionDatabase.store.insert(TABLE_NAME, bucket);
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'TimerSessionDatabase',
+        'insertCompletedSession 失败（taskId=%{public}d）：%{public}s', taskId, JSON.stringify(err));
+      return -1;
+    }
+  }
+
+  /**
+   * 删除全部计时段记录（调试用途）。
+   */
+  static async deleteAll(): Promise<void> {
+    await TimerSessionDatabase.ensureReady();
+    if (TimerSessionDatabase.store === null) {
+      return;
+    }
+    try {
+      const predicates: relationalStore.RdbPredicates = new relationalStore.RdbPredicates(TABLE_NAME);
+      predicates.greaterThan(COL_ID, 0);
+      await TimerSessionDatabase.store.delete(predicates);
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, 'TimerSessionDatabase', 'deleteAll 失败：%{public}s', JSON.stringify(err));
+    }
+  }
+
   /** 执行实际初始化：创建/打开 RDB 并建表 */
   private static async doInit(context: Context): Promise<void> {
     try {
