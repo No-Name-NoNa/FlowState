@@ -504,20 +504,13 @@ struct TimerPage {
                             || (task.completionType === TaskCompletionType.DURATION && task.targetDuration > 0)
                             || task.status === TaskStatus.IN_PROGRESS) {
                             Row({ space: 6 }) {
-                              // 标签列表（最多 2 个）
-                              if (task.tags !== '') {
-                                ForEach(parseTags(task.tags).slice(0, 2), (tag: string) => {
-                                  Text('#' + tag)
-                                    .fontSize(this.fontTokens.label)
-                                    .fontColor(this.themeTokens.colorAccent)
-                                    .maxLines(1)
-                                    .textOverflow({ overflow: TextOverflow.Ellipsis })
-                                    .constraintSize({ maxWidth: 72 })
-                                    .flexShrink(0)
-                                }, (tag: string) => tag)
-                              }
-
-                              Blank()
+                              // 标签：尽可能多显示，layoutWeight(1) 防止挤压右侧内容
+                              Text(this.buildTagsDisplayText(task))
+                                .fontSize(this.fontTokens.label)
+                                .fontColor(this.themeTokens.colorAccent)
+                                .maxLines(1)
+                                .textOverflow({ overflow: TextOverflow.Ellipsis })
+                                .layoutWeight(1)
 
                               // 计时中标记（IN_PROGRESS 时显示）
                               if (task.status === TaskStatus.IN_PROGRESS) {
@@ -836,6 +829,80 @@ struct TimerPage {
       return parseIntervalNodes(task.timeNodes).length;
     }
     return 0;
+  }
+
+  /**
+   * 将标签列表格式化为可显示的字符串。
+   * 根据右侧内容（计时中标记 / 截止时间 / 进度百分比）的宽度估算标签区可用字符单元数，
+   * 贪心地尽可能多显示标签；若不能全部显示，末尾追加 " …" 提示还有更多标签。
+   * 每个标签名超过 8 字符时截断并加 "…"。
+   */
+  private buildTagsDisplayText(task: TaskEntry): string {
+    if (task.tags === '') {
+      return '';
+    }
+    const allTags: string[] = parseTags(task.tags);
+    const MAX_TAG_CHARS: number = 8;
+
+    // 估算右侧所有内容合并后占用宽度单元（CJK 字符算 2 单元，其余算 1）
+    let rightText: string = '';
+    if (task.status === TaskStatus.IN_PROGRESS) {
+      const statusStr: string = I18nHelper.t(I18nKeys.TASK_STATUS_IN_PROGRESS, this.lang);
+      rightText += statusStr;
+    }
+    if (getNextDeadline(task) > 0) {
+      const deadlineStr: string = (task.scheduleType === TaskScheduleType.INTERVAL
+        || task.scheduleType === TaskScheduleType.MULTI_NODE_INTERVAL)
+        && getStartTime(task) > 0
+        ? formatTaskInterval(getStartTime(task), getNextDeadline(task), this.lang)
+        : formatTaskDeadline(getNextDeadline(task), this.lang);
+      rightText += rightText !== '' ? ' ' + deadlineStr : deadlineStr;
+    }
+    if (task.completionType === TaskCompletionType.DURATION && task.targetDuration > 0) {
+      const pct: string = this.getProgressPctById(task.id).toString() + '%';
+      rightText += rightText !== '' ? ' ' + pct : pct;
+    }
+
+    let rightUnits: number = 0;
+    for (let c: number = 0; c < rightText.length; c++) {
+      rightUnits += rightText.charCodeAt(c) > 255 ? 2 : 1;
+    }
+    // 内容列总单元约 38（对应 ~285vp 宽度、label 字体），减去右侧和间距
+    const tagsUnits: number = Math.max(8, 38 - rightUnits - 1);
+
+    const pieces: string[] = [];
+    let usedUnits: number = 0;
+    let truncated: boolean = false;
+
+    for (let i: number = 0; i < allTags.length; i++) {
+      const rawTag: string = allTags[i];
+      const tagName: string = rawTag.length > MAX_TAG_CHARS
+        ? rawTag.slice(0, MAX_TAG_CHARS) + '…'
+        : rawTag;
+      const piece: string = '#' + tagName;
+      const sepUnits: number = pieces.length > 0 ? 1 : 0;
+
+      let pieceUnits: number = 0;
+      for (let c: number = 0; c < piece.length; c++) {
+        pieceUnits += piece.charCodeAt(c) > 255 ? 2 : 1;
+      }
+      // 非最后一个标签时，预留 2 个单元给末尾的 " …" 指示符
+      const isLastTag: boolean = i === allTags.length - 1;
+      const reserve: number = isLastTag ? 0 : 2;
+
+      if (usedUnits + sepUnits + pieceUnits > tagsUnits - reserve) {
+        truncated = true;
+        break;
+      }
+      usedUnits += sepUnits + pieceUnits;
+      pieces.push(piece);
+    }
+
+    let result: string = pieces.join(' ');
+    if (truncated) {
+      result += pieces.length > 0 ? ' …' : '…';
+    }
+    return result;
   }
 
   /**

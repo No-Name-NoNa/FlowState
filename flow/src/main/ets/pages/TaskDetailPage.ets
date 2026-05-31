@@ -87,6 +87,22 @@ struct TaskDetailPage {
     });
   }
 
+  onPageShow(): void {
+    // 每次页面重新可见时（如从编辑页返回）重新加载任务，以显示最新内容
+    if (this.taskId <= 0) {
+      return;
+    }
+    TaskViewModel.getById(this.taskId).then((entry: TaskEntry | null) => {
+      if (entry !== null) {
+        this.taskEntry = entry;
+        // 计时器未运行时才同步状态，避免打断进行中的计时
+        if (!this.isTimerRunning) {
+          this.currentStatus = entry.status;
+        }
+      }
+    });
+  }
+
   aboutToDisappear(): void {
     if (this.skipAutoSaveOnDisappear) {
       return;
@@ -165,25 +181,30 @@ struct TaskDetailPage {
                 bottom: 6
               })
 
-            // 标签行（若有）
+            // 标签行（若有）——内容过多时可左右滑动
             if (this.taskEntry.tags !== '') {
-              Row({ space: 8 }) {
-                ForEach(parseTags(this.taskEntry.tags), (tag: string) => {
-                  Text('#' + tag)
-                    .fontSize(this.fontTokens.label)
-                    .fontColor(this.themeTokens.colorAccent)
-                    .padding({
-                      left: 8,
-                      right: 8,
-                      top: 3,
-                      bottom: 3
-                    })
-                    .backgroundColor(this.themeTokens.colorDivider)
-                    .borderRadius(10)
-                }, (tag: string) => tag)
+              Scroll() {
+                Row({ space: 8 }) {
+                  ForEach(parseTags(this.taskEntry.tags), (tag: string) => {
+                    Text('#' + tag)
+                      .fontSize(this.fontTokens.label)
+                      .fontColor(this.themeTokens.colorAccent)
+                      .padding({
+                        left: 8,
+                        right: 8,
+                        top: 3,
+                        bottom: 3
+                      })
+                      .backgroundColor(this.themeTokens.colorDivider)
+                      .borderRadius(10)
+                  }, (tag: string) => tag)
+                }
+                .padding({ left: 20, right: 20, bottom: 8 })
               }
+              .scrollable(ScrollDirection.Horizontal)
+              .scrollBar(BarState.Off)
+              .edgeEffect(EdgeEffect.None)
               .width('100%')
-              .padding({ left: 20, right: 20, bottom: 8 })
             }
 
             // 正文备注（若有）

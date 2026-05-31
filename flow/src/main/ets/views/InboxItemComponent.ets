@@ -241,18 +241,59 @@ export struct InboxItemComponent {
     .borderStyle({ left: BorderStyle.Solid })
   }
 
-  /** 将最多 2 个标签格式化为空格分隔的字符串，无标签时返回空字符串 */
+  /**
+   * 将标签列表格式化为可显示的字符串。
+   * 根据右侧时间戳的宽度估算标签区可用字符单元数，贪心地尽可能多显示标签；
+   * 若不能全部显示，末尾追加 " …" 提示还有更多标签。
+   * 每个标签名超过 8 字符时截断并加 "…"。
+   */
   private buildTagsText(): string {
     if (this.entryTags === '') {
       return '';
     }
-    const tags: string[] = parseTags(this.entryTags).slice(0, 2);
-    let result: string = '';
-    for (let i: number = 0; i < tags.length; i++) {
-      if (i > 0) {
-        result += ' ';
+    const allTags: string[] = parseTags(this.entryTags);
+    const MAX_TAG_CHARS: number = 8;
+
+    // 估算右侧时间戳占用宽度单元（CJK 字符算 2 单元，其余算 1）
+    const rightText: string = formatTimestamp(this.entryUpdatedAt, this.lang);
+    let rightUnits: number = 0;
+    for (let c: number = 0; c < rightText.length; c++) {
+      rightUnits += rightText.charCodeAt(c) > 255 ? 2 : 1;
+    }
+    // 内容列总单元约 38（对应 ~285vp 宽度、label 字体），减去右侧和间距
+    const tagsUnits: number = Math.max(8, 38 - rightUnits - 1);
+
+    const pieces: string[] = [];
+    let usedUnits: number = 0;
+    let truncated: boolean = false;
+
+    for (let i: number = 0; i < allTags.length; i++) {
+      const rawTag: string = allTags[i];
+      const tagName: string = rawTag.length > MAX_TAG_CHARS
+        ? rawTag.slice(0, MAX_TAG_CHARS) + '…'
+        : rawTag;
+      const piece: string = '#' + tagName;
+      const sepUnits: number = pieces.length > 0 ? 1 : 0;
+
+      let pieceUnits: number = 0;
+      for (let c: number = 0; c < piece.length; c++) {
+        pieceUnits += piece.charCodeAt(c) > 255 ? 2 : 1;
       }
-      result += '#' + tags[i];
+      // 非最后一个标签时，预留 2 个单元给末尾的 " …" 指示符
+      const isLastTag: boolean = i === allTags.length - 1;
+      const reserve: number = isLastTag ? 0 : 2;
+
+      if (usedUnits + sepUnits + pieceUnits > tagsUnits - reserve) {
+        truncated = true;
+        break;
+      }
+      usedUnits += sepUnits + pieceUnits;
+      pieces.push(piece);
+    }
+
+    let result: string = pieces.join(' ');
+    if (truncated) {
+      result += pieces.length > 0 ? ' …' : '…';
     }
     return result;
   }

@@ -93,30 +93,35 @@ struct ArchivedTaskDetailPage {
         Column() {
           if (this.taskEntry !== null) {
 
-            // 标签行（若有）
+            // 标签行（若有）——内容过多时可左右滑动
             if (this.taskEntry.tags !== '') {
-              Row({ space: 8 }) {
-                ForEach(parseTags(this.taskEntry.tags), (tag: string) => {
-                  Text('#' + tag)
-                    .fontSize(this.fontTokens.label)
-                    .fontColor(this.themeTokens.colorAccent)
-                    .padding({
-                      left: 8,
-                      right: 8,
-                      top: 3,
-                      bottom: 3
-                    })
-                    .backgroundColor(this.themeTokens.colorDivider)
-                    .borderRadius(10)
-                }, (tag: string) => tag)
+              Scroll() {
+                Row({ space: 8 }) {
+                  ForEach(parseTags(this.taskEntry.tags), (tag: string) => {
+                    Text('#' + tag)
+                      .fontSize(this.fontTokens.label)
+                      .fontColor(this.themeTokens.colorAccent)
+                      .padding({
+                        left: 8,
+                        right: 8,
+                        top: 3,
+                        bottom: 3
+                      })
+                      .backgroundColor(this.themeTokens.colorDivider)
+                      .borderRadius(10)
+                  }, (tag: string) => tag)
+                }
+                .padding({
+                  left: 20,
+                  right: 20,
+                  bottom: 8,
+                  top: 8
+                })
               }
+              .scrollable(ScrollDirection.Horizontal)
+              .scrollBar(BarState.Off)
+              .edgeEffect(EdgeEffect.None)
               .width('100%')
-              .padding({
-                left: 20,
-                right: 20,
-                bottom: 8,
-                top: 8
-              })
             }
 
             // 正文备注（若有）
